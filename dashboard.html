@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Expense Monitoring Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .loading-spinner { 
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .chart-container { position: relative; height: 300px; }
+        .status-badge { 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: 600; 
+        }
+        .status-received { background-color: #d4edda; color: #155724; }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-other { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="loading-spinner"></div>
+            <p class="text-gray-600 mt-4">กำลังโหลดข้อมูล...</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="hidden">
+        <!-- Header -->
+        <header class="gradient-bg text-white p-6 shadow-lg">
+            <div class="max-w-7xl mx-auto">
+                <h1 class="text-3xl font-bold mb-2">📊 PR Expense Monitoring Dashboard</h1>
+                <p class="text-blue-100">ระบบตรวจสอบค่าใช้จ่าย Purchase Request 2025</p>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto p-6">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Expense Card -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-1">ค่าใช้จ่ายรวม</p>
+                            <p id="totalExpense" class="text-2xl font-bold text-green-600">0 ฿</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Records Card -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-1">รายการทั้งหมด</p>
+                            <p id="totalRecords" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All PRs Card -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-1">รายการ PR ทั้งหมด</p>
+                            <p id="allPRsCount" class="text-2xl font-bold text-red-600">0</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Months Card -->
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 mb-1">เดือนที่มีข้อมูล</p>
+                            <p id="activeMonths" class="text-2xl font-bold text-purple-600">0</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Monthly Expense Chart -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📈 ค่าใช้จ่ายรายเดือน</h3>
+                    <div class="chart-container">
+                        <canvas id="monthlyExpenseChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Interactive PR Distribution Chart -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">📊 การกระจาย PR</h3>
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <select id="chartTypeSelector" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="month">แบ่งตามเดือน</option>
+                                <option value="status">แบ่งตามสถานะ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All PRs Table -->
+            <div class="bg-white rounded-xl shadow-md mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">📋 รายการ PR ทั้งหมด (ยกเว้นสถานะ Operate/Cancel)</h3>
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                            <select id="monthFilter" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="all">ทุกเดือน</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PR No.</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รายการ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวน</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ยอดเงิน</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allPRsTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Table content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Monthly Summary Table -->
+            <div class="bg-white rounded-xl shadow-md">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">📅 สรุปค่าใช้จ่ายรายเดือน</h3>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เดือน</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าใช้จ่ายรวม</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนรายการ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าใช้จ่ายสูงสุด</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% ของรวม</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthlySummaryTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Table content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Key Insights -->
+            <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">💡 ข้อมูลเชิงลึก</h3>
+                <div id="insights" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Insights will be populated by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white py-6 mt-8">
+            <div class="max-w-7xl mx-auto px-6 text-center">
+                <p>&copy; 2025 PR Expense Monitoring Dashboard. สร้างด้วย Google Apps Script + Tailwind CSS</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Global variables
+        let dashboardData = null;
+        let monthlyChart = null;
+        let distributionChart = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+
+        // Load data from Google Apps Script
+        function loadDashboardData() {
+            google.script.run
+                .withSuccessHandler(onDataLoaded)
+                .withFailureHandler(onDataError)
+                .getPRData();
+        }
+
+        // Handle successful data load
+        function onDataLoaded(data) {
+            console.log('ข้อมูลโหลดสำเร็จ:', data);
+            
+            if (data.error) {
+                onDataError(data.error);
+                return;
+            }
+
+            dashboardData = data;
+            
+            // Update summary cards
+            updateSummaryCards(data);
+            
+            // Create charts
+            createMonthlyExpenseChart(data.monthlySummary);
+            createDistributionChart(data.allPRs, data.monthlySummary, 'month'); // เริ่มต้นด้วยแบ่งตามเดือน
+            
+            // Populate tables
+            populateAllPRsTable(data.allPRs);
+            populateMonthlySummaryTable(data.monthlySummary);
+            
+            // Create insights
+            createInsights(data);
+            
+            // Setup month filter
+            setupMonthFilter(data.allPRs);
+            
+            // Setup chart type selector
+            setupChartTypeSelector(data.allPRs, data.monthlySummary);
+            
+            // Hide loading screen and show content
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        }
+
+        // Handle data load error
+        function onDataError(error) {
+            console.error('เกิดข้อผิดพลาด:', error);
+            document.getElementById('loadingScreen').innerHTML = `
+                <div class="text-center">
+                    <div class="text-red-500 text-6xl mb-4">⚠️</div>
+                    <h3 class="text-xl font-bold text-red-600 mb-2">เกิดข้อผิดพลาด</h3>
+                    <p class="text-gray-600 mb-4">${error}</p>
+                    <button onclick="location.reload()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        ลองใหม่อีกครั้ง
+                    </button>
+                </div>
+            `;
+        }
+
+        // Update summary cards
+        function updateSummaryCards(data) {
+            document.getElementById('totalExpense').textContent = formatCurrency(data.totalExpense);
+            document.getElementById('totalRecords').textContent = formatNumber(data.totalRecords);
+            document.getElementById('allPRsCount').textContent = formatNumber(data.allPRs.length);
+            document.getElementById('activeMonths').textContent = formatNumber(data.monthlySummary.length);
+        }
+
+        // Create monthly expense chart
+        function createMonthlyExpenseChart(monthlySummary) {
+            const ctx = document.getElementById('monthlyExpenseChart').getContext('2d');
+            
+            if (monthlyChart) {
+                monthlyChart.destroy();
+            }
+            
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthlySummary.map(item => item.month.split(' ')[0]),
+                    datasets: [{
+                        label: 'ค่าใช้จ่าย (บาท)',
+                        data: monthlySummary.map(item => item.totalExpense),
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create distribution chart (month or status)
+        function createDistributionChart(allPRs, monthlySummary, type = 'month') {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+            
+            let chartData, chartLabels, colors;
+            
+            if (type === 'month') {
+                // แบ่งตามเดือน
+                const monthlyCount = {};
+                allPRs.forEach(pr => {
+                    const month = pr.month.split(' ')[0]; // เอาเฉพาะชื่อเดือน
+                    monthlyCount[month] = (monthlyCount[month] || 0) + 1;
+                });
+                
+                chartLabels = Object.keys(monthlyCount);
+                chartData = Object.values(monthlyCount);
+                colors = [
+                    '#3B82F6', '#EF4444', '#10B981', '#F59E0B', 
+                    '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
+                    '#F97316', '#6366F1', '#14B8A6', '#F43F5E'
+                ];
+            } else {
+                // แบ่งตามสถานะ
+                const statusCount = {};
+                allPRs.forEach(pr => {
+                    const status = pr.status || 'UNKNOWN';
+                    statusCount[status] = (statusCount[status] || 0) + 1;
+                });
+                
+                chartLabels = Object.keys(statusCount);
+                chartData = Object.values(statusCount);
+                colors = [
+                    '#10B981', '#EF4444', '#F59E0B', '#8B5CF6', 
+                    '#06B6D4', '#EC4899', '#84CC16', '#F97316'
+                ];
+            }
+            
+            distributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} รายการ (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        // Populate all PRs table
+        function populateAllPRsTable(allPRs) {
+            const tableBody = document.getElementById('allPRsTable');
+            
+            if (allPRs.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            ไม่มีข้อมูล PR
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tableBody.innerHTML = allPRs.map(pr => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pr.prNo}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.date}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">${pr.item}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.qty} ${pr.unit}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${pr.amount > 20000 ? 'text-red-600' : 'text-blue-600'}">${formatCurrency(pr.amount)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-badge ${getStatusClass(pr.status)}">${pr.status}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Populate monthly summary table
+        function populateMonthlySummaryTable(monthlySummary) {
+            const tableBody = document.getElementById('monthlySummaryTable');
+            const totalExpense = monthlySummary.reduce((sum, month) => sum + month.totalExpense, 0);
+            
+            tableBody.innerHTML = monthlySummary.map(month => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${month.month}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">${formatCurrency(month.totalExpense)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatNumber(month.recordCount)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(month.maxExpense)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${month.percentage.toFixed(1)}%</td>
+                </tr>
+            `).join('');
+        }
+
+        // Create insights
+        function createInsights(data) {
+            const insightsContainer = document.getElementById('insights');
+            const maxExpenseMonth = data.monthlySummary.reduce((max, month) => 
+                month.totalExpense > max.totalExpense ? month : max, data.monthlySummary[0]);
+            
+            const maxPR = data.allPRs.length > 0 ? 
+                data.allPRs.reduce((max, pr) => pr.amount > max.amount ? pr : max) : null;
+            
+            const highValuePRs = data.allPRs.filter(pr => pr.amount > 20000);
+            const highValueTotal = highValuePRs.reduce((sum, pr) => sum + pr.amount, 0);
+            const avgExpensePerPR = data.allPRs.length > 0 ? data.totalExpense / data.allPRs.length : 0;
+            
+            insightsContainer.innerHTML = `
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">${maxExpenseMonth.percentage.toFixed(1)}%</div>
+                    <div class="text-sm text-gray-600">เดือนที่ใช้จ่ายสูงสุด (${maxExpenseMonth.month.split(' ')[0]})</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-red-600">${maxPR ? formatCurrency(maxPR.amount) : '0 ฿'}</div>
+                    <div class="text-sm text-gray-600">PR มูลค่าสูงสุด</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">${highValuePRs.length}</div>
+                    <div class="text-sm text-gray-600">PR มูลค่า > 20K</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">${formatCurrency(avgExpensePerPR)}</div>
+                    <div class="text-sm text-gray-600">ค่าเฉลี่ยต่อ PR</div>
+                </div>
+            `;
+        }
+
+        // Setup chart type selector
+        function setupChartTypeSelector(allPRs, monthlySummary) {
+            const chartTypeSelector = document.getElementById('chartTypeSelector');
+            
+            chartTypeSelector.addEventListener('change', function() {
+                const selectedType = this.value;
+                createDistributionChart(allPRs, monthlySummary, selectedType);
+                
+                // อัปเดตชื่อกราฟ
+                const chartTitle = this.closest('.bg-white').querySelector('h3');
+                if (selectedType === 'month') {
+                    chartTitle.textContent = '📊 การกระจาย PR - แบ่งตามเดือน';
+                } else {
+                    chartTitle.textContent = '📊 การกระจาย PR - แบ่งตามสถานะ';
+                }
+            });
+            
+            // ตั้งค่าชื่อเริ่มต้น
+            const chartTitle = chartTypeSelector.closest('.bg-white').querySelector('h3');
+            chartTitle.textContent = '📊 การกระจาย PR - แบ่งตามเดือน';
+        }
+
+        // Setup month filter
+        function setupMonthFilter(allPRs) {
+            const monthFilter = document.getElementById('monthFilter');
+            const uniqueMonths = [...new Set(allPRs.map(pr => pr.month))];
+            
+            uniqueMonths.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = month;
+                monthFilter.appendChild(option);
+            });
+            
+            monthFilter.addEventListener('change', function() {
+                const selectedMonth = this.value;
+                const filteredPRs = selectedMonth === 'all' ? 
+                    allPRs : 
+                    allPRs.filter(pr => pr.month === selectedMonth);
+                populateAllPRsTable(filteredPRs);
+            });
+        }
+
+        // Utility functions
+        function formatNumber(num) {
+            return num.toLocaleString('th-TH');
+        }
+
+        function formatCurrency(num) {
+            return num.toLocaleString('th-TH') + ' ฿';
+        }
+
+        function getStatusClass(status) {
+            switch (status.toUpperCase()) {
+                case 'RECEIVED':
+                    return 'status-received';
+                case 'PENDING':
+                    return 'status-pending';
+                default:
+                    return 'status-other';
+            }
+        }
+    </script>
+</body>
+</html>
