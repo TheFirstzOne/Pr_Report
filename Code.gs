@@ -24,7 +24,7 @@ function include(filename) {
 function getPRData() {
   try {
     // เปิด Google Sheets (ใส่ ID ของ Google Sheets ที่นี่)
-    const spreadsheet = SpreadsheetApp.openById('Your_Sheeet_ID');
+    const spreadsheet = SpreadsheetApp.openById('189G2MUOTfR1en6_8pjLJ2zP4TKEGQWF4gxNtwkCacj0');
     const sheet = spreadsheet.getSheetByName('PR');
     
     if (!sheet) {
@@ -55,6 +55,7 @@ function getPRData() {
     const processedData = [];
     const monthlyData = {};
     const allPRs = [];
+    const uniquePRNumbers = new Set(); // เก็บ PR No. ที่ไม่ซ้ำกัน
     
     rows.forEach((row, index) => {
       const date = row[dateIndex];
@@ -94,7 +95,9 @@ function getPRData() {
           totalExpense: 0,
           recordCount: 0,
           activeRecordCount: 0,
-          maxExpense: 0
+          maxExpense: 0,
+          uniquePRCount: 0,
+          monthlyUniquePRs: new Set()
         };
       }
       
@@ -105,6 +108,12 @@ function getPRData() {
       
       // เก็บ PR ทั้งหมด (ยกเว้นสถานะ operate/cancel)
       if (prNo) {
+        // เพิ่ม PR No. ในชุดข้อมูลรวม (สำหรับนับ unique ทั้งหมด)
+        uniquePRNumbers.add(prNo);
+        
+        // เพิ่ม PR No. ในชุดข้อมูลรายเดือน (สำหรับนับ unique รายเดือน)
+        monthlyData[monthKey].monthlyUniquePRs.add(prNo);
+        
         allPRs.push({
           prNo: prNo,
           amount: totalPrice,
@@ -141,6 +150,12 @@ function getPRData() {
       return monthOrder.indexOf(aMonth) - monthOrder.indexOf(bMonth);
     });
     
+    // คำนวณจำนวน unique PR สำหรับแต่ละเดือน และลบ Set ออก (เพื่อไม่ให้ error ใน JSON)
+    monthlySummary.forEach(month => {
+      month.uniquePRCount = month.monthlyUniquePRs.size;
+      delete month.monthlyUniquePRs; // ลบ Set ออกเพราะไม่สามารถ serialize เป็น JSON ได้
+    });
+    
     // คำนวณเปอร์เซ็นต์
     const totalExpense = monthlySummary.reduce((sum, month) => sum + month.totalExpense, 0);
     monthlySummary.forEach(month => {
@@ -155,6 +170,7 @@ function getPRData() {
       allPRs: allPRs,
       totalRecords: processedData.length,
       totalExpense: totalExpense,
+      uniquePRCount: uniquePRNumbers.size, // จำนวน PR ที่ไม่ซ้ำกัน
       dateRange: {
         min: processedData.length > 0 ? Math.min(...processedData.map(d => d.date.getTime())) : null,
         max: processedData.length > 0 ? Math.max(...processedData.map(d => d.date.getTime())) : null
@@ -165,6 +181,7 @@ function getPRData() {
       totalRecords: result.totalRecords,
       monthlyCount: result.monthlySummary.length,
       allPRsCount: result.allPRs.length,
+      uniquePRCount: result.uniquePRCount,
       totalExpense: result.totalExpense
     });
     
@@ -177,7 +194,8 @@ function getPRData() {
       monthlySummary: [],
       allPRs: [],
       totalRecords: 0,
-      totalExpense: 0
+      totalExpense: 0,
+      uniquePRCount: 0
     };
   }
 }
