@@ -106,25 +106,25 @@ function getPRData() {
       monthlyData[monthKey].activeRecordCount += 1;
       monthlyData[monthKey].maxExpense = Math.max(monthlyData[monthKey].maxExpense, totalPrice);
       
-      // เก็บ PR ทั้งหมด (ยกเว้นสถานะ operate/cancel)
+      // เก็บ PR ทั้งหมด (ยกเว้นสถานะ operate/cancel) - รวมทุกรายการแม้ PR No. จะซ้ำ
+      // เพิ่ม PR No. ในชุดข้อมูลสำหรับนับ unique
       if (prNo) {
-        // เพิ่ม PR No. ในชุดข้อมูลรวม (สำหรับนับ unique ทั้งหมด)
         uniquePRNumbers.add(prNo);
-        
-        // เพิ่ม PR No. ในชุดข้อมูลรายเดือน (สำหรับนับ unique รายเดือน)
         monthlyData[monthKey].monthlyUniquePRs.add(prNo);
-        
-        allPRs.push({
-          prNo: prNo,
-          amount: totalPrice,
-          date: Utilities.formatDate(dateObj, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
-          month: monthKey,
-          item: row[orderIndex] || 'ไม่ระบุ',
-          qty: row[qtyIndex] || '',
-          unit: row[unitIndex] || '',
-          status: row[statusIndex] || 'PENDING'
-        });
       }
+      
+      // เพิ่มทุกรายการใน allPRs (รวมรายการที่ PR No. ซ้ำด้วย)
+      allPRs.push({
+        prNo: prNo || `NO_PR_${index + 2}`, // ถ้าไม่มี PR No. ให้สร้าง ID ชั่วคราว
+        amount: totalPrice,
+        date: Utilities.formatDate(dateObj, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        month: monthKey,
+        item: row[orderIndex] || 'ไม่ระบุ',
+        qty: row[qtyIndex] || '',
+        unit: row[unitIndex] || '',
+        status: row[statusIndex] || 'PENDING',
+        rowIndex: index + 2 // เก็บ row number ใน sheet สำหรับ reference
+      });
       
       processedData.push({
         date: dateObj,
