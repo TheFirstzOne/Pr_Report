@@ -5,11 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PR Expense Monitoring Dashboard</title>
     
+    <!-- 
+    🚀 การติดตั้งและใช้งาน:
+    1. คัดลอกโค้ด HTML นี้ไปสร้างไฟล์ใหม่ใน Google Apps Script ชื่อ "dashboard.html"
+    2. วางโค้ด Backend (Google Apps Script) ที่ให้มาในไฟล์ Code.gs 
+    3. แก้ไข Sheet ID ในโค้ด Backend ให้ตรงกับ Google Sheets ของคุณ
+    4. ตรวจสอบว่ามีคอลัมน์ทั้งหมดครบใน Google Sheets: DATE, Pr No., TOTAL PRICE, ORDER, QTY., UNIT, STATUS, Remark
+    5. ทดสอบฟังก์ชัน: testGetPRData(), testRemarkColumn(), testErrorHandling()
+    6. Deploy เป็น Web App: Execute as "Me", Access "Anyone"
+    7. ทดสอบ URL ที่ได้รับ
+    
+    📋 ฟีเจอร์:
+    - ✅ เชื่อมต่อ Google Sheets แบบเรียลไทม์
+    - ✅ กรองข้อมูลตามเดือน, สถานะ, คำค้นหา
+    - ✅ เรียงลำดับแบบต่างๆ (วันที่, PR No., ยอดเงิน)
+    - ✅ กราฟแสดงข้อมูลแบบ Interactive
+    - ✅ สร้างรายงาน PNG (รายงานฉบับเต็ม, สรุป, ตาราง)
+    - ✅ Responsive Design สำหรับมือถือ
+    - ✅ แสดงหมายเหตุจากคอลัมน์ Remark
+    
+    ⚠️ สำคัญ: ลบส่วน sample data ออก และเปิดใช้งาน google.script.run.getPRData() จริง
+    -->
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- html2canvas for capturing screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,6 +69,335 @@
         .status-received { background-color: #d4edda; color: #155724; }
         .status-pending { background-color: #fff3cd; color: #856404; }
         .status-other { background-color: #f8d7da; color: #721c24; }
+        
+        /* Search Box Animations */
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-input {
+            width: 0;
+            opacity: 0;
+            transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+            border: none;
+            outline: none;
+            background: transparent;
+        }
+        .search-input.active {
+            width: 200px;
+            opacity: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .search-icon {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px;
+            border-radius: 0.375rem;
+            color: #6b7280;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .search-icon:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .search-icon.active {
+            color: #3b82f6;
+            background-color: #dbeafe;
+        }
+        .search-clear {
+            position: absolute;
+            right: 8px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+            color: #6b7280;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            border-radius: 50%;
+        }
+        .search-clear.show {
+            opacity: 1;
+        }
+        .search-clear:hover {
+            color: #ef4444;
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Multi-Status Filter Styles */
+        .status-filter-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .status-filter-button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 160px;
+            max-width: 200px;
+        }
+        
+        .status-filter-button:hover {
+            border-color: #9ca3af;
+            background-color: #f9fafb;
+        }
+        
+        .status-filter-button.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .status-filter-content {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            margin-top: 4px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        
+        .status-filter-content.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .status-filter-header {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        
+        .status-filter-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .status-filter-control-btn {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            background: white;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .status-filter-control-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        
+        .status-filter-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .status-filter-option:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .status-filter-option input[type="checkbox"] {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
+        
+        .status-filter-option label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .status-count {
+            background-color: #e5e7eb;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-filter-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .status-selected-count {
+            background-color: #3b82f6;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        /* Report Generation Styles */
+        .report-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .report-dropdown-content {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            margin-top: 4px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+            min-width: 250px;
+        }
+        
+        .report-dropdown-content.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .report-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .report-option:last-child {
+            border-bottom: none;
+        }
+        
+        .report-option:hover {
+            background-color: #f9fafb;
+        }
+        
+        .report-option-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            color: #6b7280;
+        }
+        
+        .report-option-content {
+            flex: 1;
+        }
+        
+        .report-option-title {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        .report-option-desc {
+            color: #6b7280;
+            font-size: 0.75rem;
+            margin-top: 2px;
+        }
+
+        /* Report Progress Styles */
+        .report-progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .report-progress-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .report-progress-content {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .report-progress-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        .report-progress-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .report-progress-desc {
+            color: #6b7280;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -52,6 +406,15 @@
         <div class="text-center">
             <div class="loading-spinner"></div>
             <p class="text-gray-600 mt-4">กำลังโหลดข้อมูล...</p>
+        </div>
+    </div>
+
+    <!-- Report Progress Overlay -->
+    <div id="reportProgressOverlay" class="report-progress-overlay">
+        <div class="report-progress-content">
+            <div class="report-progress-spinner"></div>
+            <div class="report-progress-title">กำลังสร้างรายงาน...</div>
+            <div class="report-progress-desc">กรุณารอสักครู่</div>
         </div>
     </div>
 
@@ -129,8 +492,69 @@
                 </div>
             </div>
 
+            <!-- Report Generation Section -->
+            <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-6 mb-8 border border-indigo-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-indigo-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">📋 สร้างรายงาน</h3>
+                            <p class="text-sm text-gray-600">บันทึกภาพรายงานตามการแสดงผลปัจจุบัน</p>
+                        </div>
+                    </div>
+                    
+                    <div class="report-dropdown">
+                        <button id="reportButton" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>สร้างรายงาน</span>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <div id="reportDropdownContent" class="report-dropdown-content">
+                            <div class="report-option" data-report-type="full">
+                                <svg class="report-option-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <div class="report-option-content">
+                                    <div class="report-option-title">รายงานฉบับเต็ม</div>
+                                    <div class="report-option-desc">บันทึกทุกส่วนของ Dashboard</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-option" data-report-type="summary">
+                                <svg class="report-option-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                <div class="report-option-content">
+                                    <div class="report-option-title">สรุปผลและกราฟ</div>
+                                    <div class="report-option-desc">เฉพาะการ์ดสรุปและกราฟ</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-option" data-report-type="table">
+                                <svg class="report-option-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                                </svg>
+                                <div class="report-option-content">
+                                    <div class="report-option-title">ตารางข้อมูล</div>
+                                    <div class="report-option-desc">เฉพาะตารางรายการ PR</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" id="chartsSection">
                 <!-- Monthly Expense Chart -->
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">📈 ค่าใช้จ่ายรายเดือน</h3>
@@ -159,18 +583,98 @@
                 </div>
             </div>
 
-            <!-- All PRs Table -->
-            <div class="bg-white rounded-xl shadow-md mb-8">
+            <!-- All PRs Table with Enhanced Multi-Status Filter -->
+            <div class="bg-white rounded-xl shadow-md mb-8" id="tableSection">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-900">📋 รายการ PR ทั้งหมด (ยกเว้นสถานะ Operate/Cancel)</h3>
-                        <div class="flex items-center space-x-2">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                            </svg>
-                            <select id="monthFilter" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="all">ทุกเดือน</option>
-                            </select>
+                        <h3 class="text-lg font-semibold text-gray-900">📋 รายการ PR ทั้งหมด (รวมรายการที่ PR No. ซ้ำ)</h3>
+                        <div class="flex items-center space-x-4">
+                            <!-- Sort Options -->
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+                                </svg>
+                                <select id="sortOption" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="date-asc">📅 วันที่ (เก่า → ใหม่) + PR No.</option>
+                                    <option value="date-desc">📅 วันที่ (ใหม่ → เก่า) + PR No.</option>
+                                    <option value="pr-asc">📋 PR No. (น้อย → มาก) + วันที่</option>
+                                    <option value="pr-desc">📋 PR No. (มาก → น้อย) + วันที่</option>
+                                    <option value="amount-desc">💰 ยอดเงิน (มาก → น้อย)</option>
+                                    <option value="amount-asc">💰 ยอดเงิน (น้อย → มาก)</option>
+                                </select>
+                            </div>
+                            <!-- Month Filter -->
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <select id="monthFilter" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="all">ทุกเดือน</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Enhanced Multi-Status Filter -->
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div class="status-filter-dropdown">
+                                    <div id="statusFilterButton" class="status-filter-button">
+                                        <span class="status-filter-text">ทุกสถานะ</span>
+                                        <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                    <div id="statusFilterContent" class="status-filter-content">
+                                        <div class="status-filter-header">
+                                            <div class="status-filter-controls">
+                                                <button id="selectAllStatus" class="status-filter-control-btn">เลือกทั้งหมด</button>
+                                                <button id="clearAllStatus" class="status-filter-control-btn">ล้างทั้งหมด</button>
+                                            </div>
+                                        </div>
+                                        <div id="statusFilterOptions">
+                                            <!-- Options will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Box -->
+                            <div class="flex items-center space-x-2">
+                                <div class="search-container">
+                                    <button 
+                                        id="searchIcon" 
+                                        class="search-icon" 
+                                        title="ค้นหารายการ"
+                                        type="button"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                    </button>
+                                    
+                                    <div style="position: relative;">
+                                        <input 
+                                            type="text" 
+                                            id="searchInput" 
+                                            class="search-input" 
+                                            placeholder="ค้นหารายการ..."
+                                            autocomplete="off"
+                                            spellcheck="false"
+                                        >
+                                        <button 
+                                            id="searchClear" 
+                                            class="search-clear" 
+                                            title="ล้างการค้นหา"
+                                            type="button"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -185,6 +689,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวน</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ยอดเงิน</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หมายเหตุ</th>
                             </tr>
                         </thead>
                         <tbody id="allPRsTable" class="bg-white divide-y divide-gray-200">
@@ -195,7 +700,7 @@
             </div>
 
             <!-- Monthly Summary Table -->
-            <div class="bg-white rounded-xl shadow-md">
+            <div class="bg-white rounded-xl shadow-md" id="summaryTableSection">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">📅 สรุปค่าใช้จ่ายรายเดือน</h3>
                 </div>
@@ -219,7 +724,7 @@
             </div>
 
             <!-- Key Insights -->
-            <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+            <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6" id="insightsSection">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">💡 ข้อมูลเชิงลึก</h3>
                 <div id="insights" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Insights will be populated by JavaScript -->
@@ -229,29 +734,346 @@
 
         <!-- Footer -->
         <footer class="bg-gray-800 text-white py-6 mt-8">
-            <div class="max-w-7xl mx-auto px-6 text-center">
-                <p>&copy; 2025 PR Expense Monitoring Dashboard. สร้างด้วย Google Apps Script + Tailwind CSS</p>
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
+                    <div>
+                        <h4 class="font-semibold mb-2">📊 PR Expense Dashboard</h4>
+                        <p class="text-sm text-gray-300">ระบบตรวจสอบค่าใช้จ่าย Purchase Request 2025</p>
+                        <p class="text-xs text-gray-400 mt-1">เวอร์ชัน 2.1 - พร้อมฟีเจอร์รายงาน</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">🛠️ เทคโนโลยี</h4>
+                        <p class="text-sm text-gray-300">Google Apps Script + Google Sheets</p>
+                        <p class="text-sm text-gray-300">Tailwind CSS + Chart.js</p>
+                        <p class="text-sm text-gray-300">html2canvas สำหรับรายงาน</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">📋 ฟีเจอร์</h4>
+                        <p class="text-sm text-gray-300">• กรองและค้นหาข้อมูล</p>
+                        <p class="text-sm text-gray-300">• กราฟและสถิติแบบเรียลไทม์</p>
+                        <p class="text-sm text-gray-300">• สร้างรายงาน PDF/Image</p>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-700 mt-6 pt-4 text-center">
+                    <p class="text-sm text-gray-400">
+                        &copy; 2025 PR Expense Monitoring Dashboard. 
+                        <span class="text-blue-400">ข้อมูลจาก Google Sheets ID: 189G2MUOTfR1en6_8pjLJ2zP4TKEGQWF4gxNtwkCacj0</span>
+                    </p>
+                </div>
             </div>
         </footer>
     </div>
 
     <script>
+        // 📊 PR Expense Dashboard - Frontend (เวอร์ชัน 2.1)
+        // 🚀 พร้อมใช้งานกับ Google Apps Script Backend
+        // 📋 รองรับฟีเจอร์สร้างรายงาน + คอลัมน์หมายเหตุ
+        
         // Global variables
         let dashboardData = null;
         let monthlyChart = null;
         let distributionChart = null;
+        let selectedStatuses = new Set(['all']); // Track selected statuses
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 เริ่มโหลด Dashboard...');
             loadDashboardData();
+            setupReportFunction();
         });
 
         // Load data from Google Apps Script
         function loadDashboardData() {
+            // *** สำหรับ Google Apps Script - ใช้งานจริง ***
+            console.log('📡 เรียกข้อมูลจาก Google Apps Script...');
+            
             google.script.run
                 .withSuccessHandler(onDataLoaded)
                 .withFailureHandler(onDataError)
                 .getPRData();
+            
+            // *** สำหรับการทดสอบ - ใช้ข้อมูลตัวอย่าง (comment ออกเมื่อใช้งานจริง) ***
+            /*
+            const sampleData = {
+                totalExpense: 245000,
+                totalRecords: 15,
+                uniquePRCount: 8,
+                monthlySummary: [
+                    { month: 'มกราคม 2025', totalExpense: 125000, recordCount: 8, maxExpense: 45000, percentage: 51.0, uniquePRCount: 4 },
+                    { month: 'กุมภาพันธ์ 2025', totalExpense: 120000, recordCount: 7, maxExpense: 35000, percentage: 49.0, uniquePRCount: 4 }
+                ],
+                allPRs: [
+                    { prNo: 'PR001', date: '2025-01-15', item: 'อุปกรณ์คอมพิวเตอร์', qty: 5, unit: 'ชิ้น', amount: 45000, status: 'RECEIVED', remark: 'สำหรับแผนก IT', month: 'มกราคม 2025' },
+                    { prNo: 'PR002', date: '2025-01-20', item: 'เฟอร์นิเจอร์สำนักงาน', qty: 2, unit: 'ชุด', amount: 35000, status: 'PENDING', remark: 'โต๊ะและเก้าอี้', month: 'มกราคม 2025' },
+                    { prNo: 'PR003', date: '2025-02-05', item: 'วัสดุสำนักงาน', qty: 10, unit: 'กล่อง', amount: 12000, status: 'RECEIVED', remark: 'กระดาษและอุปกรณ์', month: 'กุมภาพันธ์ 2025' },
+                    { prNo: 'PR004', date: '2025-02-12', item: 'ซอฟต์แวร์ลิขสิทธิ์', qty: 1, unit: 'ใบอนุญาต', amount: 25000, status: 'PROCESSING', remark: 'Microsoft Office', month: 'กุมภาพันธ์ 2025' }
+                ]
+            };
+            
+            setTimeout(() => { onDataLoaded(sampleData); }, 1000);
+            */
+        }
+
+        // Setup report function
+        function setupReportFunction() {
+            console.log('📋 ตั้งค่า Report Function...');
+            
+            const reportButton = document.getElementById('reportButton');
+            const reportDropdownContent = document.getElementById('reportDropdownContent');
+            const reportProgressOverlay = document.getElementById('reportProgressOverlay');
+            
+            if (!reportButton || !reportDropdownContent) {
+                console.error('❌ ไม่พบ report elements');
+                return;
+            }
+            
+            let isDropdownOpen = false;
+            
+            // Toggle dropdown
+            reportButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                isDropdownOpen = !isDropdownOpen;
+                
+                if (isDropdownOpen) {
+                    reportDropdownContent.classList.add('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(180deg)';
+                } else {
+                    reportDropdownContent.classList.remove('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.report-dropdown') && isDropdownOpen) {
+                    reportDropdownContent.classList.remove('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(0deg)';
+                    isDropdownOpen = false;
+                }
+            });
+            
+            // Handle report type selection
+            reportDropdownContent.addEventListener('click', function(e) {
+                const reportOption = e.target.closest('.report-option');
+                if (reportOption) {
+                    const reportType = reportOption.getAttribute('data-report-type');
+                    generateReport(reportType);
+                    
+                    // Close dropdown
+                    reportDropdownContent.classList.remove('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(0deg)';
+                    isDropdownOpen = false;
+                }
+            });
+            
+            console.log('✅ ตั้งค่า Report Function สำเร็จ');
+        }
+
+        // Generate report based on type
+        async function generateReport(reportType) {
+            console.log(`📋 เริ่มสร้างรายงาน: ${reportType}`);
+            
+            const progressOverlay = document.getElementById('reportProgressOverlay');
+            const progressTitle = progressOverlay.querySelector('.report-progress-title');
+            const progressDesc = progressOverlay.querySelector('.report-progress-desc');
+            
+            // Show progress overlay
+            progressOverlay.classList.add('show');
+            
+            try {
+                let element;
+                let filename;
+                
+                switch (reportType) {
+                    case 'full':
+                        progressTitle.textContent = 'กำลังสร้างรายงานฉบับเต็ม...';
+                        progressDesc.textContent = 'บันทึกทั้ง Dashboard รวมทุกส่วน';
+                        element = document.getElementById('mainContent');
+                        filename = `PR_Dashboard_Full_Report_${getCurrentDateString()}.png`;
+                        break;
+                        
+                    case 'summary':
+                        progressTitle.textContent = 'กำลังสร้างรายงานสรุป...';
+                        progressDesc.textContent = 'บันทึกการ์ดสรุปและกราฟ';
+                        element = createSummaryReportElement();
+                        filename = `PR_Dashboard_Summary_${getCurrentDateString()}.png`;
+                        break;
+                        
+                    case 'table':
+                        progressTitle.textContent = 'กำลังสร้างรายงานตาราง...';
+                        progressDesc.textContent = 'บันทึกตารางรายการ PR';
+                        element = document.getElementById('tableSection');
+                        filename = `PR_Dashboard_Table_${getCurrentDateString()}.png`;
+                        break;
+                        
+                    default:
+                        throw new Error('ประเภทรายงานไม่ถูกต้อง');
+                }
+                
+                // Wait a bit for UI update
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Generate screenshot
+                const canvas = await html2canvas(element, {
+                    backgroundColor: '#f9fafb',
+                    scale: 2, // Higher quality
+                    useCORS: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: element.scrollWidth,
+                    height: element.scrollHeight
+                });
+                
+                // Convert to blob and download
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    // Hide progress overlay
+                    progressOverlay.classList.remove('show');
+                    
+                    // Clean up summary element if created
+                    if (reportType === 'summary' && element.id === 'tempSummaryReport') {
+                        document.body.removeChild(element);
+                    }
+                    
+                    console.log(`✅ สร้างรายงาน ${reportType} สำเร็จ: ${filename}`);
+                    
+                    // Show success message
+                    showNotification('สร้างรายงานสำเร็จ!', 'ไฟล์รายงานได้ถูกดาวน์โหลดแล้ว', 'success');
+                }, 'image/png', 0.95);
+                
+            } catch (error) {
+                console.error('❌ เกิดข้อผิดพลาดในการสร้างรายงาน:', error);
+                progressOverlay.classList.remove('show');
+                showNotification('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างรายงานได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+        }
+
+        // Create summary report element
+        function createSummaryReportElement() {
+            const mainContent = document.getElementById('mainContent');
+            const summaryCards = mainContent.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4.gap-6.mb-8');
+            const chartsSection = document.getElementById('chartsSection');
+            const insightsSection = document.getElementById('insightsSection');
+            
+            // Create temporary container
+            const tempContainer = document.createElement('div');
+            tempContainer.id = 'tempSummaryReport';
+            tempContainer.className = 'bg-gray-50 p-6';
+            tempContainer.style.position = 'fixed';
+            tempContainer.style.top = '-9999px';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.width = '1200px';
+            
+            // Clone and add header
+            const header = document.querySelector('header').cloneNode(true);
+            tempContainer.appendChild(header);
+            
+            // Create main content container
+            const mainDiv = document.createElement('div');
+            mainDiv.className = 'max-w-7xl mx-auto p-6';
+            
+            // Add summary cards
+            const clonedSummaryCards = summaryCards.cloneNode(true);
+            mainDiv.appendChild(clonedSummaryCards);
+            
+            // Add charts section
+            const clonedChartsSection = chartsSection.cloneNode(true);
+            mainDiv.appendChild(clonedChartsSection);
+            
+            // Add insights section
+            const clonedInsightsSection = insightsSection.cloneNode(true);
+            clonedInsightsSection.classList.add('mt-8');
+            mainDiv.appendChild(clonedInsightsSection);
+            
+            tempContainer.appendChild(mainDiv);
+            document.body.appendChild(tempContainer);
+            
+            return tempContainer;
+        }
+
+        // Get current date string for filename
+        function getCurrentDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            return `${year}${month}${day}_${hours}${minutes}`;
+        }
+
+        // Show notification
+        function showNotification(title, message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 max-w-sm bg-white border border-gray-200 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            
+            const bgColor = type === 'success' ? 'bg-green-50 border-green-200' : 
+                           type === 'error' ? 'bg-red-50 border-red-200' : 
+                           'bg-blue-50 border-blue-200';
+            
+            const iconColor = type === 'success' ? 'text-green-600' : 
+                             type === 'error' ? 'text-red-600' : 
+                             'text-blue-600';
+            
+            const icon = type === 'success' ? 
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                type === 'error' ? 
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+            
+            notification.className = `fixed top-4 right-4 z-50 max-w-sm ${bgColor} rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            
+            notification.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${icon}
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="text-sm font-medium text-gray-900">${title}</h3>
+                            <p class="mt-1 text-sm text-gray-600">${message}</p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0">
+                            <button class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none" onclick="this.closest('.fixed').remove()">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
         }
 
         // Handle successful data load
@@ -270,7 +1092,7 @@
             
             // Create charts
             createMonthlyExpenseChart(data.monthlySummary);
-            createDistributionChart(data.allPRs, data.monthlySummary, 'month'); // เริ่มต้นด้วยแบ่งตามเดือน
+            createDistributionChart(data.allPRs, data.monthlySummary, 'month');
             
             // Populate tables
             populateAllPRsTable(data.allPRs);
@@ -279,11 +1101,18 @@
             // Create insights
             createInsights(data);
             
-            // Setup month filter
+            // Setup filters
             setupMonthFilter(data.allPRs);
+            setupMultiStatusFilter(data.allPRs); // New multi-status filter
             
             // Setup chart type selector
             setupChartTypeSelector(data.allPRs, data.monthlySummary);
+            
+            // Setup sorting function
+            setupSortingFunction();
+            
+            // Setup search function
+            setupSearchFunction();
             
             // Hide loading screen and show content
             document.getElementById('loadingScreen').classList.add('hidden');
@@ -305,11 +1134,152 @@
             `;
         }
 
+        // Setup enhanced multi-status filter
+        function setupMultiStatusFilter(allPRs) {
+            console.log('🏷️ เริ่มตั้งค่า Multi-Status Filter...');
+            
+            const statusFilterButton = document.getElementById('statusFilterButton');
+            const statusFilterContent = document.getElementById('statusFilterContent');
+            const statusFilterOptions = document.getElementById('statusFilterOptions');
+            const selectAllBtn = document.getElementById('selectAllStatus');
+            const clearAllBtn = document.getElementById('clearAllStatus');
+            
+            if (!statusFilterButton || !statusFilterContent || !statusFilterOptions) {
+                console.error('❌ ไม่พบ elements ของ multi-status filter');
+                return;
+            }
+            
+            // Count statuses
+            const statusCounts = {};
+            allPRs.forEach(pr => {
+                const status = pr.status || 'UNKNOWN';
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            
+            const uniqueStatuses = Object.keys(statusCounts).sort();
+            console.log('🏷️ สถานะที่พบ:', uniqueStatuses, statusCounts);
+            
+            // Create options
+            statusFilterOptions.innerHTML = uniqueStatuses.map(status => `
+                <div class="status-filter-option">
+                    <input type="checkbox" id="status_${status}" value="${status}" checked>
+                    <label for="status_${status}">
+                        <span>${status}</span>
+                        <span class="status-count">${statusCounts[status]}</span>
+                    </label>
+                </div>
+            `).join('');
+            
+            // Initialize selected statuses (all checked by default)
+            selectedStatuses = new Set(uniqueStatuses);
+            updateStatusFilterButtonText();
+            
+            // Toggle dropdown
+            let isDropdownOpen = false;
+            statusFilterButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                isDropdownOpen = !isDropdownOpen;
+                
+                if (isDropdownOpen) {
+                    statusFilterContent.classList.add('show');
+                    statusFilterButton.classList.add('active');
+                    statusFilterButton.querySelector('svg').style.transform = 'rotate(180deg)';
+                } else {
+                    statusFilterContent.classList.remove('show');
+                    statusFilterButton.classList.remove('active');
+                    statusFilterButton.querySelector('svg').style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.status-filter-dropdown') && isDropdownOpen) {
+                    statusFilterContent.classList.remove('show');
+                    statusFilterButton.classList.remove('active');
+                    statusFilterButton.querySelector('svg').style.transform = 'rotate(0deg)';
+                    isDropdownOpen = false;
+                }
+            });
+            
+            // Prevent dropdown from closing when clicking inside options
+            statusFilterContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Handle checkbox changes
+            statusFilterOptions.addEventListener('change', function(e) {
+                if (e.target.type === 'checkbox') {
+                    const statusValue = e.target.value;
+                    
+                    if (e.target.checked) {
+                        selectedStatuses.add(statusValue);
+                    } else {
+                        selectedStatuses.delete(statusValue);
+                    }
+                    
+                    updateStatusFilterButtonText();
+                    applyFilters(dashboardData.allPRs);
+                }
+            });
+            
+            // Select all button
+            selectAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectedStatuses = new Set(uniqueStatuses);
+                
+                // Check all checkboxes
+                statusFilterOptions.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                
+                updateStatusFilterButtonText();
+                applyFilters(dashboardData.allPRs);
+            });
+            
+            // Clear all button
+            clearAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectedStatuses.clear();
+                
+                // Uncheck all checkboxes
+                statusFilterOptions.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                updateStatusFilterButtonText();
+                applyFilters(dashboardData.allPRs);
+            });
+            
+            // Update button text based on selections
+            function updateStatusFilterButtonText() {
+                const buttonText = statusFilterButton.querySelector('.status-filter-text');
+                const selectedCount = selectedStatuses.size;
+                const totalCount = uniqueStatuses.length;
+                
+                if (selectedCount === 0) {
+                    buttonText.innerHTML = 'ไม่เลือกสถานะ';
+                    buttonText.style.color = '#ef4444';
+                } else if (selectedCount === totalCount) {
+                    buttonText.innerHTML = 'ทุกสถานะ';
+                    buttonText.style.color = '';
+                } else if (selectedCount === 1) {
+                    const singleStatus = Array.from(selectedStatuses)[0];
+                    buttonText.innerHTML = singleStatus;
+                    buttonText.style.color = '';
+                } else {
+                    buttonText.innerHTML = `เลือก ${selectedCount} สถานะ <span class="status-selected-count">${selectedCount}</span>`;
+                    buttonText.style.color = '';
+                }
+            }
+            
+            console.log('✅ ตั้งค่า Multi-Status Filter สำเร็จ');
+        }
+
         // Update summary cards
         function updateSummaryCards(data) {
             document.getElementById('totalExpense').textContent = formatCurrency(data.totalExpense);
             document.getElementById('totalRecords').textContent = formatNumber(data.totalRecords);
-            document.getElementById('allPRsCount').textContent = formatNumber(data.allPRs.length);
+            document.getElementById('allPRsCount').textContent = formatNumber(data.uniquePRCount || 0);
             document.getElementById('activeMonths').textContent = formatNumber(data.monthlySummary.length);
         }
 
@@ -356,7 +1326,7 @@
             });
         }
 
-        // Create distribution chart (month or status)
+        // Create distribution chart
         function createDistributionChart(allPRs, monthlySummary, type = 'month') {
             const ctx = document.getElementById('distributionChart').getContext('2d');
             
@@ -367,30 +1337,25 @@
             let chartData, chartLabels, colors;
             
             if (type === 'month') {
-                // แบ่งตามเดือน
-                const monthlyCount = {};
-                allPRs.forEach(pr => {
-                    const month = pr.month.split(' ')[0]; // เอาเฉพาะชื่อเดือน
-                    monthlyCount[month] = (monthlyCount[month] || 0) + 1;
-                });
-                
-                chartLabels = Object.keys(monthlyCount);
-                chartData = Object.values(monthlyCount);
+                chartLabels = monthlySummary.map(month => month.month.split(' ')[0]);
+                chartData = monthlySummary.map(month => month.uniquePRCount || 0);
                 colors = [
                     '#3B82F6', '#EF4444', '#10B981', '#F59E0B', 
                     '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
                     '#F97316', '#6366F1', '#14B8A6', '#F43F5E'
                 ];
             } else {
-                // แบ่งตามสถานะ
-                const statusCount = {};
+                const statusPRs = {};
                 allPRs.forEach(pr => {
                     const status = pr.status || 'UNKNOWN';
-                    statusCount[status] = (statusCount[status] || 0) + 1;
+                    if (!statusPRs[status]) {
+                        statusPRs[status] = new Set();
+                    }
+                    statusPRs[status].add(pr.prNo);
                 });
                 
-                chartLabels = Object.keys(statusCount);
-                chartData = Object.values(statusCount);
+                chartLabels = Object.keys(statusPRs);
+                chartData = Object.values(statusPRs).map(prSet => prSet.size);
                 colors = [
                     '#10B981', '#EF4444', '#F59E0B', '#8B5CF6', 
                     '#06B6D4', '#EC4899', '#84CC16', '#F97316'
@@ -429,7 +1394,7 @@
                                     const value = context.raw || 0;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${label}: ${value} รายการ (${percentage}%)`;
+                                    return `${label}: ${value} รายการ PR (${percentage}%)`;
                                 }
                             }
                         }
@@ -443,27 +1408,50 @@
         function populateAllPRsTable(allPRs) {
             const tableBody = document.getElementById('allPRsTable');
             
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
             if (allPRs.length === 0) {
+                let noDataMessage = 'ไม่มีข้อมูล PR';
+                
+                if (searchTerm !== '') {
+                    noDataMessage = `ไม่พบรายการที่ตรงกับ "${searchTerm}"`;
+                }
+                
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                            ไม่มีข้อมูล PR
+                        <td colspan="7" class="px-6 py-8 text-center">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                <p class="text-gray-500 text-sm font-medium">${noDataMessage}</p>
+                                ${searchTerm !== '' ? '<p class="text-gray-400 text-xs">ลองใช้คำค้นหาอื่น หรือล้างการค้นหา</p>' : ''}
+                            </div>
                         </td>
                     </tr>
                 `;
                 return;
             }
             
+            function highlightSearchTerm(text, term) {
+                if (!term || !text) return text;
+                
+                const regex = new RegExp(`(${term})`, 'gi');
+                return text.replace(regex, '<mark class="bg-yellow-200 px-1 rounded font-medium">$1</mark>');
+            }
+            
             tableBody.innerHTML = allPRs.map(pr => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pr.prNo}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.date}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">${pr.item}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.qty} ${pr.unit}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${pr.amount > 20000 ? 'text-red-600' : 'text-blue-600'}">${formatCurrency(pr.amount)}</td>
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pr.prNo || 'ไม่ระบุ'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.date || 'ไม่ระบุ'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">${highlightSearchTerm(pr.item || 'ไม่ระบุ', searchTerm)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.qty || ''} ${pr.unit || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${(pr.amount || 0) > 20000 ? 'text-red-600' : 'text-blue-600'}">${formatCurrency(pr.amount || 0)}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-badge ${getStatusClass(pr.status)}">${pr.status}</span>
+                        <span class="status-badge ${getStatusClass(pr.status || 'UNKNOWN')}">${pr.status || 'UNKNOWN'}</span>
                     </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title="${pr.remark || ''}">${pr.remark || '-'}</td>
                 </tr>
             `).join('');
         }
@@ -471,7 +1459,6 @@
         // Populate monthly summary table
         function populateMonthlySummaryTable(monthlySummary) {
             const tableBody = document.getElementById('monthlySummaryTable');
-            const totalExpense = monthlySummary.reduce((sum, month) => sum + month.totalExpense, 0);
             
             tableBody.innerHTML = monthlySummary.map(month => `
                 <tr class="hover:bg-gray-50">
@@ -494,8 +1481,8 @@
                 data.allPRs.reduce((max, pr) => pr.amount > max.amount ? pr : max) : null;
             
             const highValuePRs = data.allPRs.filter(pr => pr.amount > 20000);
-            const highValueTotal = highValuePRs.reduce((sum, pr) => sum + pr.amount, 0);
-            const avgExpensePerPR = data.allPRs.length > 0 ? data.totalExpense / data.allPRs.length : 0;
+            const uniqueHighValuePRs = new Set(highValuePRs.map(pr => pr.prNo));
+            const avgExpensePerPR = data.uniquePRCount > 0 ? data.totalExpense / data.uniquePRCount : 0;
             
             insightsContainer.innerHTML = `
                 <div class="text-center">
@@ -507,12 +1494,12 @@
                     <div class="text-sm text-gray-600">PR มูลค่าสูงสุด</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-green-600">${highValuePRs.length}</div>
-                    <div class="text-sm text-gray-600">PR มูลค่า > 20K</div>
+                    <div class="text-2xl font-bold text-green-600">${uniqueHighValuePRs.size}</div>
+                    <div class="text-sm text-gray-600">PR มูลค่า > 20K (Unique)</div>
                 </div>
                 <div class="text-center">
                     <div class="text-2xl font-bold text-purple-600">${formatCurrency(avgExpensePerPR)}</div>
-                    <div class="text-sm text-gray-600">ค่าเฉลี่ยต่อ PR</div>
+                    <div class="text-sm text-gray-600">ค่าเฉลี่ยต่อ PR (Unique)</div>
                 </div>
             `;
         }
@@ -525,7 +1512,6 @@
                 const selectedType = this.value;
                 createDistributionChart(allPRs, monthlySummary, selectedType);
                 
-                // อัปเดตชื่อกราฟ
                 const chartTitle = this.closest('.bg-white').querySelector('h3');
                 if (selectedType === 'month') {
                     chartTitle.textContent = '📊 การกระจาย PR - แบ่งตามเดือน';
@@ -534,15 +1520,238 @@
                 }
             });
             
-            // ตั้งค่าชื่อเริ่มต้น
             const chartTitle = chartTypeSelector.closest('.bg-white').querySelector('h3');
             chartTitle.textContent = '📊 การกระจาย PR - แบ่งตามเดือน';
+        }
+
+        // Setup sorting function
+        function setupSortingFunction() {
+            const sortOption = document.getElementById('sortOption');
+            
+            if (sortOption) {
+                sortOption.value = 'date-asc';
+                
+                sortOption.addEventListener('change', function() {
+                    if (dashboardData && dashboardData.allPRs) {
+                        applyFilters(dashboardData.allPRs);
+                    }
+                });
+            }
+        }
+
+        // Setup search functionality
+        function setupSearchFunction() {
+            console.log('🔍 ตั้งค่า Search Function...');
+            
+            const searchIcon = document.getElementById('searchIcon');
+            const searchInput = document.getElementById('searchInput');
+            const searchClear = document.getElementById('searchClear');
+            
+            if (!searchIcon || !searchInput || !searchClear) {
+                console.error('❌ ไม่พบ search elements');
+                return;
+            }
+            
+            let isSearchVisible = false;
+            
+            function showSearch() {
+                searchInput.classList.add('active');
+                searchIcon.classList.add('active');
+                isSearchVisible = true;
+                setTimeout(() => searchInput.focus(), 50);
+            }
+            
+            function hideSearch() {
+                searchInput.classList.remove('active');
+                searchIcon.classList.remove('active');
+                searchClear.classList.remove('show');
+                searchInput.value = '';
+                isSearchVisible = false;
+                
+                if (dashboardData && dashboardData.allPRs) {
+                    applyFilters(dashboardData.allPRs);
+                }
+            }
+            
+            searchIcon.addEventListener('click', function() {
+                if (!isSearchVisible) {
+                    showSearch();
+                } else if (searchInput.value === '') {
+                    hideSearch();
+                }
+            });
+            
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                
+                if (searchTerm.length > 0) {
+                    searchClear.classList.add('show');
+                } else {
+                    searchClear.classList.remove('show');
+                }
+                
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                searchTimeout = setTimeout(() => {
+                    if (dashboardData && dashboardData.allPRs) {
+                        applyFilters(dashboardData.allPRs);
+                    }
+                }, 150);
+            });
+            
+            searchClear.addEventListener('click', function() {
+                hideSearch();
+            });
+            
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (dashboardData && dashboardData.allPRs) {
+                        applyFilters(dashboardData.allPRs);
+                    }
+                }
+                if (e.key === 'Escape') {
+                    hideSearch();
+                }
+            });
+            
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.search-container') && isSearchVisible && searchInput.value === '') {
+                    hideSearch();
+                }
+            });
+            
+            console.log('✅ ตั้งค่า Search Function สำเร็จ');
+        }
+
+        // Apply sorting function
+        function applySorting(allPRs) {
+            const sortOption = document.getElementById('sortOption');
+            const sortValue = sortOption ? sortOption.value : 'date-asc';
+            
+            let sortedPRs = [...allPRs];
+            
+            function getPRNumber(prNo) {
+                if (!prNo || typeof prNo !== 'string') {
+                    return 0;
+                }
+                return parseInt(prNo.replace(/[^0-9]/g, '')) || 0;
+            }
+            
+            switch (sortValue) {
+                case 'date-asc':
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateA.getTime() - dateB.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+                    break;
+                    
+                case 'date-desc':
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateB.getTime() - dateA.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+                    break;
+                    
+                case 'amount-desc':
+                    sortedPRs.sort((a, b) => (b.amount || 0) - (a.amount || 0));
+                    break;
+                    
+                case 'amount-asc':
+                    sortedPRs.sort((a, b) => (a.amount || 0) - (b.amount || 0));
+                    break;
+                    
+                default:
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateA.getTime() - dateB.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+            }
+            
+            return sortedPRs;
+        }
+
+        // Populate monthly summary table
+        function populateMonthlySummaryTable(monthlySummary) {
+            const tableBody = document.getElementById('monthlySummaryTable');
+            
+            tableBody.innerHTML = monthlySummary.map(month => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${month.month}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">${formatCurrency(month.totalExpense)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatNumber(month.recordCount)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(month.maxExpense)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${month.percentage.toFixed(1)}%</td>
+                </tr>
+            `).join('');
+        }
+
+        // Utility functions
+        function formatNumber(num) {
+            if (typeof num !== 'number' || isNaN(num)) {
+                return '0';
+            }
+            return num.toLocaleString('th-TH');
+        }
+
+        function formatCurrency(num) {
+            if (typeof num !== 'number' || isNaN(num)) {
+                return '0 ฿';
+            }
+            return num.toLocaleString('th-TH') + ' ฿';
+        }
+
+        function getStatusClass(status) {
+            if (!status || typeof status !== 'string') {
+                return 'status-other';
+            }
+            
+            switch (status.toUpperCase()) {
+                case 'RECEIVED':
+                    return 'status-received';
+                case 'PENDING':
+                    return 'status-pending';
+                default:
+                    return 'status-other';
+            }
         }
 
         // Setup month filter
         function setupMonthFilter(allPRs) {
             const monthFilter = document.getElementById('monthFilter');
-            const uniqueMonths = [...new Set(allPRs.map(pr => pr.month))];
+            
+            if (!monthFilter) return;
+            
+            monthFilter.innerHTML = '<option value="all">ทุกเดือน</option>';
+            
+            const uniqueMonths = [...new Set(allPRs.map(pr => pr.month))].filter(month => month).sort();
             
             uniqueMonths.forEach(month => {
                 const option = document.createElement('option');
@@ -552,24 +1761,153 @@
             });
             
             monthFilter.addEventListener('change', function() {
-                const selectedMonth = this.value;
-                const filteredPRs = selectedMonth === 'all' ? 
-                    allPRs : 
-                    allPRs.filter(pr => pr.month === selectedMonth);
-                populateAllPRsTable(filteredPRs);
+                applyFilters(dashboardData.allPRs);
             });
+        }
+
+        // Enhanced apply filters with multi-status support
+        function applyFilters(allPRs) {
+            console.log('🔍 เริ่มกรองข้อมูล...');
+            
+            const monthFilter = document.getElementById('monthFilter');
+            const searchInput = document.getElementById('searchInput');
+            
+            const selectedMonth = monthFilter ? monthFilter.value : 'all';
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
+            let filteredPRs = allPRs;
+            
+            // Filter by month
+            if (selectedMonth !== 'all') {
+                filteredPRs = filteredPRs.filter(pr => pr.month === selectedMonth);
+            }
+            
+            // Filter by selected statuses
+            if (selectedStatuses.size > 0) {
+                filteredPRs = filteredPRs.filter(pr => {
+                    const status = pr.status || 'UNKNOWN';
+                    return selectedStatuses.has(status);
+                });
+            }
+            
+            // Filter by search term
+            if (searchTerm !== '') {
+                filteredPRs = filteredPRs.filter(pr => {
+                    const item = (pr.item || '').toLowerCase();
+                    const prNo = (pr.prNo || '').toLowerCase();
+                    const remark = (pr.remark || '').toLowerCase();
+                    const term = searchTerm.toLowerCase();
+                    
+                    return item.includes(term) || 
+                           prNo.includes(term) || 
+                           remark.includes(term);
+                });
+            }
+            
+            console.log(`🔍 กรองข้อมูล: ${filteredPRs.length} จาก ${allPRs.length} รายการ`);
+            console.log(`🔍 เงื่อนไข: เดือน="${selectedMonth}", สถานะ=[${Array.from(selectedStatuses).join(', ')}], ค้นหา="${searchTerm}"`);
+            
+            // Apply sorting
+            const sortedPRs = applySorting(filteredPRs);
+            
+            // Update table
+            populateAllPRsTable(sortedPRs);
+            
+            // Update filter results
+            updateFilterResults(filteredPRs.length, allPRs.length, searchTerm);
+        }
+
+        // Apply sorting function
+        function applySorting(allPRs) {
+            const sortOption = document.getElementById('sortOption');
+            const sortValue = sortOption ? sortOption.value : 'date-asc';
+            
+            let sortedPRs = [...allPRs];
+            
+            function getPRNumber(prNo) {
+                if (!prNo || typeof prNo !== 'string') {
+                    return 0;
+                }
+                return parseInt(prNo.replace(/[^0-9]/g, '')) || 0;
+            }
+            
+            switch (sortValue) {
+                case 'date-asc':
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateA.getTime() - dateB.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+                    break;
+                    
+                case 'date-desc':
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateB.getTime() - dateA.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+                    break;
+                    
+                case 'amount-desc':
+                    sortedPRs.sort((a, b) => (b.amount || 0) - (a.amount || 0));
+                    break;
+                    
+                case 'amount-asc':
+                    sortedPRs.sort((a, b) => (a.amount || 0) - (b.amount || 0));
+                    break;
+                    
+                default:
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateA.getTime() - dateB.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+            }
+            
+            return sortedPRs;
         }
 
         // Utility functions
         function formatNumber(num) {
+            if (typeof num !== 'number' || isNaN(num)) {
+                return '0';
+            }
             return num.toLocaleString('th-TH');
         }
 
         function formatCurrency(num) {
+            if (typeof num !== 'number' || isNaN(num)) {
+                return '0 ฿';
+            }
             return num.toLocaleString('th-TH') + ' ฿';
         }
 
         function getStatusClass(status) {
+            if (!status || typeof status !== 'string') {
+                return 'status-other';
+            }
+            
             switch (status.toUpperCase()) {
                 case 'RECEIVED':
                     return 'status-received';
