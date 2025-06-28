@@ -44,6 +44,212 @@
         .status-received { background-color: #d4edda; color: #155724; }
         .status-pending { background-color: #fff3cd; color: #856404; }
         .status-other { background-color: #f8d7da; color: #721c24; }
+        
+        /* Search Box Animations */
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-input {
+            width: 0;
+            opacity: 0;
+            transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+            border: none;
+            outline: none;
+            background: transparent;
+        }
+        .search-input.active {
+            width: 200px;
+            opacity: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .search-icon {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px;
+            border-radius: 0.375rem;
+            color: #6b7280;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .search-icon:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .search-icon.active {
+            color: #3b82f6;
+            background-color: #dbeafe;
+        }
+        .search-clear {
+            position: absolute;
+            right: 8px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+            color: #6b7280;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            border-radius: 50%;
+        }
+        .search-clear.show {
+            opacity: 1;
+        }
+        .search-clear:hover {
+            color: #ef4444;
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Multi-Status Filter Styles */
+        .status-filter-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .status-filter-button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 160px;
+            max-width: 200px;
+        }
+        
+        .status-filter-button:hover {
+            border-color: #9ca3af;
+            background-color: #f9fafb;
+        }
+        
+        .status-filter-button.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .status-filter-content {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            margin-top: 4px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        
+        .status-filter-content.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .status-filter-header {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        
+        .status-filter-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .status-filter-control-btn {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            background: white;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .status-filter-control-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        
+        .status-filter-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .status-filter-option:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .status-filter-option input[type="checkbox"] {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
+        
+        .status-filter-option label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .status-count {
+            background-color: #e5e7eb;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-filter-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .status-selected-count {
+            background-color: #3b82f6;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -159,12 +365,26 @@
                 </div>
             </div>
 
-            <!-- All PRs Table -->
+            <!-- All PRs Table with Enhanced Multi-Status Filter -->
             <div class="bg-white rounded-xl shadow-md mb-8">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">📋 รายการ PR ทั้งหมด (รวมรายการที่ PR No. ซ้ำ)</h3>
                         <div class="flex items-center space-x-4">
+                            <!-- Sort Options -->
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+                                </svg>
+                                <select id="sortOption" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="date-asc">📅 วันที่ (เก่า → ใหม่) + PR No.</option>
+                                    <option value="date-desc">📅 วันที่ (ใหม่ → เก่า) + PR No.</option>
+                                    <option value="pr-asc">📋 PR No. (น้อย → มาก) + วันที่</option>
+                                    <option value="pr-desc">📋 PR No. (มาก → น้อย) + วันที่</option>
+                                    <option value="amount-desc">💰 ยอดเงิน (มาก → น้อย)</option>
+                                    <option value="amount-asc">💰 ยอดเงิน (น้อย → มาก)</option>
+                                </select>
+                            </div>
                             <!-- Month Filter -->
                             <div class="flex items-center space-x-2">
                                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,14 +395,67 @@
                                 </select>
                             </div>
                             
-                            <!-- Status Filter -->
+                            <!-- Enhanced Multi-Status Filter -->
                             <div class="flex items-center space-x-2">
                                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <select id="statusFilter" class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="all">ทุกสถานะ</option>
-                                </select>
+                                <div class="status-filter-dropdown">
+                                    <div id="statusFilterButton" class="status-filter-button">
+                                        <span class="status-filter-text">ทุกสถานะ</span>
+                                        <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                    <div id="statusFilterContent" class="status-filter-content">
+                                        <div class="status-filter-header">
+                                            <div class="status-filter-controls">
+                                                <button id="selectAllStatus" class="status-filter-control-btn">เลือกทั้งหมด</button>
+                                                <button id="clearAllStatus" class="status-filter-control-btn">ล้างทั้งหมด</button>
+                                            </div>
+                                        </div>
+                                        <div id="statusFilterOptions">
+                                            <!-- Options will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Box -->
+                            <div class="flex items-center space-x-2">
+                                <div class="search-container">
+                                    <button 
+                                        id="searchIcon" 
+                                        class="search-icon" 
+                                        title="ค้นหารายการ"
+                                        type="button"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                    </button>
+                                    
+                                    <div style="position: relative;">
+                                        <input 
+                                            type="text" 
+                                            id="searchInput" 
+                                            class="search-input" 
+                                            placeholder="ค้นหารายการ..."
+                                            autocomplete="off"
+                                            spellcheck="false"
+                                        >
+                                        <button 
+                                            id="searchClear" 
+                                            class="search-clear" 
+                                            title="ล้างการค้นหา"
+                                            type="button"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -198,6 +471,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวน</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ยอดเงิน</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หมายเหตุ</th>
                             </tr>
                         </thead>
                         <tbody id="allPRsTable" class="bg-white divide-y divide-gray-200">
@@ -253,18 +527,25 @@
         let dashboardData = null;
         let monthlyChart = null;
         let distributionChart = null;
+        let selectedStatuses = new Set(['all']); // Track selected statuses
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 เริ่มโหลด Dashboard...');
             loadDashboardData();
         });
 
         // Load data from Google Apps Script
         function loadDashboardData() {
+            // *** สำหรับ Google Apps Script - เปิดใช้งานโค้ดด้านล่าง ***
             google.script.run
                 .withSuccessHandler(onDataLoaded)
                 .withFailureHandler(onDataError)
                 .getPRData();
+            
+            // *** สำหรับการทดสอบ - ลบออกเมื่อใช้งานจริง ***
+            // const sampleData = { ... }; // ข้อมูลตัวอย่าง
+            // setTimeout(() => { onDataLoaded(sampleData); }, 1000);
         }
 
         // Handle successful data load
@@ -283,7 +564,7 @@
             
             // Create charts
             createMonthlyExpenseChart(data.monthlySummary);
-            createDistributionChart(data.allPRs, data.monthlySummary, 'month'); // เริ่มต้นด้วยแบ่งตามเดือน
+            createDistributionChart(data.allPRs, data.monthlySummary, 'month');
             
             // Populate tables
             populateAllPRsTable(data.allPRs);
@@ -294,10 +575,16 @@
             
             // Setup filters
             setupMonthFilter(data.allPRs);
-            setupStatusFilter(data.allPRs);
+            setupMultiStatusFilter(data.allPRs); // New multi-status filter
             
             // Setup chart type selector
             setupChartTypeSelector(data.allPRs, data.monthlySummary);
+            
+            // Setup sorting function
+            setupSortingFunction();
+            
+            // Setup search function
+            setupSearchFunction();
             
             // Hide loading screen and show content
             document.getElementById('loadingScreen').classList.add('hidden');
@@ -319,11 +606,152 @@
             `;
         }
 
+        // Setup enhanced multi-status filter
+        function setupMultiStatusFilter(allPRs) {
+            console.log('🏷️ เริ่มตั้งค่า Multi-Status Filter...');
+            
+            const statusFilterButton = document.getElementById('statusFilterButton');
+            const statusFilterContent = document.getElementById('statusFilterContent');
+            const statusFilterOptions = document.getElementById('statusFilterOptions');
+            const selectAllBtn = document.getElementById('selectAllStatus');
+            const clearAllBtn = document.getElementById('clearAllStatus');
+            
+            if (!statusFilterButton || !statusFilterContent || !statusFilterOptions) {
+                console.error('❌ ไม่พบ elements ของ multi-status filter');
+                return;
+            }
+            
+            // Count statuses
+            const statusCounts = {};
+            allPRs.forEach(pr => {
+                const status = pr.status || 'UNKNOWN';
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            
+            const uniqueStatuses = Object.keys(statusCounts).sort();
+            console.log('🏷️ สถานะที่พบ:', uniqueStatuses, statusCounts);
+            
+            // Create options
+            statusFilterOptions.innerHTML = uniqueStatuses.map(status => `
+                <div class="status-filter-option">
+                    <input type="checkbox" id="status_${status}" value="${status}" checked>
+                    <label for="status_${status}">
+                        <span>${status}</span>
+                        <span class="status-count">${statusCounts[status]}</span>
+                    </label>
+                </div>
+            `).join('');
+            
+            // Initialize selected statuses (all checked by default)
+            selectedStatuses = new Set(uniqueStatuses);
+            updateStatusFilterButtonText();
+            
+            // Toggle dropdown
+            let isDropdownOpen = false;
+            statusFilterButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                isDropdownOpen = !isDropdownOpen;
+                
+                if (isDropdownOpen) {
+                    statusFilterContent.classList.add('show');
+                    statusFilterButton.classList.add('active');
+                    statusFilterButton.querySelector('svg').style.transform = 'rotate(180deg)';
+                } else {
+                    statusFilterContent.classList.remove('show');
+                    statusFilterButton.classList.remove('active');
+                    statusFilterButton.querySelector('svg').style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.status-filter-dropdown') && isDropdownOpen) {
+                    statusFilterContent.classList.remove('show');
+                    statusFilterButton.classList.remove('active');
+                    statusFilterButton.querySelector('svg').style.transform = 'rotate(0deg)';
+                    isDropdownOpen = false;
+                }
+            });
+            
+            // Prevent dropdown from closing when clicking inside options
+            statusFilterContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Handle checkbox changes
+            statusFilterOptions.addEventListener('change', function(e) {
+                if (e.target.type === 'checkbox') {
+                    const statusValue = e.target.value;
+                    
+                    if (e.target.checked) {
+                        selectedStatuses.add(statusValue);
+                    } else {
+                        selectedStatuses.delete(statusValue);
+                    }
+                    
+                    updateStatusFilterButtonText();
+                    applyFilters(dashboardData.allPRs);
+                }
+            });
+            
+            // Select all button
+            selectAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectedStatuses = new Set(uniqueStatuses);
+                
+                // Check all checkboxes
+                statusFilterOptions.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                
+                updateStatusFilterButtonText();
+                applyFilters(dashboardData.allPRs);
+            });
+            
+            // Clear all button
+            clearAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectedStatuses.clear();
+                
+                // Uncheck all checkboxes
+                statusFilterOptions.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                updateStatusFilterButtonText();
+                applyFilters(dashboardData.allPRs);
+            });
+            
+            // Update button text based on selections
+            function updateStatusFilterButtonText() {
+                const buttonText = statusFilterButton.querySelector('.status-filter-text');
+                const selectedCount = selectedStatuses.size;
+                const totalCount = uniqueStatuses.length;
+                
+                if (selectedCount === 0) {
+                    buttonText.innerHTML = 'ไม่เลือกสถานะ';
+                    buttonText.style.color = '#ef4444';
+                } else if (selectedCount === totalCount) {
+                    buttonText.innerHTML = 'ทุกสถานะ';
+                    buttonText.style.color = '';
+                } else if (selectedCount === 1) {
+                    const singleStatus = Array.from(selectedStatuses)[0];
+                    buttonText.innerHTML = singleStatus;
+                    buttonText.style.color = '';
+                } else {
+                    buttonText.innerHTML = `เลือก ${selectedCount} สถานะ <span class="status-selected-count">${selectedCount}</span>`;
+                    buttonText.style.color = '';
+                }
+            }
+            
+            console.log('✅ ตั้งค่า Multi-Status Filter สำเร็จ');
+        }
+
         // Update summary cards
         function updateSummaryCards(data) {
             document.getElementById('totalExpense').textContent = formatCurrency(data.totalExpense);
             document.getElementById('totalRecords').textContent = formatNumber(data.totalRecords);
-            document.getElementById('allPRsCount').textContent = formatNumber(data.uniquePRCount || 0); // ใช้ uniquePRCount แทน allPRs.length
+            document.getElementById('allPRsCount').textContent = formatNumber(data.uniquePRCount || 0);
             document.getElementById('activeMonths').textContent = formatNumber(data.monthlySummary.length);
         }
 
@@ -370,7 +798,7 @@
             });
         }
 
-        // Create distribution chart (month or status)
+        // Create distribution chart
         function createDistributionChart(allPRs, monthlySummary, type = 'month') {
             const ctx = document.getElementById('distributionChart').getContext('2d');
             
@@ -381,27 +809,25 @@
             let chartData, chartLabels, colors;
             
             if (type === 'month') {
-                // แบ่งตามเดือน - ใช้ unique PR count จาก monthlySummary
-                chartLabels = monthlySummary.map(month => month.month.split(' ')[0]); // เอาเฉพาะชื่อเดือน
-                chartData = monthlySummary.map(month => month.uniquePRCount || 0); // ใช้ uniquePRCount
+                chartLabels = monthlySummary.map(month => month.month.split(' ')[0]);
+                chartData = monthlySummary.map(month => month.uniquePRCount || 0);
                 colors = [
                     '#3B82F6', '#EF4444', '#10B981', '#F59E0B', 
                     '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
                     '#F97316', '#6366F1', '#14B8A6', '#F43F5E'
                 ];
             } else {
-                // แบ่งตามสถานะ - นับ unique PR ตามสถานะ
                 const statusPRs = {};
                 allPRs.forEach(pr => {
                     const status = pr.status || 'UNKNOWN';
                     if (!statusPRs[status]) {
                         statusPRs[status] = new Set();
                     }
-                    statusPRs[status].add(pr.prNo); // ใช้ Set เพื่อไม่นับซ้ำ
+                    statusPRs[status].add(pr.prNo);
                 });
                 
                 chartLabels = Object.keys(statusPRs);
-                chartData = Object.values(statusPRs).map(prSet => prSet.size); // นับ unique PR
+                chartData = Object.values(statusPRs).map(prSet => prSet.size);
                 colors = [
                     '#10B981', '#EF4444', '#F59E0B', '#8B5CF6', 
                     '#06B6D4', '#EC4899', '#84CC16', '#F97316'
@@ -454,27 +880,50 @@
         function populateAllPRsTable(allPRs) {
             const tableBody = document.getElementById('allPRsTable');
             
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
             if (allPRs.length === 0) {
+                let noDataMessage = 'ไม่มีข้อมูล PR';
+                
+                if (searchTerm !== '') {
+                    noDataMessage = `ไม่พบรายการที่ตรงกับ "${searchTerm}"`;
+                }
+                
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                            ไม่มีข้อมูล PR
+                        <td colspan="7" class="px-6 py-8 text-center">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                <p class="text-gray-500 text-sm font-medium">${noDataMessage}</p>
+                                ${searchTerm !== '' ? '<p class="text-gray-400 text-xs">ลองใช้คำค้นหาอื่น หรือล้างการค้นหา</p>' : ''}
+                            </div>
                         </td>
                     </tr>
                 `;
                 return;
             }
             
+            function highlightSearchTerm(text, term) {
+                if (!term || !text) return text;
+                
+                const regex = new RegExp(`(${term})`, 'gi');
+                return text.replace(regex, '<mark class="bg-yellow-200 px-1 rounded font-medium">$1</mark>');
+            }
+            
             tableBody.innerHTML = allPRs.map(pr => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pr.prNo}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.date}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">${pr.item}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.qty} ${pr.unit}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${pr.amount > 20000 ? 'text-red-600' : 'text-blue-600'}">${formatCurrency(pr.amount)}</td>
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pr.prNo || 'ไม่ระบุ'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.date || 'ไม่ระบุ'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">${highlightSearchTerm(pr.item || 'ไม่ระบุ', searchTerm)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pr.qty || ''} ${pr.unit || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${(pr.amount || 0) > 20000 ? 'text-red-600' : 'text-blue-600'}">${formatCurrency(pr.amount || 0)}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-badge ${getStatusClass(pr.status)}">${pr.status}</span>
+                        <span class="status-badge ${getStatusClass(pr.status || 'UNKNOWN')}">${pr.status || 'UNKNOWN'}</span>
                     </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title="${pr.remark || ''}">${pr.remark || '-'}</td>
                 </tr>
             `).join('');
         }
@@ -482,7 +931,6 @@
         // Populate monthly summary table
         function populateMonthlySummaryTable(monthlySummary) {
             const tableBody = document.getElementById('monthlySummaryTable');
-            const totalExpense = monthlySummary.reduce((sum, month) => sum + month.totalExpense, 0);
             
             tableBody.innerHTML = monthlySummary.map(month => `
                 <tr class="hover:bg-gray-50">
@@ -505,11 +953,8 @@
                 data.allPRs.reduce((max, pr) => pr.amount > max.amount ? pr : max) : null;
             
             const highValuePRs = data.allPRs.filter(pr => pr.amount > 20000);
-            
-            // นับ unique PR ที่มีมูลค่า > 20K
             const uniqueHighValuePRs = new Set(highValuePRs.map(pr => pr.prNo));
-            
-            const avgExpensePerPR = data.uniquePRCount > 0 ? data.totalExpense / data.uniquePRCount : 0; // ใช้ uniquePRCount
+            const avgExpensePerPR = data.uniquePRCount > 0 ? data.totalExpense / data.uniquePRCount : 0;
             
             insightsContainer.innerHTML = `
                 <div class="text-center">
@@ -539,7 +984,6 @@
                 const selectedType = this.value;
                 createDistributionChart(allPRs, monthlySummary, selectedType);
                 
-                // อัปเดตชื่อกราฟ
                 const chartTitle = this.closest('.bg-white').querySelector('h3');
                 if (selectedType === 'month') {
                     chartTitle.textContent = '📊 การกระจาย PR - แบ่งตามเดือน';
@@ -548,375 +992,308 @@
                 }
             });
             
-            // ตั้งค่าชื่อเริ่มต้น
             const chartTitle = chartTypeSelector.closest('.bg-white').querySelector('h3');
             chartTitle.textContent = '📊 การกระจาย PR - แบ่งตามเดือน';
         }
 
-        // Enhanced element finder with retry mechanism
-        function findElementWithRetry(elementId, maxRetries = 5, delay = 200) {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
+        // Setup sorting function
+        function setupSortingFunction() {
+            const sortOption = document.getElementById('sortOption');
+            
+            if (sortOption) {
+                sortOption.value = 'date-asc';
                 
-                function tryFind() {
-                    attempts++;
-                    const element = document.getElementById(elementId);
-                    
-                    if (element) {
-                        console.log(`✅ พบ element '${elementId}' ใน attempt ${attempts}`);
-                        resolve(element);
-                    } else if (attempts >= maxRetries) {
-                        console.error(`❌ ไม่พบ element '${elementId}' หลังจาก ${maxRetries} ครั้ง`);
-                        reject(new Error(`Element '${elementId}' not found after ${maxRetries} attempts`));
-                    } else {
-                        console.warn(`⏳ ไม่พบ element '${elementId}' attempt ${attempts}/${maxRetries} - รอ ${delay}ms`);
-                        setTimeout(tryFind, delay);
+                sortOption.addEventListener('change', function() {
+                    if (dashboardData && dashboardData.allPRs) {
+                        applyFilters(dashboardData.allPRs);
                     }
+                });
+            }
+        }
+
+        // Setup search functionality
+        function setupSearchFunction() {
+            console.log('🔍 ตั้งค่า Search Function...');
+            
+            const searchIcon = document.getElementById('searchIcon');
+            const searchInput = document.getElementById('searchInput');
+            const searchClear = document.getElementById('searchClear');
+            
+            if (!searchIcon || !searchInput || !searchClear) {
+                console.error('❌ ไม่พบ search elements');
+                return;
+            }
+            
+            let isSearchVisible = false;
+            
+            function showSearch() {
+                searchInput.classList.add('active');
+                searchIcon.classList.add('active');
+                isSearchVisible = true;
+                setTimeout(() => searchInput.focus(), 50);
+            }
+            
+            function hideSearch() {
+                searchInput.classList.remove('active');
+                searchIcon.classList.remove('active');
+                searchClear.classList.remove('show');
+                searchInput.value = '';
+                isSearchVisible = false;
+                
+                if (dashboardData && dashboardData.allPRs) {
+                    applyFilters(dashboardData.allPRs);
+                }
+            }
+            
+            searchIcon.addEventListener('click', function() {
+                if (!isSearchVisible) {
+                    showSearch();
+                } else if (searchInput.value === '') {
+                    hideSearch();
+                }
+            });
+            
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                
+                if (searchTerm.length > 0) {
+                    searchClear.classList.add('show');
+                } else {
+                    searchClear.classList.remove('show');
                 }
                 
-                tryFind();
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                searchTimeout = setTimeout(() => {
+                    if (dashboardData && dashboardData.allPRs) {
+                        applyFilters(dashboardData.allPRs);
+                    }
+                }, 150);
             });
-        }
-
-        // Setup status filter with retry mechanism
-        async function setupStatusFilter(allPRs) {
-            try {
-                console.log('🏷️ เริ่มตั้งค่า Status Filter...');
-                
-                // ใช้ retry mechanism เพื่อหา statusFilter
-                const statusFilter = await findElementWithRetry('statusFilter', 10, 100);
-                
-                // ล้าง options เดิม (ยกเว้น "ทุกสถานะ")
-                statusFilter.innerHTML = '<option value="all">ทุกสถานะ</option>';
-                
-                const uniqueStatuses = [...new Set(allPRs.map(pr => pr.status))].filter(status => status).sort();
-                console.log('🏷️ สถานะที่พบ:', uniqueStatuses);
-                
-                // เพิ่มตัวเลือกสถานะ
-                uniqueStatuses.forEach(status => {
-                    const option = document.createElement('option');
-                    option.value = status;
-                    option.textContent = status;
-                    statusFilter.appendChild(option);
-                });
-                
-                // Event listener สำหรับ status filter
-                statusFilter.addEventListener('change', function() {
-                    applyFilters(allPRs);
-                });
-                
-                console.log('✅ ตั้งค่า Status Filter สำเร็จ');
-                
-            } catch (error) {
-                console.error('❌ Error ใน setupStatusFilter:', error);
-                
-                // ลองหาด้วยวิธีอื่น
-                setTimeout(() => {
-                    const statusFilter = document.querySelector('#statusFilter');
-                    if (statusFilter) {
-                        console.log('✅ พบ statusFilter ด้วย querySelector');
-                        // ตั้งค่าแบบปกติ
-                        setupStatusFilterFallback(statusFilter, allPRs);
-                    } else {
-                        console.error('❌ ยังคงไม่พบ statusFilter แม้ใช้ querySelector');
-                        // สร้าง element ใหม่ถ้าไม่มี
-                        createStatusFilterElement(allPRs);
-                    }
-                }, 500);
-            }
-        }
-
-        // Setup month filter with retry mechanism  
-        async function setupMonthFilter(allPRs) {
-            try {
-                console.log('📅 เริ่มตั้งค่า Month Filter...');
-                
-                // ใช้ retry mechanism เพื่อหา monthFilter
-                const monthFilter = await findElementWithRetry('monthFilter', 10, 100);
-                
-                // ล้าง options เดิม (ยกเว้น "ทุกเดือน")
-                monthFilter.innerHTML = '<option value="all">ทุกเดือน</option>';
-                
-                const uniqueMonths = [...new Set(allPRs.map(pr => pr.month))].filter(month => month).sort();
-                console.log('📅 เดือนที่พบ:', uniqueMonths);
-                
-                uniqueMonths.forEach(month => {
-                    const option = document.createElement('option');
-                    option.value = month;
-                    option.textContent = month;
-                    monthFilter.appendChild(option);
-                });
-                
-                // Event listener สำหรับ month filter
-                monthFilter.addEventListener('change', function() {
-                    applyFilters(allPRs);
-                });
-                
-                console.log('✅ ตั้งค่า Month Filter สำเร็จ');
-                
-            } catch (error) {
-                console.error('❌ Error ใน setupMonthFilter:', error);
-                
-                // ลองหาด้วยวิธีอื่น
-                setTimeout(() => {
-                    const monthFilter = document.querySelector('#monthFilter');
-                    if (monthFilter) {
-                        console.log('✅ พบ monthFilter ด้วย querySelector');
-                        setupMonthFilterFallback(monthFilter, allPRs);
-                    } else {
-                        console.error('❌ ยังคงไม่พบ monthFilter แม้ใช้ querySelector');
-                    }
-                }, 500);
-            }
-        }
-
-        // Fallback function for status filter
-        function setupStatusFilterFallback(statusFilter, allPRs) {
-            try {
-                statusFilter.innerHTML = '<option value="all">ทุกสถานะ</option>';
-                
-                const uniqueStatuses = [...new Set(allPRs.map(pr => pr.status))].filter(status => status).sort();
-                
-                uniqueStatuses.forEach(status => {
-                    const option = document.createElement('option');
-                    option.value = status;
-                    option.textContent = status;
-                    statusFilter.appendChild(option);
-                });
-                
-                statusFilter.addEventListener('change', function() {
-                    applyFilters(allPRs);
-                });
-                
-                console.log('✅ ตั้งค่า Status Filter Fallback สำเร็จ');
-            } catch (error) {
-                console.error('❌ Error ใน setupStatusFilterFallback:', error);
-            }
-        }
-
-        // Fallback function for month filter
-        function setupMonthFilterFallback(monthFilter, allPRs) {
-            try {
-                monthFilter.innerHTML = '<option value="all">ทุกเดือน</option>';
-                
-                const uniqueMonths = [...new Set(allPRs.map(pr => pr.month))].filter(month => month).sort();
-                
-                uniqueMonths.forEach(month => {
-                    const option = document.createElement('option');
-                    option.value = month;
-                    option.textContent = month;
-                    monthFilter.appendChild(option);
-                });
-                
-                monthFilter.addEventListener('change', function() {
-                    applyFilters(allPRs);
-                });
-                
-                console.log('✅ ตั้งค่า Month Filter Fallback สำเร็จ');
-            } catch (error) {
-                console.error('❌ Error ใน setupMonthFilterFallback:', error);
-            }
-        }
-
-        // Enhanced debugging function for filters
-        function debugFilters() {
-            console.log('🔍 === DEBUG FILTERS ===');
             
-            // ตรวจสอบทั้ง monthFilter และ statusFilter
-            const filters = ['monthFilter', 'statusFilter'];
+            searchClear.addEventListener('click', function() {
+                hideSearch();
+            });
             
-            filters.forEach(filterId => {
-                console.log(`\n🔎 ตรวจสอบ ${filterId}:`);
-                
-                // Method 1: getElementById
-                const byId = document.getElementById(filterId);
-                console.log(`  📋 getElementById: ${byId ? '✅ พบ' : '❌ ไม่พบ'}`, byId);
-                
-                // Method 2: querySelector
-                const byQuery = document.querySelector(`#${filterId}`);
-                console.log(`  📋 querySelector: ${byQuery ? '✅ พบ' : '❌ ไม่พบ'}`, byQuery);
-                
-                // Method 3: querySelectorAll
-                const byQueryAll = document.querySelectorAll(`#${filterId}`);
-                console.log(`  📋 querySelectorAll: ${byQueryAll.length} elements`, byQueryAll);
-                
-                // Method 4: search in all selects
-                const allSelects = document.querySelectorAll('select');
-                const selectInfo = [];
-                allSelects.forEach((select, index) => {
-                    selectInfo.push({
-                        index,
-                        id: select.id || 'no-id',
-                        className: select.className,
-                        parentElement: select.parentElement?.tagName
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (dashboardData && dashboardData.allPRs) {
+                        applyFilters(dashboardData.allPRs);
+                    }
+                }
+                if (e.key === 'Escape') {
+                    hideSearch();
+                }
+            });
+            
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.search-container') && isSearchVisible && searchInput.value === '') {
+                    hideSearch();
+                }
+            });
+            
+            console.log('✅ ตั้งค่า Search Function สำเร็จ');
+        }
+
+        // Apply sorting function
+        function applySorting(allPRs) {
+            const sortOption = document.getElementById('sortOption');
+            const sortValue = sortOption ? sortOption.value : 'date-asc';
+            
+            let sortedPRs = [...allPRs];
+            
+            function getPRNumber(prNo) {
+                if (!prNo || typeof prNo !== 'string') {
+                    return 0;
+                }
+                return parseInt(prNo.replace(/[^0-9]/g, '')) || 0;
+            }
+            
+            switch (sortValue) {
+                case 'date-asc':
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateA.getTime() - dateB.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
                     });
-                });
-                console.log(`  📋 ทุก select elements:`, selectInfo);
-                
-                // หา select ที่มีคำว่า filter ใน class หรือ id
-                const filterSelects = Array.from(allSelects).filter(select => 
-                    (select.id && select.id.includes('filter')) || 
-                    (select.className && select.className.includes('filter'))
-                );
-                console.log(`  📋 select elements ที่เกี่ยวกับ filter:`, filterSelects);
+                    break;
+                    
+                case 'date-desc':
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateB.getTime() - dateA.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+                    break;
+                    
+                case 'amount-desc':
+                    sortedPRs.sort((a, b) => (b.amount || 0) - (a.amount || 0));
+                    break;
+                    
+                case 'amount-asc':
+                    sortedPRs.sort((a, b) => (a.amount || 0) - (b.amount || 0));
+                    break;
+                    
+                default:
+                    sortedPRs.sort((a, b) => {
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateA.getTime() - dateB.getTime();
+                        }
+                        
+                        const prNoA = getPRNumber(a.prNo);
+                        const prNoB = getPRNumber(b.prNo);
+                        return prNoA - prNoB;
+                    });
+            }
+            
+            return sortedPRs;
+        }
+
+        // Setup month filter
+        function setupMonthFilter(allPRs) {
+            const monthFilter = document.getElementById('monthFilter');
+            
+            if (!monthFilter) return;
+            
+            monthFilter.innerHTML = '<option value="all">ทุกเดือน</option>';
+            
+            const uniqueMonths = [...new Set(allPRs.map(pr => pr.month))].filter(month => month).sort();
+            
+            uniqueMonths.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = month;
+                monthFilter.appendChild(option);
             });
             
-            console.log('🔍 === END DEBUG ===\n');
+            monthFilter.addEventListener('change', function() {
+                applyFilters(dashboardData.allPRs);
+            });
         }
 
-        // Create missing filter elements if needed
-        function createMissingFilters() {
-            console.log('🔧 ตรวจสอบและสร้าง Filter Elements...');
+        // Enhanced apply filters with multi-status support
+        function applyFilters(allPRs) {
+            console.log('🔍 เริ่มกรองข้อมูล...');
             
-            // หา container
-            const container = document.querySelector('.flex.flex-wrap.gap-4.mb-6') || 
-                            document.querySelector('.flex.space-x-4.mb-6');
+            const monthFilter = document.getElementById('monthFilter');
+            const searchInput = document.getElementById('searchInput');
             
-            if (!container) {
-                console.error('❌ ไม่พบ filter container');
-                return false;
+            const selectedMonth = monthFilter ? monthFilter.value : 'all';
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            
+            let filteredPRs = allPRs;
+            
+            // Filter by month
+            if (selectedMonth !== 'all') {
+                filteredPRs = filteredPRs.filter(pr => pr.month === selectedMonth);
             }
             
-            console.log('✅ พบ filter container:', container);
+            // Filter by selected statuses
+            if (selectedStatuses.size > 0) {
+                filteredPRs = filteredPRs.filter(pr => {
+                    const status = pr.status || 'UNKNOWN';
+                    return selectedStatuses.has(status);
+                });
+            }
             
-            // ตรวจสอบและสร้าง statusFilter หากไม่มี
-            let statusFilter = document.getElementById('statusFilter');
-            if (!statusFilter) {
-                console.log('🔧 สร้าง statusFilter ใหม่...');
-                
-                const statusDiv = document.createElement('div');
-                statusDiv.className = 'flex-1 min-w-[200px]';
-                statusDiv.innerHTML = `
-                    <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามสถานะ</label>
-                    <select id="statusFilter" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="all">ทุกสถานะ</option>
-                    </select>
-                `;
-                
-                // เพิ่มเข้าไปใน container
-                const monthFilterDiv = container.querySelector('div');
-                if (monthFilterDiv && monthFilterDiv.nextSibling) {
-                    container.insertBefore(statusDiv, monthFilterDiv.nextSibling);
+            // Filter by search term
+            if (searchTerm !== '') {
+                filteredPRs = filteredPRs.filter(pr => {
+                    const item = (pr.item || '').toLowerCase();
+                    const prNo = (pr.prNo || '').toLowerCase();
+                    const remark = (pr.remark || '').toLowerCase();
+                    const term = searchTerm.toLowerCase();
+                    
+                    return item.includes(term) || 
+                           prNo.includes(term) || 
+                           remark.includes(term);
+                });
+            }
+            
+            console.log(`🔍 กรองข้อมูล: ${filteredPRs.length} จาก ${allPRs.length} รายการ`);
+            console.log(`🔍 เงื่อนไข: เดือน="${selectedMonth}", สถานะ=[${Array.from(selectedStatuses).join(', ')}], ค้นหา="${searchTerm}"`);
+            
+            // Apply sorting
+            const sortedPRs = applySorting(filteredPRs);
+            
+            // Update table
+            populateAllPRsTable(sortedPRs);
+            
+            // Update filter results
+            updateFilterResults(filteredPRs.length, allPRs.length, searchTerm);
+        }
+
+        // Update filter results display
+        function updateFilterResults(filteredCount, totalCount, searchTerm = '') {
+            const tableTitle = document.querySelector('.bg-white h3');
+            if (!tableTitle) return;
+            
+            let titleText = '📋 รายการ PR ทั้งหมด (รวมรายการที่ PR No. ซ้ำ)';
+            
+            if (filteredCount === totalCount && searchTerm === '') {
+                tableTitle.textContent = titleText;
+            } else {
+                if (searchTerm !== '') {
+                    if (filteredCount === 0) {
+                        titleText = `📋 ไม่พบรายการที่ตรงกับ "${searchTerm}"`;
+                    } else {
+                        titleText = `📋 พบ ${filteredCount} รายการจาก ${totalCount} รายการ - ค้นหา: "${searchTerm}"`;
+                    }
                 } else {
-                    container.appendChild(statusDiv);
+                    titleText = `📋 รายการ PR ทั้งหมด (แสดง ${filteredCount} จาก ${totalCount} รายการ)`;
                 }
                 
-                statusFilter = document.getElementById('statusFilter');
-                console.log('✅ สร้าง statusFilter เสร็จ:', statusFilter);
+                tableTitle.textContent = titleText;
             }
             
-            // ตรวจสอบและสร้าง monthFilter หากไม่มี
-            let monthFilter = document.getElementById('monthFilter');
-            if (!monthFilter) {
-                console.log('🔧 สร้าง monthFilter ใหม่...');
-                
-                const monthDiv = document.createElement('div');
-                monthDiv.className = 'flex-1 min-w-[200px]';
-                monthDiv.innerHTML = `
-                    <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามเดือน</label>
-                    <select id="monthFilter" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="all">ทุกเดือน</option>
-                    </select>
-                `;
-                
-                container.insertBefore(monthDiv, container.firstChild);
-                monthFilter = document.getElementById('monthFilter');
-                console.log('✅ สร้าง monthFilter เสร็จ:', monthFilter);
-            }
-            
-            return { monthFilter, statusFilter };
-        }
-
-        // Apply filters (both month and status) with enhanced error handling
-        async function applyFilters(allPRs) {
-            try {
-                console.log('🔍 เริ่มกรองข้อมูล...');
-                
-                // ใช้ retry mechanism เพื่อหา filter elements
-                let monthFilter, statusFilter;
-                
-                try {
-                    monthFilter = await findElementWithRetry('monthFilter', 3, 100);
-                } catch (error) {
-                    console.warn('⚠️ ไม่พบ monthFilter - ใช้ querySelector');
-                    monthFilter = document.querySelector('#monthFilter');
-                }
-                
-                try {
-                    statusFilter = await findElementWithRetry('statusFilter', 3, 100);
-                } catch (error) {
-                    console.warn('⚠️ ไม่พบ statusFilter - ใช้ querySelector');
-                    statusFilter = document.querySelector('#statusFilter');
-                }
-                
-                if (!monthFilter && !statusFilter) {
-                    console.error('❌ ไม่พบ filter elements ใดเลย');
-                    return;
-                }
-                
-                const selectedMonth = monthFilter ? monthFilter.value : 'all';
-                const selectedStatus = statusFilter ? statusFilter.value : 'all';
-                
-                let filteredPRs = allPRs;
-                
-                // กรองตามเดือน
-                if (selectedMonth !== 'all') {
-                    filteredPRs = filteredPRs.filter(pr => pr.month === selectedMonth);
-                }
-                
-                // กรองตามสถานะ
-                if (selectedStatus !== 'all') {
-                    filteredPRs = filteredPRs.filter(pr => pr.status === selectedStatus);
-                }
-                
-                console.log(`🔍 กรองข้อมูล: ${filteredPRs.length} จาก ${allPRs.length} รายการ`);
-                console.log(`📊 เงื่อนไข: เดือน="${selectedMonth}", สถานะ="${selectedStatus}"`);
-                
-                // อัปเดตตาราง
-                populateAllPRsTable(filteredPRs);
-                
-                // แสดงจำนวนผลลัพธ์
-                updateFilterResults(filteredPRs.length, allPRs.length);
-                
-            } catch (error) {
-                console.error('❌ Error ใน applyFilters:', error);
-                
-                // Fallback: แสดงข้อมูลทั้งหมดหากกรองไม่ได้
-                console.log('🔄 Fallback: แสดงข้อมูลทั้งหมด');
-                populateAllPRsTable(allPRs);
-                updateFilterResults(allPRs.length, allPRs.length);
-            }
-        }
-
-        // Update filter results display with error handling
-        function updateFilterResults(filteredCount, totalCount) {
-            try {
-                const tableTitle = document.querySelector('.bg-white h3');
-                if (!tableTitle) {
-                    console.warn('⚠️ ไม่พบ table title element');
-                    return;
-                }
-                
-                if (filteredCount === totalCount) {
-                    tableTitle.textContent = '📋 รายการ PR ทั้งหมด';
-                } else {
-                    tableTitle.textContent = `📋 รายการ PR ทั้งหมด (แสดง ${filteredCount} จาก ${totalCount} รายการ)`;
-                }
-            } catch (error) {
-                console.error('❌ Error ใน updateFilterResults:', error);
+            if (searchTerm !== '') {
+                tableTitle.classList.add('text-blue-700');
+            } else {
+                tableTitle.classList.remove('text-blue-700');
             }
         }
 
         // Utility functions
         function formatNumber(num) {
+            if (typeof num !== 'number' || isNaN(num)) {
+                return '0';
+            }
             return num.toLocaleString('th-TH');
         }
 
         function formatCurrency(num) {
+            if (typeof num !== 'number' || isNaN(num)) {
+                return '0 ฿';
+            }
             return num.toLocaleString('th-TH') + ' ฿';
         }
 
         function getStatusClass(status) {
+            if (!status || typeof status !== 'string') {
+                return 'status-other';
+            }
+            
             switch (status.toUpperCase()) {
                 case 'RECEIVED':
                     return 'status-received';
