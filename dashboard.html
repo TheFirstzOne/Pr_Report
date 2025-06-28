@@ -5,11 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PR Expense Monitoring Dashboard</title>
     
+    <!-- 
+    🚀 การติดตั้งและใช้งาน:
+    1. คัดลอกโค้ด HTML นี้ไปสร้างไฟล์ใหม่ใน Google Apps Script ชื่อ "dashboard.html"
+    2. วางโค้ด Backend (Google Apps Script) ที่ให้มาในไฟล์ Code.gs 
+    3. แก้ไข Sheet ID ในโค้ด Backend ให้ตรงกับ Google Sheets ของคุณ
+    4. ตรวจสอบว่ามีคอลัมน์ทั้งหมดครบใน Google Sheets: DATE, Pr No., TOTAL PRICE, ORDER, QTY., UNIT, STATUS, Remark
+    5. ทดสอบฟังก์ชัน: testGetPRData(), testRemarkColumn(), testErrorHandling()
+    6. Deploy เป็น Web App: Execute as "Me", Access "Anyone"
+    7. ทดสอบ URL ที่ได้รับ
+    
+    📋 ฟีเจอร์:
+    - ✅ เชื่อมต่อ Google Sheets แบบเรียลไทม์
+    - ✅ กรองข้อมูลตามเดือน, สถานะ, คำค้นหา
+    - ✅ เรียงลำดับแบบต่างๆ (วันที่, PR No., ยอดเงิน)
+    - ✅ กราฟแสดงข้อมูลแบบ Interactive
+    - ✅ สร้างรายงาน PNG (รายงานฉบับเต็ม, สรุป, ตาราง)
+    - ✅ Responsive Design สำหรับมือถือ
+    - ✅ แสดงหมายเหตุจากคอลัมน์ Remark
+    
+    ⚠️ สำคัญ: ลบส่วน sample data ออก และเปิดใช้งาน google.script.run.getPRData() จริง
+    -->
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- html2canvas for capturing screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -250,6 +275,129 @@
             font-weight: 600;
             margin-left: 4px;
         }
+
+        /* Report Generation Styles */
+        .report-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .report-dropdown-content {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            margin-top: 4px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+            min-width: 250px;
+        }
+        
+        .report-dropdown-content.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .report-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .report-option:last-child {
+            border-bottom: none;
+        }
+        
+        .report-option:hover {
+            background-color: #f9fafb;
+        }
+        
+        .report-option-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            color: #6b7280;
+        }
+        
+        .report-option-content {
+            flex: 1;
+        }
+        
+        .report-option-title {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        .report-option-desc {
+            color: #6b7280;
+            font-size: 0.75rem;
+            margin-top: 2px;
+        }
+
+        /* Report Progress Styles */
+        .report-progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .report-progress-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .report-progress-content {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .report-progress-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        .report-progress-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .report-progress-desc {
+            color: #6b7280;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -258,6 +406,15 @@
         <div class="text-center">
             <div class="loading-spinner"></div>
             <p class="text-gray-600 mt-4">กำลังโหลดข้อมูล...</p>
+        </div>
+    </div>
+
+    <!-- Report Progress Overlay -->
+    <div id="reportProgressOverlay" class="report-progress-overlay">
+        <div class="report-progress-content">
+            <div class="report-progress-spinner"></div>
+            <div class="report-progress-title">กำลังสร้างรายงาน...</div>
+            <div class="report-progress-desc">กรุณารอสักครู่</div>
         </div>
     </div>
 
@@ -335,8 +492,69 @@
                 </div>
             </div>
 
+            <!-- Report Generation Section -->
+            <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-6 mb-8 border border-indigo-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-indigo-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">📋 สร้างรายงาน</h3>
+                            <p class="text-sm text-gray-600">บันทึกภาพรายงานตามการแสดงผลปัจจุบัน</p>
+                        </div>
+                    </div>
+                    
+                    <div class="report-dropdown">
+                        <button id="reportButton" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>สร้างรายงาน</span>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <div id="reportDropdownContent" class="report-dropdown-content">
+                            <div class="report-option" data-report-type="full">
+                                <svg class="report-option-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <div class="report-option-content">
+                                    <div class="report-option-title">รายงานฉบับเต็ม</div>
+                                    <div class="report-option-desc">บันทึกทุกส่วนของ Dashboard</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-option" data-report-type="summary">
+                                <svg class="report-option-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                <div class="report-option-content">
+                                    <div class="report-option-title">สรุปผลและกราฟ</div>
+                                    <div class="report-option-desc">เฉพาะการ์ดสรุปและกราฟ</div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-option" data-report-type="table">
+                                <svg class="report-option-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                                </svg>
+                                <div class="report-option-content">
+                                    <div class="report-option-title">ตารางข้อมูล</div>
+                                    <div class="report-option-desc">เฉพาะตารางรายการ PR</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" id="chartsSection">
                 <!-- Monthly Expense Chart -->
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">📈 ค่าใช้จ่ายรายเดือน</h3>
@@ -366,7 +584,7 @@
             </div>
 
             <!-- All PRs Table with Enhanced Multi-Status Filter -->
-            <div class="bg-white rounded-xl shadow-md mb-8">
+            <div class="bg-white rounded-xl shadow-md mb-8" id="tableSection">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">📋 รายการ PR ทั้งหมด (รวมรายการที่ PR No. ซ้ำ)</h3>
@@ -482,7 +700,7 @@
             </div>
 
             <!-- Monthly Summary Table -->
-            <div class="bg-white rounded-xl shadow-md">
+            <div class="bg-white rounded-xl shadow-md" id="summaryTableSection">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">📅 สรุปค่าใช้จ่ายรายเดือน</h3>
                 </div>
@@ -506,7 +724,7 @@
             </div>
 
             <!-- Key Insights -->
-            <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+            <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6" id="insightsSection">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">💡 ข้อมูลเชิงลึก</h3>
                 <div id="insights" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Insights will be populated by JavaScript -->
@@ -516,13 +734,42 @@
 
         <!-- Footer -->
         <footer class="bg-gray-800 text-white py-6 mt-8">
-            <div class="max-w-7xl mx-auto px-6 text-center">
-                <p>&copy; 2025 PR Expense Monitoring Dashboard. สร้างด้วย Google Apps Script + Tailwind CSS</p>
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
+                    <div>
+                        <h4 class="font-semibold mb-2">📊 PR Expense Dashboard</h4>
+                        <p class="text-sm text-gray-300">ระบบตรวจสอบค่าใช้จ่าย Purchase Request 2025</p>
+                        <p class="text-xs text-gray-400 mt-1">เวอร์ชัน 2.1 - พร้อมฟีเจอร์รายงาน</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">🛠️ เทคโนโลยี</h4>
+                        <p class="text-sm text-gray-300">Google Apps Script + Google Sheets</p>
+                        <p class="text-sm text-gray-300">Tailwind CSS + Chart.js</p>
+                        <p class="text-sm text-gray-300">html2canvas สำหรับรายงาน</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">📋 ฟีเจอร์</h4>
+                        <p class="text-sm text-gray-300">• กรองและค้นหาข้อมูล</p>
+                        <p class="text-sm text-gray-300">• กราฟและสถิติแบบเรียลไทม์</p>
+                        <p class="text-sm text-gray-300">• สร้างรายงาน PDF/Image</p>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-700 mt-6 pt-4 text-center">
+                    <p class="text-sm text-gray-400">
+                        &copy; 2025 PR Expense Monitoring Dashboard. 
+                        <span class="text-blue-400">ข้อมูลจาก Google Sheets ID: 189G2MUOTfR1en6_8pjLJ2zP4TKEGQWF4gxNtwkCacj0</span>
+                    </p>
+                </div>
             </div>
         </footer>
     </div>
 
     <script>
+        // 📊 PR Expense Dashboard - Frontend (เวอร์ชัน 2.1)
+        // 🚀 พร้อมใช้งานกับ Google Apps Script Backend
+        // 📋 รองรับฟีเจอร์สร้างรายงาน + คอลัมน์หมายเหตุ
+        
         // Global variables
         let dashboardData = null;
         let monthlyChart = null;
@@ -533,19 +780,300 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 เริ่มโหลด Dashboard...');
             loadDashboardData();
+            setupReportFunction();
         });
 
         // Load data from Google Apps Script
         function loadDashboardData() {
-            // *** สำหรับ Google Apps Script - เปิดใช้งานโค้ดด้านล่าง ***
+            // *** สำหรับ Google Apps Script - ใช้งานจริง ***
+            console.log('📡 เรียกข้อมูลจาก Google Apps Script...');
+            
             google.script.run
                 .withSuccessHandler(onDataLoaded)
                 .withFailureHandler(onDataError)
                 .getPRData();
             
-            // *** สำหรับการทดสอบ - ลบออกเมื่อใช้งานจริง ***
-            // const sampleData = { ... }; // ข้อมูลตัวอย่าง
-            // setTimeout(() => { onDataLoaded(sampleData); }, 1000);
+            // *** สำหรับการทดสอบ - ใช้ข้อมูลตัวอย่าง (comment ออกเมื่อใช้งานจริง) ***
+            /*
+            const sampleData = {
+                totalExpense: 245000,
+                totalRecords: 15,
+                uniquePRCount: 8,
+                monthlySummary: [
+                    { month: 'มกราคม 2025', totalExpense: 125000, recordCount: 8, maxExpense: 45000, percentage: 51.0, uniquePRCount: 4 },
+                    { month: 'กุมภาพันธ์ 2025', totalExpense: 120000, recordCount: 7, maxExpense: 35000, percentage: 49.0, uniquePRCount: 4 }
+                ],
+                allPRs: [
+                    { prNo: 'PR001', date: '2025-01-15', item: 'อุปกรณ์คอมพิวเตอร์', qty: 5, unit: 'ชิ้น', amount: 45000, status: 'RECEIVED', remark: 'สำหรับแผนก IT', month: 'มกราคม 2025' },
+                    { prNo: 'PR002', date: '2025-01-20', item: 'เฟอร์นิเจอร์สำนักงาน', qty: 2, unit: 'ชุด', amount: 35000, status: 'PENDING', remark: 'โต๊ะและเก้าอี้', month: 'มกราคม 2025' },
+                    { prNo: 'PR003', date: '2025-02-05', item: 'วัสดุสำนักงาน', qty: 10, unit: 'กล่อง', amount: 12000, status: 'RECEIVED', remark: 'กระดาษและอุปกรณ์', month: 'กุมภาพันธ์ 2025' },
+                    { prNo: 'PR004', date: '2025-02-12', item: 'ซอฟต์แวร์ลิขสิทธิ์', qty: 1, unit: 'ใบอนุญาต', amount: 25000, status: 'PROCESSING', remark: 'Microsoft Office', month: 'กุมภาพันธ์ 2025' }
+                ]
+            };
+            
+            setTimeout(() => { onDataLoaded(sampleData); }, 1000);
+            */
+        }
+
+        // Setup report function
+        function setupReportFunction() {
+            console.log('📋 ตั้งค่า Report Function...');
+            
+            const reportButton = document.getElementById('reportButton');
+            const reportDropdownContent = document.getElementById('reportDropdownContent');
+            const reportProgressOverlay = document.getElementById('reportProgressOverlay');
+            
+            if (!reportButton || !reportDropdownContent) {
+                console.error('❌ ไม่พบ report elements');
+                return;
+            }
+            
+            let isDropdownOpen = false;
+            
+            // Toggle dropdown
+            reportButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                isDropdownOpen = !isDropdownOpen;
+                
+                if (isDropdownOpen) {
+                    reportDropdownContent.classList.add('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(180deg)';
+                } else {
+                    reportDropdownContent.classList.remove('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.report-dropdown') && isDropdownOpen) {
+                    reportDropdownContent.classList.remove('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(0deg)';
+                    isDropdownOpen = false;
+                }
+            });
+            
+            // Handle report type selection
+            reportDropdownContent.addEventListener('click', function(e) {
+                const reportOption = e.target.closest('.report-option');
+                if (reportOption) {
+                    const reportType = reportOption.getAttribute('data-report-type');
+                    generateReport(reportType);
+                    
+                    // Close dropdown
+                    reportDropdownContent.classList.remove('show');
+                    reportButton.querySelector('svg:last-child').style.transform = 'rotate(0deg)';
+                    isDropdownOpen = false;
+                }
+            });
+            
+            console.log('✅ ตั้งค่า Report Function สำเร็จ');
+        }
+
+        // Generate report based on type
+        async function generateReport(reportType) {
+            console.log(`📋 เริ่มสร้างรายงาน: ${reportType}`);
+            
+            const progressOverlay = document.getElementById('reportProgressOverlay');
+            const progressTitle = progressOverlay.querySelector('.report-progress-title');
+            const progressDesc = progressOverlay.querySelector('.report-progress-desc');
+            
+            // Show progress overlay
+            progressOverlay.classList.add('show');
+            
+            try {
+                let element;
+                let filename;
+                
+                switch (reportType) {
+                    case 'full':
+                        progressTitle.textContent = 'กำลังสร้างรายงานฉบับเต็ม...';
+                        progressDesc.textContent = 'บันทึกทั้ง Dashboard รวมทุกส่วน';
+                        element = document.getElementById('mainContent');
+                        filename = `PR_Dashboard_Full_Report_${getCurrentDateString()}.png`;
+                        break;
+                        
+                    case 'summary':
+                        progressTitle.textContent = 'กำลังสร้างรายงานสรุป...';
+                        progressDesc.textContent = 'บันทึกการ์ดสรุปและกราฟ';
+                        element = createSummaryReportElement();
+                        filename = `PR_Dashboard_Summary_${getCurrentDateString()}.png`;
+                        break;
+                        
+                    case 'table':
+                        progressTitle.textContent = 'กำลังสร้างรายงานตาราง...';
+                        progressDesc.textContent = 'บันทึกตารางรายการ PR';
+                        element = document.getElementById('tableSection');
+                        filename = `PR_Dashboard_Table_${getCurrentDateString()}.png`;
+                        break;
+                        
+                    default:
+                        throw new Error('ประเภทรายงานไม่ถูกต้อง');
+                }
+                
+                // Wait a bit for UI update
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Generate screenshot
+                const canvas = await html2canvas(element, {
+                    backgroundColor: '#f9fafb',
+                    scale: 2, // Higher quality
+                    useCORS: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: element.scrollWidth,
+                    height: element.scrollHeight
+                });
+                
+                // Convert to blob and download
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    // Hide progress overlay
+                    progressOverlay.classList.remove('show');
+                    
+                    // Clean up summary element if created
+                    if (reportType === 'summary' && element.id === 'tempSummaryReport') {
+                        document.body.removeChild(element);
+                    }
+                    
+                    console.log(`✅ สร้างรายงาน ${reportType} สำเร็จ: ${filename}`);
+                    
+                    // Show success message
+                    showNotification('สร้างรายงานสำเร็จ!', 'ไฟล์รายงานได้ถูกดาวน์โหลดแล้ว', 'success');
+                }, 'image/png', 0.95);
+                
+            } catch (error) {
+                console.error('❌ เกิดข้อผิดพลาดในการสร้างรายงาน:', error);
+                progressOverlay.classList.remove('show');
+                showNotification('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างรายงานได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+        }
+
+        // Create summary report element
+        function createSummaryReportElement() {
+            const mainContent = document.getElementById('mainContent');
+            const summaryCards = mainContent.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4.gap-6.mb-8');
+            const chartsSection = document.getElementById('chartsSection');
+            const insightsSection = document.getElementById('insightsSection');
+            
+            // Create temporary container
+            const tempContainer = document.createElement('div');
+            tempContainer.id = 'tempSummaryReport';
+            tempContainer.className = 'bg-gray-50 p-6';
+            tempContainer.style.position = 'fixed';
+            tempContainer.style.top = '-9999px';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.width = '1200px';
+            
+            // Clone and add header
+            const header = document.querySelector('header').cloneNode(true);
+            tempContainer.appendChild(header);
+            
+            // Create main content container
+            const mainDiv = document.createElement('div');
+            mainDiv.className = 'max-w-7xl mx-auto p-6';
+            
+            // Add summary cards
+            const clonedSummaryCards = summaryCards.cloneNode(true);
+            mainDiv.appendChild(clonedSummaryCards);
+            
+            // Add charts section
+            const clonedChartsSection = chartsSection.cloneNode(true);
+            mainDiv.appendChild(clonedChartsSection);
+            
+            // Add insights section
+            const clonedInsightsSection = insightsSection.cloneNode(true);
+            clonedInsightsSection.classList.add('mt-8');
+            mainDiv.appendChild(clonedInsightsSection);
+            
+            tempContainer.appendChild(mainDiv);
+            document.body.appendChild(tempContainer);
+            
+            return tempContainer;
+        }
+
+        // Get current date string for filename
+        function getCurrentDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            return `${year}${month}${day}_${hours}${minutes}`;
+        }
+
+        // Show notification
+        function showNotification(title, message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 max-w-sm bg-white border border-gray-200 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            
+            const bgColor = type === 'success' ? 'bg-green-50 border-green-200' : 
+                           type === 'error' ? 'bg-red-50 border-red-200' : 
+                           'bg-blue-50 border-blue-200';
+            
+            const iconColor = type === 'success' ? 'text-green-600' : 
+                             type === 'error' ? 'text-red-600' : 
+                             'text-blue-600';
+            
+            const icon = type === 'success' ? 
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                type === 'error' ? 
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' :
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+            
+            notification.className = `fixed top-4 right-4 z-50 max-w-sm ${bgColor} rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            
+            notification.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${icon}
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="text-sm font-medium text-gray-900">${title}</h3>
+                            <p class="mt-1 text-sm text-gray-600">${message}</p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0">
+                            <button class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none" onclick="this.closest('.fixed').remove()">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
         }
 
         // Handle successful data load
