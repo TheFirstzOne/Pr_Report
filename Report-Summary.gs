@@ -8,7 +8,7 @@
 // const TELEGRAM_BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN_HERE';
 // const TELEGRAM_CHAT_ID = 'YOUR_TELEGRAM_CHAT_ID_HERE'; 
 
-// ฟังก์ชันหลักที่ใช้ในการสร้างและส่งรายงาน
+// ฟังก์ชันหลักที่ใช้ในการสร้างและส่งรายงานพร้อมกราฟ
 function generateAndSendReport() {
   
   // เรียกใช้ฟังก์ชันเพื่อดึงข้อมูล
@@ -31,40 +31,35 @@ function generateAndSendReport() {
 // ฟังก์ชันสำหรับดึงข้อมูลทั้งหมดจากชีท 'PR'
 function getSheetData() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  // ตรวจสอบว่าชีทชื่อ 'PR' มีอยู่จริง
   const sheet = ss.getSheetByName('PR');
   if (!sheet) {
     Logger.log("ไม่พบชีทชื่อ 'PR'");
     return null;
   }
   
-  // ดึงข้อมูลทั้งหมดจาก A2 ถึงคอลัมน์ O แถวสุดท้าย
   const lastRow = sheet.getLastRow();
-  // ข้อมูลจากแถว A1:O985
-  // Columns: A=DATE, K=TOTAL PRICE, N=Category
+  // ดึงข้อมูลทั้งหมดจาก A2 ถึงคอลัมน์ O แถวสุดท้าย
+  // Columns: A=DATE, J=TOTAL PRICE, O=Category
   return sheet.getRange(2, 1, lastRow - 1, 15).getValues(); 
 }
 
-// ฟังก์ชันสำหรับประมวลผลข้อมูลและสรุปยอดรวม
 function processData(data) {
   const summary = {};
   
   data.forEach(row => {
     try {
-      // ดึงข้อมูลจากคอลัมน์ที่ถูกต้องตามที่คุณระบุ
-      const date = new Date(row[0]); // คอลัมน์แรก (index 0) สำหรับวันที่ (DATE)
-      const totalPrice = parseFloat(row[9]); // คอลัมน์ที่ 10 (index 9) สำหรับค่าใช้จ่ายรวม (TOTAL PRICE)
-      const category = row[14] ? String(row[14]).trim() : 'ไม่มีประเภท'; // คอลัมน์ที่ 15 (index 14) สำหรับประเภท (Category)
+      const date = new Date(row[0]); 
+      const totalPrice = parseFloat(row[9]);
+      const category = row[14] ? String(row[14]).trim() : 'ไม่มีประเภท';
+      const status = row[11] ? String(row[11]).trim() : ''; 
 
-      // ตรวจสอบว่าค่าที่ดึงมาเป็นตัวเลขที่ถูกต้องหรือไม่
-      if (isNaN(totalPrice) || totalPrice === 0) {
-        return; // ถ้าไม่ใช่ตัวเลขหรือเป็น 0 ให้ข้ามรายการนี้
+      const allowedStatuses = ["Pr", "PO", "DEL.", "RECEIVED"];
+      if (isNaN(totalPrice) || totalPrice === 0 || !allowedStatuses.includes(status)) {
+        return; 
       }
 
-      // จัดกลุ่มข้อมูลตามเดือนและปี
       const yearMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
       
-      // สร้างโครงสร้างข้อมูลถ้ายังไม่มี
       if (!summary[yearMonth]) {
         summary[yearMonth] = {
           total: 0,
@@ -72,10 +67,8 @@ function processData(data) {
         };
       }
       
-      // เพิ่มยอดรวม
       summary[yearMonth].total += totalPrice;
       
-      // เพิ่มยอดรวมตามประเภท
       if (!summary[yearMonth].categories[category]) {
         summary[yearMonth].categories[category] = 0;
       }
@@ -89,34 +82,81 @@ function processData(data) {
   return summary;
 }
 
+// ฟังก์ชันใหม่: สร้างกราฟฮิสโตแกรมและแปลงเป็น Blob (ไฟล์ภาพ)
+function createChartBlob(summary) {
+  const dataTable = Charts.newDataTable()
+    .addColumn(Charts.ColumnType.STRING, 'เดือน')
+    .addColumn(Charts.ColumnType.NUMBER, 'ค่าใช้จ่ายรวม')
+    .build();
+
+  const sortedMonths = Object.keys(summary).sort();
+  sortedMonths.forEach(yearMonth => {
+    const [year, month] = yearMonth.split('-');
+    const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleString('th-TH', { month: 'long', year: 'numeric' });
+    dataTable.addRow([monthName, summary[yearMonth].total]);
+  });
+
+  const chart = Charts.newBarChart()
+    .setDataTable(dataTable)
+    .setTitle('กราฟสรุปค่าใช้จ่ายรายเดือน')
+    .setOption('legend', { position: 'none' })
+    .setOption('hAxis', { title: 'ยอดค่าใช้จ่าย (บาท)' })
+    .setOption('vAxis', { title: 'เดือน', format: '' })
+    .setOption('colors', ['#1E90FF'])
+    .build();
+
+  return chart.getAs('image/png');
+}
+
 // ฟังก์ชันสำหรับจัดรูปแบบข้อความรายงาน
 function createReportMessage(summary) {
   let message = "📊 *รายงานสรุปค่าใช้จ่าย* 📊\n\n";
-
-  // เรียงลำดับเดือนจากเก่าไปใหม่
   const sortedMonths = Object.keys(summary).sort();
   
   sortedMonths.forEach(yearMonth => {
     const [year, month] = yearMonth.split('-');
     const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleString('th-TH', { month: 'long', year: 'numeric' });
     
-    // Header ของเดือน
     message += `*เดือน ${monthName}*\n`;
     message += `ค่าใช้จ่ายรวม: ${summary[yearMonth].total.toLocaleString()} บาท\n`;
     
-    // รายละเอียดตามประเภท
     const categories = summary[yearMonth].categories;
     for (const category in categories) {
       message += `  - ${category}: ${categories[category].toLocaleString()} บาท\n`;
     }
     
-    message += "\n"; // เว้นบรรทัด
+    message += "\n";
   });
   
   return message;
 }
 
-// ฟังก์ชันสำหรับส่งข้อความไปยัง Telegram
+// ฟังก์ชันใหม่: ส่งรูปภาพพร้อมข้อความไปยัง Telegram
+function sendTelegramPhoto(photoBlob, captionText) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+  
+  const payload = {
+    chat_id: TELEGRAM_CHAT_ID,
+    photo: photoBlob,
+    caption: captionText,
+    parse_mode: 'Markdown'
+  };
+
+  const options = {
+    method: 'post',
+    payload: payload,
+    muteHttpExceptions: true
+  };
+  
+  try {
+    UrlFetchApp.fetch(url, options);
+    Logger.log("ส่งกราฟและรายงานไปยัง Telegram เรียบร้อยแล้ว");
+  } catch (e) {
+      Logger.log(`ไม่สามารถส่งกราฟและรายงานไป Telegram ได้: ${e.message}`);
+  }
+}
+
+// ฟังก์ชันเดิมที่ใช้ส่งข้อความอย่างเดียว เผื่อเกิดข้อผิดพลาดในการส่งรูป
 function sendTelegramMessage(text) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   const options = {
@@ -124,7 +164,7 @@ function sendTelegramMessage(text) {
     'payload': {
       'chat_id': TELEGRAM_CHAT_ID,
       'text': text,
-      'parse_mode': 'Markdown' // เพื่อให้ข้อความแสดงผลเป็นตัวหนา
+      'parse_mode': 'Markdown'
     }
   };
   
