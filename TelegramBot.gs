@@ -25,6 +25,7 @@ function setWebhook(){
 function doPost(e){
   try {
     if (!e || !e.postData) {
+      Logger.log("❌ No postData");
       return HtmlService.createHtmlOutput("OK")
         .setMimeType(ContentService.MimeType.TEXT);
     }
@@ -32,6 +33,7 @@ function doPost(e){
     var webhookData = JSON.parse(e.postData.contents);
     
     if (!webhookData.message) {
+      Logger.log("❌ No message");
       return HtmlService.createHtmlOutput("OK")
         .setMimeType(ContentService.MimeType.TEXT);
     }
@@ -44,21 +46,17 @@ function doPost(e){
     Logger.log("Chat ID: " + chatId);
     Logger.log("Name: " + firstName);
     
-    // ตรวจสอบประเภทข้อมูล
     if (message.document) {
-      // มีไฟล์
-      Logger.log("Document type: " + message.document.mime_type);
+      Logger.log("📄 Document type: " + message.document.mime_type);
       handleDocument(message.document, chatId, firstName);
     } 
     else if (message.photo) {
-      // มีรูปภาพ
-      Logger.log("Photo received");
-      handlePhoto(message.photo, chatId, firstName);
+      Logger.log("🖼️ Photo received");
+      handlePhoto(message.photo, message.caption, chatId, firstName);
     }
     else if (message.text) {
-      // ข้อความธรรมดา
       var text = message.text;
-      Logger.log("Text: " + text);
+      Logger.log("💬 Text: " + text);
       
       if(typeof command[text] == 'undefined'){
         var sendText = encodeURIComponent("command not found");
@@ -76,19 +74,18 @@ function doPost(e){
       .setMimeType(ContentService.MimeType.TEXT);
     
   } catch (error) {
-    Logger.log("❌ Error: " + error.toString());
+    Logger.log("❌ Error in doPost: " + error.toString());
+    Logger.log("Stack: " + error.stack);
     return HtmlService.createHtmlOutput("Error")
       .setMimeType(ContentService.MimeType.TEXT);
   }
 }
 
-// ========================
-// ฟังก์ชั่นจัดการไฟล์
-// ========================
+// ✅ แก้ไข handleDocument
 function handleDocument(document, chatId, userName) {
   try {
     var fileId = document.file_id;
-    var fileName = document.file_name; // ใช้ชื่อไฟล์เดิม
+    var fileName = document.file_name;
     var fileSize = document.file_size;
     
     Logger.log("File ID: " + fileId);
@@ -101,8 +98,6 @@ function handleDocument(document, chatId, userName) {
     
     // ดาวน์โหลด
     var blob = UrlFetchApp.fetch(fileUrl).getBlob();
-    
-    // ✅ ตั้งชื่อไฟล์ให้ตรงกับชื่อเดิม
     blob.setName(fileName);
     
     // อัปโหลดไปยัง Google Drive
@@ -111,9 +106,9 @@ function handleDocument(document, chatId, userName) {
     
     Logger.log("✅ File uploaded: " + file.getName());
     
-    // ส่งข้อความตอบกลับ
-    var message = "ไฟล์ " + fileName + " อัปโหลดสำเร็จ!";
-    sendMessage(chatId, message);
+    // ✅ ใช้ชื่อตัวแปรอื่น เพื่อหลีกเลี่ยง collision
+    var replyMsg = "ไฟล์ " + fileName + " อัปโหลดสำเร็จ!";
+    sendMessage(chatId, replyMsg);
     
   } catch (error) {
     Logger.log("❌ Error handling document: " + error.toString());
@@ -121,31 +116,51 @@ function handleDocument(document, chatId, userName) {
   }
 }
 
-function handlePhoto(photos, chatId, userName) {
+// ✅ แก้ไข handlePhoto
+function handlePhoto(photos, photoCaption, chatId, userName) {
   try {
+    if (!photos || photos.length === 0) {
+      throw new Error("No photos provided");
+    }
+    
+    // เลือกรูปขนาดใหญ่สุด
     var photo = photos[photos.length - 1];
     var fileId = photo.file_id;
     
     Logger.log("Photo File ID: " + fileId);
     
+    // ดาวน์โหลดรูป
     var fileUrl = getFilePath(fileId);
     var blob = UrlFetchApp.fetch(fileUrl).getBlob();
     
-    // ✅ ถ้า message มี caption ให้ใช้เป็นชื่อไฟล์
-    // ถ้าไม่มี ใช้ photo_timestamp.jpg
-    var fileName = message.caption || "photo_" + new Date().getTime() + ".jpg";
-    blob.setName(fileName + ".jpg");
+    // ✅ ตรวจสอบ caption
+    var fileName;
     
+    if (photoCaption && photoCaption.trim().length > 0) {
+      // ถ้ามี caption ใช้เป็นชื่อไฟล์
+      fileName = photoCaption.trim() + ".jpg";
+      Logger.log("Using caption as filename: " + fileName);
+    } else {
+      // ถ้าไม่มี caption ใช้ timestamp
+      fileName = "photo_" + new Date().getTime() + ".jpg";
+      Logger.log("Using timestamp as filename: " + fileName);
+    }
+    
+    blob.setName(fileName);
+    
+    // อัปโหลดไปยัง Google Drive
     var folderId = DRIVE_FOLDER_ID;
     var file = DriveApp.getFolderById(folderId).createFile(blob);
     
     Logger.log("✅ Photo uploaded: " + file.getName());
     
-    var message = "รูปภาพ " + file.getName() + " อัปโหลดสำเร็จ!";
-    sendMessage(chatId, message);
+    // ✅ ใช้ชื่อตัวแปรอื่น
+    var replyMsg = "รูปภาพ " + file.getName() + " อัปโหลดสำเร็จ!";
+    sendMessage(chatId, replyMsg);
     
   } catch (error) {
     Logger.log("❌ Error handling photo: " + error.toString());
+    Logger.log("Stack: " + error.stack);
     sendMessage(chatId, "เกิดข้อผิดพลาด: " + error.toString());
   }
 }
