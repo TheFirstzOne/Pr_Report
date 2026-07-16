@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดซื้อและคลังอะไหล่แผนกซ่อมบำรุง (Procurement & Stock Dashboard)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN for Modern UI Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN for Analytics Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Sarabun', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            950: '#2e1065',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Style for extra refinement -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Sarabun', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Custom scrollbar for beautiful layout */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Subtle smooth transition for modals */
+        .modal-transition {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50/50 text-slate-800 min-h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- SIDEBAR - LEFT SIDE TABS -->
+    <aside class="w-full md:w-64 bg-slate-950 text-white flex flex-col flex-shrink-0 z-30 transition-all duration-300 border-r border-slate-900">
+        <!-- Logo & Header -->
+        <div class="p-6 border-b border-slate-900 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-md shadow-indigo-950/20">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight tracking-wide">MaintX Pro</h1>
+                    <p class="text-xs text-slate-300 font-medium">ระบบคลังและจัดซื้อซ่อมบำรุง</p>
+                </div>
+            </div>
+            <!-- Mobile Menu Toggle Button -->
+            <button onclick="toggleMobileMenu()" class="md:hidden text-slate-300 hover:text-white focus:ring-2 focus:ring-slate-500 focus:outline-none transition-colors">
+                <i data-lucide="menu" id="menu-icon" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Sidebar Navigation Links (Regrouped tabs) -->
+        <nav id="sidebar-nav" class="flex-1 px-4 py-6 space-y-6 overflow-y-auto hidden md:block">
+            <!-- Group 1: Inventory -->
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">พัสดุและคลังสินค้า</p>
+                <div class="space-y-1">
+                    <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md shadow-indigo-950/20 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="package" class="w-4.5 h-4.5"></i>
+                        <span>คลังอะไหล่ (Stock)</span>
+                        <span class="ml-auto bg-rose-500 text-white text-xs px-2 py-0.5 rounded-full hidden" id="low-stock-badge">0</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Group 2: Procurement -->
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">การจัดซื้อจัดหา</p>
+                <div class="space-y-1">
+                    <button onclick="switchTab('rfq')" id="tab-rfq" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="file-text" class="w-4.5 h-4.5"></i>
+                        <span>รายการขอราคา (RFQ)</span>
+                    </button>
+                    
+                    <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="file-check" class="w-4.5 h-4.5"></i>
+                        <span>ประวัติใบเสนอราคา</span>
+                        <span class="ml-auto bg-indigo-500/20 text-indigo-400 text-xs px-2 py-0.5 rounded-full" id="pending-quotes-badge">1</span>
+                    </button>
+
+                    <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="shopping-cart" class="w-4.5 h-4.5"></i>
+                        <span>รายการคำสั่งซื้อ (PO)</span>
+                        <span class="ml-auto bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full" id="pending-orders-badge">1</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Group 3: Budget & Finance -->
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">การเงินและงบประมาณ</p>
+                <div class="space-y-1">
+                    <button onclick="switchTab('budget')" id="tab-budget" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="wallet" class="w-4.5 h-4.5"></i>
+                        <span>งบประมาณ (Budget)</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- User Profile Footer -->
+        <div class="p-4 border-t border-slate-900 flex items-center space-x-3 bg-slate-950/60">
+            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm tracking-wider">
+                XX
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold truncate">xxxx</p>
+                <p class="text-xs text-slate-300 truncate">หัวหน้าแผนกจัดซื้อซ่อมบำรุง</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col overflow-y-auto h-screen relative">
+        
+        <!-- TOP HEADER BAR -->
+        <header class="bg-white border-b border-slate-200/80 px-6 py-4 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center space-x-4">
+                <h2 id="current-page-title" class="text-lg font-bold text-slate-800 tracking-wide">คลังอะไหล่ (Stock)</h2>
+                <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium hidden sm:inline-block" id="live-time">
+                    กำลังโหลดเวลา...
+                </span>
+            </div>
+        </header>
+
+        <!-- Custom Toast Notification Box -->
+        <div id="toast-notification" class="fixed top-4 right-4 z-50 transform translate-x-full transition-transform duration-300 bg-slate-950 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 pointer-events-none">
+            <div class="bg-emerald-500 p-1.5 rounded-lg text-white animate-pulse" id="toast-icon-box">
+                <i data-lucide="check" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <p class="text-xs text-slate-300 font-semibold">ระบบแจ้งเตือน</p>
+                <p class="text-sm font-bold" id="toast-message">ดำเนินการสำเร็จแล้ว</p>
+            </div>
+        </div>
+
+        <!-- ALERT ZONE (e.g. low stock alerts or major breakdowns) -->
+        <div id="system-alerts-container" class="px-6 pt-4 space-y-2">
+            <!-- Dynamic alerts will append here -->
+        </div>
+
+        <!-- CONTENT CONTAINERS (TABS) -->
+        <div class="p-6 flex-1">
+            
+            <!-- 1. STOCK TAB -->
+            <section id="content-stock" class="tab-content space-y-6">
+                <!-- Stock Controls & Filter -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200/60 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm">
+                    <div class="relative w-full sm:w-80">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" id="stock-search" oninput="filterStock()" placeholder="ค้นหาชื่ออะไหล่ รหัส หรือหมวดหมู่..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-all">
+                    </div>
+                    
+                    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <button onclick="toggleLowStockOnly()" id="btn-toggle-lowstock" class="border border-rose-200 hover:bg-rose-50/50 text-rose-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 focus:ring-2 focus:ring-rose-500/50 focus:outline-none">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            <span>แสดงเฉพาะอะไหล่ใกล้หมด</span>
+                        </button>
+                        <button onclick="openModal('addStock')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 transition-colors shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>เพิ่มอะไหล่ใหม่</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stock Table -->
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">รายการอะไหล่และอุปกรณ์คงคลัง</h3>
+                            <p class="text-xs text-slate-500 mt-1">อะไหล่ที่คงเหลือในตู้เก็บสินค้าพร้อมระบบคัดกรองข้อมูลตามไฟล์ STOCK</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4">รหัสอะไหล่ (MAT.)</th>
+                                    <th class="px-6 py-4">ชื่ออะไหล่ (Description)</th>
+                                    <th class="px-6 py-4">หมวดหมู่ (Category)</th>
+                                    <th class="px-6 py-4">ประเภท (Type)</th>
+                                    <th class="px-6 py-4 text-center">ตำแหน่งจัดเก็บ</th>
+                                    <th class="px-6 py-4 text-center">จํานวนคงเหลือ</th>
+                                    <th class="px-6 py-4 text-center">หน่วย (Unit)</th>
+                                    <th class="px-6 py-4 text-center">จุดปลอดภัยต่ำสุด</th>
+                                    <th class="px-6 py-4">สถานะสต็อก</th>
+                                    <th class="px-6 py-4 text-right">ปรับปรุงสต็อก</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-table-body">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. PURCHASE ORDERS TAB -->
+            <section id="content-orders" class="tab-content hidden space-y-6">
+                <!-- Stats Overview For Orders -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติจัดซื้อ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-pending-orders">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                            <i data-lucide="truck" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">อยู่ระหว่างจัดส่ง</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-shipping-orders">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">จัดส่งและตรวจรับสำเร็จ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-success-orders">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Purchase Orders Table -->
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">บันทึกประวัติการสั่งซื้ออะไหล่ (PO)</h3>
+                            <p class="text-xs text-slate-500 mt-1">ประวัติใบสั่งซื้อที่ผ่านการอนุมัติและรอตรวจรับพัสดุ</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4">วันที่สั่งซื้อ</th>
+                                    <th class="px-6 py-4">เลขที่ PO</th>
+                                    <th class="px-6 py-4">เลขที่ PR</th>
+                                    <th class="px-6 py-4">รหัสพัสดุ</th>
+                                    <th class="px-6 py-4">รายการอะไหล่</th>
+                                    <th class="px-6 py-4 text-center">จำนวน</th>
+                                    <th class="px-6 py-4 text-center">หน่วย</th>
+                                    <th class="px-6 py-4 text-right">ราคาต่อหน่วย</th>
+                                    <th class="px-6 py-4 text-right">ราคารวม</th>
+                                    <th class="px-6 py-4">ประเภทงาน</th>
+                                    <th class="px-6 py-4">ซัพพลายเออร์</th>
+                                    <th class="px-6 py-4">สถานะสั่งซื้อ</th>
+                                    <th class="px-6 py-4 text-right">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. REQUEST FOR QUOTATION (RFQ) TAB -->
+            <section id="content-rfq" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">รายการขอใบเสนอราคา (RFQ)</h3>
+                            <p class="text-xs text-slate-500 mt-1">บันทึกประวัติเอกสารส่งเทียบราคาคู่ค้าและซัพพลายเออร์ต่างๆ</p>
+                        </div>
+                        <button onclick="openModal('rfq')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center space-x-1.5 shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                            <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+                            <span>ออกเอกสารขอราคาใหม่</span>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100 font-bold">
+                                <tr>
+                                    <th class="px-6 py-4">เลขที่ RFQ</th>
+                                    <th class="px-6 py-4">รายการอะไหล่พัสดุ</th>
+                                    <th class="px-6 py-4">ประเภทอะไหล่</th>
+                                    <th class="px-6 py-4 text-center">ส่งเทียบราคาทั้งหมด</th>
+                                    <th class="px-6 py-4 text-center">วันที่ออกใบคำขอ</th>
+                                    <th class="px-6 py-4">สถานะปัจจุบัน</th>
+                                    <th class="px-6 py-4 text-right">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rfq-table-body">
+                                <!-- Dynamic RFQ List -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. BUDGET MANAGEMENT TAB -->
+            <section id="content-budget" class="tab-content hidden space-y-6">
+                <!-- Budget Metrics Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">งบประมาณโครงการทั้งหมด (Total Budget)</h4>
+                        <h2 class="text-3xl font-extrabold text-slate-900 mt-2" id="budget-total-val">1,451,314.80 ฿</h2>
+                        <div class="mt-4">
+                            <div class="flex justify-between text-xs text-slate-500 mb-1">
+                                <span>เปอร์เซ็นต์การใช้งานงบ</span>
+                                <span id="budget-pct-text">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div id="budget-progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ยอดใช้ออกจริงสะสม (Used)</h4>
+                            <h2 class="text-3xl font-extrabold text-rose-600 mt-2" id="budget-spent-val">0 ฿</h2>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 flex items-center">
+                            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-rose-500 mr-1"></i> ผูกมัดกับโครงการและใบอนุมัติ PO สำเร็จ
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">งบประมาณคงเหลือ (Current)</h4>
+                            <h2 class="text-3xl font-extrabold text-emerald-600 mt-2" id="budget-remain-val">0 ฿</h2>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 flex items-center">
+                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500 mr-1"></i> มีงบประมาณคงเหลือสำหรับบำรุง
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Projects Budget Table (From BUDGET sheet) -->
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">งบประมาณโครงการแผนกจัดซื้อซ่อมบำรุง</h3>
+                            <p class="text-xs text-slate-500 mt-1">ข้อมูลรายละเอียดงบประมาณโครงการจำแนกตามรหัสสินทรัพย์และศูนย์ต้นทุน (ตามไฟล์ BUDGET)</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100">
+                                <tr>
+                                    <th class="px-4 py-3">No.</th>
+                                    <th class="px-4 py-3">Internal Order (IO)</th>
+                                    <th class="px-4 py-3">Asset</th>
+                                    <th class="px-4 py-3">Cost Center</th>
+                                    <th class="px-4 py-3">โครงการ/รายละเอียด (Description)</th>
+                                    <th class="px-4 py-3 text-right">งบประมาณ (BUDGET)</th>
+                                    <th class="px-4 py-3 text-right">ใช้จ่ายแล้ว (USED)</th>
+                                    <th class="px-4 py-3 text-right">คงเหลือ (CURRENT)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projects-budget-table-body">
+                                <!-- Dynamic Project Budget Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Monthly Expenses & Categories Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- 1. Monthly Spending Chart & Table -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm lg:col-span-2 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center">
+                                <i data-lucide="trending-up" class="w-4 h-4 mr-2 text-indigo-500"></i>
+                                วิเคราะห์ยอดใช้จ่ายรายเดือน (Monthly Cost Spent)
+                            </h4>
+                            <div class="h-48 flex items-center justify-center">
+                                <canvas id="monthlySpendChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="mt-4 border-t border-slate-100 pt-4">
+                            <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ตารางสรุปรายเดือน (Monthly Spend Table)</h5>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs text-slate-600">
+                                    <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-100">
+                                        <tr>
+                                            <th class="px-4 py-2">เดือน (Month Range)</th>
+                                            <th class="px-4 py-2 text-right">ยอดใช้จ่ายจริง (Amount Spent)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="monthly-expenses-table-body">
+                                        <!-- Dynamic Monthly Spend -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Category Breakdown Chart -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center">
+                                <i data-lucide="pie-chart" class="w-4 h-4 mr-2 text-indigo-500"></i>
+                                สัดส่วนค่าใช้จ่ายจำแนกตามหมวดหมู่ (PR Category)
+                            </h4>
+                            <div class="h-48 flex items-center justify-center">
+                                <canvas id="budgetBreakdownChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2 mt-4 border-t border-slate-100 pt-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-0.5">
+                                    <span>MAINTENANCE</span>
+                                    <span id="budget-cat-maintenance">0 ฿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div id="bar-cat-maintenance" class="bg-amber-500 h-1.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-0.5">
+                                    <span>JIG & FIXTURE</span>
+                                    <span id="budget-cat-jig">0 ฿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div id="bar-cat-jig" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-0.5">
+                                    <span>PROJECT</span>
+                                    <span id="budget-cat-project">0 ฿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div id="bar-cat-project" class="bg-rose-500 h-1.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-0.5">
+                                    <span>ACCES</span>
+                                    <span id="budget-cat-acces">0 ฿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div id="bar-cat-acces" class="bg-emerald-500 h-1.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-0.5">
+                                    <span>ASSET / OTHERS</span>
+                                    <span id="budget-cat-asset">0 ฿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div id="bar-cat-asset" class="bg-slate-400 h-1.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. QUOTES TAB -->
+            <section id="content-quotes" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">ประวัติใบเสนอราคาที่ได้รับจากร้านค้า (Quotation Registry)</h3>
+                            <p class="text-xs text-slate-500 mt-1">เปรียบเทียบข้อมูลราคา อนุมัติการซื้อเพื่อออกเลขใบ PO ได้โดยตรงจากที่นี่</p>
+                        </div>
+                        <button onclick="openModal('addQuote')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center space-x-1.5 shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                            <i data-lucide="file-plus-2" class="w-3.5 h-3.5"></i>
+                            <span>เพิ่มใบเสนอราคาเข้าระบบ</span>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4">
+                                        <div class="flex items-center cursor-pointer">
+                                            <span>วันที่</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4">
+                                        <div class="flex items-center cursor-pointer">
+                                            <span>ใบเสนอราคาเลขที่</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4">
+                                        <div class="flex items-center cursor-pointer">
+                                            <span>บริษัทผู้เสนอราคา</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4">
+                                        <div class="flex items-center cursor-pointer">
+                                            <span>ชื่อสินค้า</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4 text-center">
+                                        <div class="flex items-center justify-center cursor-pointer">
+                                            <span>จำนวน</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4 text-center">
+                                        <div class="flex items-center justify-center cursor-pointer">
+                                            <span>หน่วย</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4 text-center">
+                                        <div class="flex items-center justify-center cursor-pointer">
+                                            <span>ราคาต่อหน่วย</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4 text-right">
+                                        <div class="flex items-center justify-end cursor-pointer">
+                                            <span>ราคารวม</span>
+                                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-4">สถานะอนุมัติ</th>
+                                    <th class="px-6 py-4 text-right">ดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quotes-table-body">
+                                <!-- Dynamic Quotation list -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ==================== MODALS ZONE ==================== -->
+
+    <!-- MODAL 1: ADD NEW STOCK SPARE -->
+    <div id="modal-addStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-all duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all duration-300 border border-slate-100">
+            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <h4 class="font-bold text-slate-800 text-base">เพิ่มรายการอะไหล่ใหม่</h4>
+                <button onclick="closeModal('addStock')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="submitStockForm(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">รหัสอะไหล่ (MAT.)</label>
+                        <input type="text" id="form-stock-id" placeholder="เช่น 50000379" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">หมวดหมู่สินค้า (Category)</label>
+                        <input type="text" id="form-stock-category" placeholder="เช่น ข้อต่อตรง" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ประเภท (Type)</label>
+                        <input type="text" id="form-stock-type" placeholder="เช่น z50" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">หน่วย (Unit)</label>
+                        <input type="text" id="form-stock-unit" placeholder="เช่น Pc" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่พัสดุ (Description)</label>
+                    <input type="text" id="form-stock-name" placeholder="ระบุชื่อเรียกให้ชัดเจน..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">พิกัดจัดเก็บ (Location)</label>
+                        <input type="text" id="form-stock-location" placeholder="เช่น ชั้น B3" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนเริ่มต้น (Qty)</label>
+                        <input type="number" id="form-stock-qty" min="0" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ระดับเตือนขั้นต่ำ (Reorder)</label>
+                        <input type="number" id="form-stock-reorder" min="1" value="5" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('addStock')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">บันทึกพัสดุใหม่</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CREATE RFQ -->
+    <div id="modal-rfq" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-all duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all duration-300 border border-slate-100">
+            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <h4 class="font-bold text-slate-800 text-base">สร้างใบคำขอเสนอราคา (RFQ)</h4>
+                <button onclick="closeModal('rfq')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="submitRFQForm(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่ที่ต้องการขอราคา</label>
+                    <select id="form-rfq-item" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                        <!-- Populate dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนที่ต้องการสั่งโดยประมาณ</label>
+                    <input type="number" id="form-rfq-qty" min="1" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ส่งเปรียบเทียบซัพพลายเออร์ที่เลือก (พิมพ์คั่นด้วยเครื่องหมายจุลภาค)</label>
+                    <input type="text" id="form-rfq-suppliers" value="บริษัท สหรุ่งเรือง จำกัด, ชัยพัฒนาแบริ่ง, กรุงเทพไฮดรอลิก" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('rfq')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">ส่งคำขอ RFQ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ADD QUOTATION FROM SUPPLIER -->
+    <div id="modal-addQuote" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-all duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all duration-300 border border-slate-100">
+            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <h4 class="font-bold text-slate-800 text-base">บันทึกเอกสารใบเสนอราคาเสนอขาย</h4>
+                <button onclick="closeModal('addQuote')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="submitQuoteForm(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">อ้างอิงรหัสใบขอราคา RFQ</label>
+                        <select id="form-quote-rfq" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                            <!-- Auto population from RFQ lists -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่อซัพพลายเออร์ผู้ยื่นเอกสาร</label>
+                        <input type="text" id="form-quote-supplier" placeholder="ระบุบริษัทเสนอราคา..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ราคาต่อชิ้น (บาท)</label>
+                        <input type="number" id="form-quote-unitprice" min="1" value="1500" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนหน่วย</label>
+                        <input type="number" id="form-quote-qty" min="1" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ใช้เวลาส่งกี่วัน</label>
+                        <input type="text" id="form-quote-delivery" value="3 วันทำการ" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('addQuote')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">เพิ่มเสนอราคา</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ==================== JAVASCRIPT SYSTEM ENGINE ==================== -->
+    <script>
+        // Global variables for closed procure-to-pay loop simulation
+        let budgetCap = 1200000;
+        let budgetSpent = 168000; // Calculated baseline spent
+
+        // Seeded with real data from Google Sheet "STOCK"
+        let stockParts = [
+            { id: "50000379", name: "ข้อต่อตรง ขนาด 6xM5", category: "ข้อต่อตรง", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 1", qty: 12, reorder: 5 },
+            { id: "50000399", name: "สปีดคอนโทรล ขนาด 6xM5", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 2", qty: 3, reorder: 5 },
+            { id: "50000400", name: "สปีดคอนโทรล ขนาด 6x1/8\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 2", qty: 15, reorder: 10 },
+            { id: "50000401", name: "สปีดคอนโทรล ขนาด 6x1/4\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 2", qty: 8, reorder: 5 },
+            { id: "50000403", name: "สปีดคอนโทรล ขนาด 8x1/8\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 3", qty: 2, reorder: 5 },
+            { id: "50000404", name: "สปีดคอนโทรล ขนาด 8x1/4\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 3", qty: 20, reorder: 10 },
+            { id: "50002567", name: "Compact Cyl. Bore32-st15D CDQ2A32-15D", category: "กระบอกสูบ", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 1", qty: 4, reorder: 3 },
+            { id: "50002925", name: "Compact Cyl. 40x15 ACQ40-15S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 1", qty: 7, reorder: 5 },
+            { id: "50002926", name: "Compact Cyl. 40x40 ACQ40-40S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 2", qty: 1, reorder: 3 },
+            { id: "50002927", name: "Compact Cyl. 32x30 ACQ32-30S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 2", qty: 6, reorder: 5 },
+            { id: "50002928", name: "Compact Cyl. 50x15 ACQ50-15S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 3", qty: 2, reorder: 3 },
+            { id: "50003077", name: "Cyl : Bored25xst200 MAL25-200", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 1", qty: 5, reorder: 3 },
+            { id: "70003526", name: "บอลวาล์วทองเหลือง 1/4\"", category: "Ball valve", type: "z70", unit: "Pc", location: "ตู้ C1-ชั้น 1", qty: 18, reorder: 10 },
+            { id: "70012794", name: "ข้อต่อ 3 ทางขนาด 6mm.", category: "ข้อต่อ 3 ทาง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 1", qty: 22, reorder: 10 },
+            { id: "70012799", name: "ข้อต่อตรง 6 มิล เกลียว1/8\" (PC6-01)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 2", qty: 14, reorder: 10 },
+            { id: "70012800", name: "ข้อต่อตรง 6 มิล เกลียว1/4\" (PC6-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 2", qty: 9, reorder: 5 },
+            { id: "70012802", name: "ข้อต่อตรง 8 มิล เกลียว1/8\" (PC8-01)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 3", qty: 12, reorder: 10 },
+            { id: "70012803", name: "ข้อต่อตรง 8 มิล เกลียว1/4\" (PC8-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 3", qty: 4, reorder: 5 },
+            { id: "70012804", name: "ข้อต่อตรง 8มิล เกลียว 3/8\"", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 4", qty: 11, reorder: 5 },
+            { id: "70012807", name: "ข้อต่อตรง 10 มิล เกลียว1/4\" (PC10-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 1", qty: 8, reorder: 5 },
+            { id: "70012808", name: "ข้อต่อตรง 10 มิล เกลียว3/8\" (PC10-03)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 1", qty: 16, reorder: 10 },
+            { id: "70012810", name: "ข้อต่อตรง 12มิล เกลียว 1/4\" (PC12-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 2", qty: 5, reorder: 5 },
+            { id: "70012811", name: "ข้อต่อตรง 12 มิล เกลียว3/8\" (PC12-03)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 2", qty: 3, reorder: 5 },
+            { id: "70012823", name: "speed control 8mm x 1/4\"", category: "สปีดคอนโทรล", type: "z70", unit: "Pc", location: "ตู้ C4-ชั้น 1", qty: 7, reorder: 5 },
+            { id: "70012837", name: "Sol. valve 4V210 24 VDC", category: "Soliniod valve", type: "z70", unit: "Pc", location: "ตู้ D1-ชั้น 1", qty: 2, reorder: 3 },
+            { id: "70012850", name: "Silencer ทองเหลือง เกลียว1/4\" (B-1/4\")", category: "Silencer", type: "z70", unit: "Pc", location: "ตู้ D2-ชั้น 1", qty: 25, reorder: 10 },
+            { id: "70012851", name: "Silencer ทองเหลือง เกลียว3/8\" (B-3/8\")", category: "Silencer", type: "z70", unit: "Pc", location: "ตู้ D2-ชั้น 2", qty: 13, reorder: 5 },
+            { id: "70024619", name: "Air filter regulator PT1/4\" AW2000-02D", category: "Regulator", type: "z70", unit: "Pc", location: "ตู้ D3-ชั้น 1", qty: 1, reorder: 2 },
+            { id: "70024620", name: "Pressure Seitch IS30A-01-NM", category: "Pressure", type: "z70", unit: "Pc", location: "ตู้ D4-ชั้น 1", qty: 4, reorder: 3 },
+            { id: "70024621", name: "ข้อต่อตรง 6mmXM5", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 4", qty: 30, reorder: 15 },
+            { id: "70024856", name: "Pressure switch HP-35", category: "Pressure", type: "z70", unit: "Pc", location: "ตู้ D4-ชั้น 2", qty: 2, reorder: 3 },
+            { id: "70025496", name: "ปลั๊กอุดวาล์ว เกลียว1/4\" (BD-1/4\")", category: "Plug", type: "z70", unit: "Pc", location: "ตู้ E1-ชั้น 1", qty: 40, reorder: 20 },
+            { id: "70025497", name: "ปลั๊กอุดวาล์ว เกลียว3/8\" (BD-3/8\")", category: "Plug", type: "z70", unit: "Pc", location: "ตู้ E1-ชั้น 2", qty: 18, reorder: 10 },
+            { id: "50000705", name: "กระบอกลม Air cylinder Bore125xst50", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 2", qty: 2, reorder: 2 },
+            { id: "50003336", name: "CY3R32-450N SMC AIR CYLINDER", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 3", qty: 1, reorder: 2 },
+            { id: "50000472", name: "AIR CYLINDER CY3R32-450", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 3", qty: 3, reorder: 2 },
+            { id: "50003469", name: "Cyl. Air SI40x250-S-P Bore40 stoke250", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B3-ชั้น 1", qty: 2, reorder: 2 },
+            { id: "50003470", name: "Cyl. Air CDM2B40x100Z-P Bore40 stoke100", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B3-ชั้น 2", qty: 5, reorder: 3 }
+        ];
+
+        // Seeded with project budget details from Google Sheet "BUDGET"
+        let projectsBudget = [
+            { no: 1, io: "F26011200501", asset: "122150000223", costCenter: "-", desc: "Project:งานปรับปรุงเครื่องตัด-ดัด-ปั๊ม No.01", budget: 173680, used: 173680, current: 0 },
+            { no: 2, io: "P26011200502", asset: "129000000038", costCenter: "-", desc: "Project:เครื่องปั๊ม 5 หัว", budget: 198097.80, used: 204894, current: -6796.20 },
+            { no: 3, io: "P26031200501", asset: "129000000039", costCenter: "-", desc: "Project:เครื่องมาร์กลูกศร", budget: 83910.50, used: 75512, current: 8398.50 },
+            { no: 4, io: "P26041200501", asset: "129000000040", costCenter: "-", desc: "Project : Dark Factory", budget: 486205.50, used: 164435.75, current: 321769.75 },
+            { no: 5, io: "A20261200002", asset: "-", costCenter: "-", desc: "Tooling Jig & Fixture", budget: 509421.00, used: 0, current: 509421.00 },
+            { no: 6, io: "P26051200502", asset: "129000000041", costCenter: "120105", desc: "Project:Inspection MCP", budget: 0, used: 98931, current: -98931 }
+        ];
+
+        let rfqList = [
+            { id: "RFQ-2026-001", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", category: "เครื่องกล", qty: 10, supplierCount: 3, date: "10 ก.ค. 2026", status: "ได้รับเสนอราคาแล้ว" },
+            { id: "RFQ-2026-002", itemName: "โซลินอยด์วาล์ว SMC 24VDC", category: "ไฟฟ้า", qty: 5, supplierCount: 1, date: "12 ก.ค. 2026", status: "รอรับใบเสนอราคา" }
+        ];
+
+        let quoteHistory = [
+            { id: "QO-2026-001", date: "15 ก.ค. 2026", supplier: "บริษัท สามัญแบริ่ง จำกัด", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", qty: 10, unit: "Pc", unitPrice: 450, totalCost: 4500, rfqRef: "RFQ-2026-001", status: "รอพิจารณาอนุมัติ" },
+            { id: "QO-2026-002", date: "15 ก.ค. 2026", supplier: "ไทยวิวัฒน์ แมชชีนเนอรี่", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", qty: 10, unit: "Pc", unitPrice: 480, totalCost: 4800, rfqRef: "RFQ-2026-001", status: "รอพิจารณาอนุมัติ" },
+            { id: "QO-2026-003", date: "15 ก.ค. 2026", supplier: "สหรุ่งโรจน์ ฮาร์ดแวร์", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", qty: 10, unit: "Pc", unitPrice: 420, totalCost: 4200, rfqRef: "RFQ-2026-001", status: "รอพิจารณาอนุมัติ" }
+        ];
+
+        // Seeded with real PR/PO data from the user Google Sheet
+        let purchaseOrders = [
+            { date: "1/5/2026", poNo: "3100132454", prNo: "1100030413", matCode: "70002801", itemName: "สกรูหัวจม 4x15", qty: 100, unit: "Pc", unitPrice: 1.2, totalCost: 120, status: "RECEIVED", category: "JIG & FIXTURE", vendor: "บริษัท สหรุ่งเรือง จำกัด" },
+            { date: "1/5/2026", poNo: "3100132650", prNo: "1100030416", matCode: "70037099", itemName: "LED TUBE - PHILIPS MASTER 13W 1200mm. DAYLIGHT", qty: 20, unit: "Pc", unitPrice: 210, totalCost: 4200, status: "RECEIVED", category: "MAINTENANCE", vendor: "ไทยวิวัฒน์ แมชชีนเนอรี่" },
+            { date: "1/5/2026", poNo: "3100132575", prNo: "1100030419", matCode: "50000469", itemName: "Air Cyl CDJ2B10-10 bore10 x st10", qty: 10, unit: "Pc", unitPrice: 650, totalCost: 6500, status: "RECEIVED", category: "MAINTENANCE", vendor: "กรุงเทพ ไฮดรอลิก พาร์ท" },
+            { date: "1/12/2026", poNo: "3100133852", prNo: "1100030573", matCode: "50004884", itemName: "Air Cyl Bore40x200 SU40x200S", qty: 3, unit: "Pc", unitPrice: 1560, totalCost: 4680, status: "RECEIVED", category: "MAINTENANCE", vendor: "ไทยแลนด์ ทูลส์ เซ็นเตอร์" },
+            { date: "1/12/2026", poNo: "3100133306", prNo: "1100030506", matCode: "50004740", itemName: "Linear Bearing (GH15-W 2201 1H)", qty: 8, unit: "Pc", unitPrice: 1120, totalCost: 8960, status: "RECEIVED", category: "PROJECT", vendor: "บริษัท สามัญแบริ่ง จำกัด" },
+            { date: "1/12/2026", poNo: "-", prNo: "1100030507", matCode: "50002739", itemName: "PLC : FX5U-80MT/ES", qty: 1, unit: "Pc", unitPrice: 19000, totalCost: 19000, status: "Cancel", category: "PROJECT", vendor: "-" },
+            { date: "1/12/2026", poNo: "-", prNo: "1100030507", matCode: "50002765", itemName: "Weintek Touch screen (MT807IE1)", qty: 1, unit: "Pc", unitPrice: 9500, totalCost: 9500, status: "Cancel", category: "PROJECT", vendor: "-" },
+            { date: "1/14/2026", poNo: "-", prNo: "-", matCode: "-", itemName: "Break the upper clamping mold 拉断夹模块上 (Φ9.52)", qty: 1, unit: "PC", unitPrice: 3490, totalCost: 3490, status: "Pending", category: "MAINTENANCE", vendor: "-" },
+            { date: "1/19/2026", poNo: "3100133859", prNo: "1100030656", matCode: "70038123", itemName: "Fuse DAITO GP150", qty: 5, unit: "PC", unitPrice: 400, totalCost: 2000, status: "DEL.", category: "MAINTENANCE", vendor: "ไทยรุ่งเรืองซัพพลาย" },
+            { date: "1/19/2026", poNo: "3100133513", prNo: "1100030622", matCode: "70038124", itemName: "แกนรีด-PUNCH SPC3-50-P2.6", qty: 12, unit: "PC", unitPrice: 51, totalCost: 612, status: "DEL.", category: "JIG & FIXTURE", vendor: "บริษัท เอส.พี. ออโตเมติก" },
+            { date: "1/20/2026", poNo: "3100133499", prNo: "1100030631", matCode: "50000414", itemName: "สายลม PU ขนาด 6มิล (สีน้ำเงิน) 200M./Roll", qty: 1, unit: "Roll", unitPrice: 1560, totalCost: 1560, status: "RECEIVED", category: "PROJECT", vendor: "กรุงเทพ ไฮดรอลิก พาร์ท" }
+        ];
+
+        let showLowStockOnly = false;
+        let budgetChartInstance = null;
+        let monthlyChartInstance = null;
+
+        window.onload = function() {
+            lucide.createIcons();
+            updateLiveTime();
+            setInterval(updateLiveTime, 1000);
+            
+            // Render default starting screen
+            renderAll();
+            initializeBudgetChart();
+            
+            // Default load into Stock tab
+            switchTab('stock');
+        }
+
+        // Live clock display
+        function updateLiveTime() {
+            const days = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+            const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค. "];
+            const now = new Date();
+            const dateStr = `วัน${days[now.getDay()]}ที่ ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear() + 543} | เวลา ${now.toTimeString().split(' ')[0]}`;
+            const liveTimeElement = document.getElementById("live-time");
+            if (liveTimeElement) {
+                liveTimeElement.innerText = dateStr;
+            }
+        }
+
+        function triggerToast(message, type = 'success') {
+            const toast = document.getElementById("toast-notification");
+            const toastMsg = document.getElementById("toast-message");
+            const iconBox = document.getElementById("toast-icon-box");
+
+            toastMsg.innerText = message;
+            if (type === 'success') {
+                iconBox.className = "bg-emerald-500 p-1.5 rounded-lg text-white";
+                iconBox.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>';
+            } else {
+                iconBox.className = "bg-rose-500 p-1.5 rounded-lg text-white";
+                iconBox.innerHTML = '<i data-lucide="alert-triangle" class="w-4 h-4"></i>';
+            }
+            lucide.createIcons();
+
+            toast.classList.remove("translate-x-full");
+            setTimeout(() => {
+                toast.classList.add("translate-x-full");
+            }, 3000);
+        }
+
+        function renderAll() {
+            renderStockTable();
+            renderOrdersTable();
+            renderRFQTable();
+            renderQuotesTable();
+            renderBudgetInfo();
+            renderSystemAlerts();
+            populateFormDropdowns();
+            
+            // Global Badges Update
+            const pendingOrdersCount = purchaseOrders.filter(o => o.status === "กำลังจัดส่ง" || o.status === "รอดำเนินการ" || o.status === "Pending" || o.status === "DEL.").length;
+            document.getElementById("pending-orders-badge").innerText = pendingOrdersCount;
+            
+            const pendingQuotesCount = quoteHistory.filter(q => q.status === "รอพิจารณาอนุมัติ").length;
+            document.getElementById("pending-quotes-badge").innerText = pendingQuotesCount;
+
+            const lowStockCount = stockParts.filter(p => p.qty <= p.reorder).length;
+            const lowStockBadge = document.getElementById("low-stock-badge");
+            if (lowStockCount > 0) {
+                lowStockBadge.innerText = lowStockCount;
+                lowStockBadge.classList.remove("hidden");
+            } else {
+                lowStockBadge.classList.add("hidden");
+            }
+
+            lucide.createIcons();
+        }
+
+        function renderSystemAlerts() {
+            const container = document.getElementById("system-alerts-container");
+            container.innerHTML = "";
+
+            const lowStockItems = stockParts.filter(p => p.qty <= p.reorder);
+            if (lowStockItems.length > 0) {
+                const alertDiv = document.createElement("div");
+                alertDiv.className = "flex items-center justify-between bg-rose-50 border border-rose-200/50 text-rose-800 px-4 py-3 rounded-xl text-sm shadow-sm transition-all";
+                alertDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="bell" class="w-4 h-4 text-rose-600 animate-pulse"></i>
+                        <span>มีอะไหล่จำนวน <strong>${lowStockItems.length} รายการ</strong> ใกล้หมดเกณฑ์วิกฤตความปลอดภัย ควรรีบเทียบราคาจัดหาเพิ่มเติม</span>
+                    </div>
+                    <button onclick="switchTab('stock')" class="text-xs font-bold underline hover:text-rose-950 transition-colors">ไปตรวจความพร้อม</button>
+                `;
+                container.appendChild(alertDiv);
+            }
+            lucide.createIcons();
+        }
+
+        function renderStockTable() {
+            const tbody = document.getElementById("stock-table-body");
+            tbody.innerHTML = "";
+
+            stockParts.forEach(part => {
+                const isLow = part.qty <= part.reorder;
+                const statusBadge = isLow 
+                    ? `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 flex items-center w-max"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1"></i>วิกฤต/ใกล้หมด</span>` 
+                    : `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 flex items-center w-max"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>มีพร้อมจ่าย</span>`;
+
+                if (showLowStockOnly && !isLow) return;
+
+                tbody.innerHTML += `
+                    <tr class="stock-row border-b border-slate-100 hover:bg-slate-50 transition-colors" data-id="${part.id}" data-name="${part.name}">
+                        <td class="px-6 py-4 font-semibold text-slate-800">${part.id}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900">${part.name}</td>
+                        <td class="px-6 py-4 text-slate-500 text-xs">${part.category}</td>
+                        <td class="px-6 py-4 text-xs font-semibold text-indigo-600">${part.type || "-"}</td>
+                        <td class="px-6 py-4 text-center"><span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-medium">${part.location}</span></td>
+                        <td class="px-6 py-4 text-center font-bold text-slate-800 text-base">${part.qty}</td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-slate-500">${part.unit || "Pc"}</td>
+                        <td class="px-6 py-4 text-center text-slate-500 text-xs font-semibold">${part.reorder}</td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-right flex items-center justify-end space-x-1.5">
+                            <button onclick="adjustQty('${part.id}', -1)" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-100 hover:text-slate-900 text-slate-600 font-bold transition-all">-</button>
+                            <button onclick="adjustQty('${part.id}', 1)" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-100 hover:text-slate-900 text-slate-600 font-bold transition-all">+</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderOrdersTable() {
+            const tbody = document.getElementById("orders-table-body");
+            tbody.innerHTML = "";
+
+            purchaseOrders.forEach(order => {
+                let statusColor = "";
+                let actionBtn = "";
+
+                if (order.status === "รอดำเนินการ" || order.status === "Pending") {
+                    statusColor = "bg-indigo-50 border border-indigo-100 text-indigo-700";
+                    actionBtn = `<button onclick="updateOrderStatus('${order.poNo !== '-' ? order.poNo : order.prNo}', 'DEL.')" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg transition-colors flex items-center space-x-1 font-bold shadow-sm"><i data-lucide="truck" class="w-3.5 h-3.5"></i> <span>ส่งของ</span></button>`;
+                } else if (order.status === "กำลังจัดส่ง" || order.status === "DEL.") {
+                    statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
+                    actionBtn = `<button onclick="updateOrderStatus('${order.poNo !== '-' ? order.poNo : order.prNo}', 'RECEIVED')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg transition-colors flex items-center space-x-1 font-bold shadow-sm"><i data-lucide="package-check" class="w-3.5 h-3.5"></i> <span>ตรวจรับอะไหล่</span></button>`;
+                } else if (order.status === "RECEIVED" || order.status === "ได้รับแล้ว") {
+                    statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
+                    actionBtn = `<span class="text-xs text-slate-500 italic">ตรวจรับและเติมคลังเรียบร้อย</span>`;
+                } else if (order.status === "Cancle" || order.status === "Cancel") {
+                    statusColor = "bg-rose-50 border border-rose-100 text-rose-700";
+                    actionBtn = `<span class="text-xs text-slate-500 italic">ยกเลิกแล้ว</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 text-xs font-semibold text-slate-500">${order.date}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800">${order.poNo || "-"}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800">${order.prNo || "-"}</td>
+                        <td class="px-6 py-4 text-xs font-semibold text-slate-600">${order.matCode || "-"}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900">${order.itemName}</td>
+                        <td class="px-6 py-4 text-center font-semibold text-slate-800">${order.qty}</td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-slate-600">${order.unit || "Pc"}</td>
+                        <td class="px-6 py-4 text-right font-semibold text-slate-800">${order.unitPrice.toLocaleString()} ฿</td>
+                        <td class="px-6 py-4 text-right font-bold text-slate-900">${order.totalCost.toLocaleString()} ฿</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">${order.category}</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">${order.vendor || "-"}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-bold rounded-lg ${statusColor}">${order.status}</span></td>
+                        <td class="px-6 py-4 text-right flex items-center justify-end">${actionBtn}</td>
+                    </tr>
+                `;
+            });
+
+            // Calculate state summary
+            const pOrders = purchaseOrders.filter(o => o.status === "รอดำเนินการ" || o.status === "Pending").length;
+            const sOrders = purchaseOrders.filter(o => o.status === "กำลังจัดส่ง" || o.status === "DEL.").length;
+            const rOrders = purchaseOrders.filter(o => o.status === "ได้รับแล้ว" || o.status === "RECEIVED").length;
+            document.getElementById("stat-pending-orders").innerText = pOrders;
+            document.getElementById("stat-shipping-orders").innerText = sOrders;
+            document.getElementById("stat-success-orders").innerText = rOrders;
+        }
+
+        function renderRFQTable() {
+            const tbody = document.getElementById("rfq-table-body");
+            tbody.innerHTML = "";
+
+            rfqList.forEach(rfq => {
+                let statusColor = "bg-slate-100 text-slate-600";
+                if (rfq.status === "ได้รับเสนอราคาแล้ว") statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
+                else if (rfq.status === "รอรับใบเสนอราคา") statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-semibold text-slate-800">${rfq.id}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900">${rfq.itemName}</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">${rfq.category}</td>
+                        <td class="px-6 py-4 text-center text-slate-800 font-semibold">${rfq.supplierCount} ราย</td>
+                        <td class="px-6 py-4 text-center text-xs">${rfq.date}</td>
+                        <td class="px-6 py-4"><span class="px-2.5 py-1 text-xs font-bold rounded-lg ${statusColor}">${rfq.status}</span></td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="simulateQuotationResponse('${rfq.id}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200/50 font-bold transition-all">จำลองข้อเสนอคู่ค้า</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderQuotesTable() {
+            const tbody = document.getElementById("quotes-table-body");
+            tbody.innerHTML = "";
+
+            quoteHistory.forEach(q => {
+                let statusBadge = "";
+                let actionBtn = "";
+
+                if (q.status === "รอพิจารณาอนุมัติ") {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-50 border border-amber-100 text-amber-700">รอเปิด PO</span>`;
+                    actionBtn = `<button onclick="approveQuotation('${q.id}')" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all shadow-sm flex items-center space-x-1"><i data-lucide="check-square" class="w-3.5 h-3.5"></i> <span>อนุมัติสั่งซื้อ</span></button>`;
+                } else if (q.status === "อนุมัติเรียบร้อย") {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700">อนุมัติแล้ว</span>`;
+                    actionBtn = `<span class="text-xs text-slate-500 italic">ดำเนินการเรียบร้อย</span>`;
+                } else {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 border border-slate-200 text-slate-500">ปฏิเสธ</span>`;
+                    actionBtn = `<span class="text-xs text-slate-500 italic">-</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 text-xs font-semibold text-slate-500">${q.date || "-"}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-600 text-xs">${q.id}</td>
+                        <td class="px-6 py-4 text-slate-800 font-medium">${q.supplier}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900">${q.itemName}</td>
+                        <td class="px-6 py-4 text-center font-semibold text-slate-800">${q.qty}</td>
+                        <td class="px-6 py-4 text-center text-xs font-semibold text-slate-600">${q.unit || "Pc"}</td>
+                        <td class="px-6 py-4 text-center font-semibold text-slate-800">${q.unitPrice.toLocaleString()} ฿</td>
+                        <td class="px-6 py-4 text-right font-bold text-slate-900">${q.totalCost.toLocaleString()} ฿</td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-right flex items-center justify-end">${actionBtn}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderBudgetInfo() {
+            // Re-calculate budget statistics based on projectsBudget sheet
+            let totalCap = projectsBudget.reduce((sum, p) => sum + p.budget, 0);
+            let totalSpentBase = projectsBudget.reduce((sum, p) => sum + p.used, 0);
+            
+            // Let's add any newly created POs (not present in the baseline sheet)
+            let newPoCost = 0;
+            purchaseOrders.forEach(o => {
+                if (o.status !== "Cancle" && o.status !== "Cancel") {
+                    if (o.date.includes('/') && !o.date.startsWith('1/5/') && !o.date.startsWith('1/12/') && !o.date.startsWith('1/14/') && !o.date.startsWith('1/19/') && !o.date.startsWith('1/20/') && !o.date.startsWith('1/21/')) {
+                        newPoCost += o.totalCost;
+                    }
+                }
+            });
+
+            const spent = totalSpentBase + newPoCost;
+            const remaining = Math.max(0, totalCap - spent);
+            const pct = Math.min(100, Math.round((spent / totalCap) * 100));
+
+            document.getElementById("budget-total-val").innerText = totalCap.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("budget-spent-val").innerText = spent.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("budget-remain-val").innerText = remaining.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("budget-pct-text").innerText = pct + "%";
+            document.getElementById("budget-progress-bar").style.width = pct + "%";
+
+            // Render Projects Budget Table
+            const tbody = document.getElementById("projects-budget-table-body");
+            if (tbody) {
+                tbody.innerHTML = "";
+                projectsBudget.forEach(p => {
+                    const currentVal = p.current;
+                    const curClass = currentVal < 0 ? "text-rose-600 font-bold" : "text-emerald-600 font-bold";
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="px-4 py-3 text-xs text-slate-500 font-semibold">${p.no}</td>
+                            <td class="px-4 py-3 text-xs font-semibold text-slate-600">${p.io || "-"}</td>
+                            <td class="px-4 py-3 text-xs text-slate-500">${p.asset || "-"}</td>
+                            <td class="px-4 py-3 text-xs text-slate-500">${p.costCenter || "-"}</td>
+                            <td class="px-4 py-3 font-semibold text-slate-800 text-xs">${p.desc}</td>
+                            <td class="px-4 py-3 text-right font-bold text-slate-700">${p.budget.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                            <td class="px-4 py-3 text-right font-bold text-slate-700">${p.used.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                            <td class="px-4 py-3 text-right ${curClass}">${p.current.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Category detail breakdown directly from purchaseOrders (PR sheet)
+            let sumMaintenance = 0;
+            let sumJig = 0;
+            let sumProject = 0;
+            let sumAcces = 0;
+            let sumAsset = 0;
+
+            // Approximate baseline projects into PR sheet categories
+            projectsBudget.forEach(p => {
+                if (p.desc.toLowerCase().includes("jig") || p.desc.toLowerCase().includes("tooling")) {
+                    sumJig += p.used;
+                } else {
+                    sumProject += p.used;
+                }
+            });
+
+            // Group PO costs using EXACT category names from PR sheet
+            purchaseOrders.forEach(o => {
+                if (o.status !== "Cancle" && o.status !== "Cancel") {
+                    const cat = (o.category || "").toUpperCase().trim();
+                    if (cat === "MAINTENANCE") {
+                        sumMaintenance += o.totalCost;
+                    } else if (cat === "JIG & FIXTURE" || cat === "TOOLING JIG & FIXTURE") {
+                        sumJig += o.totalCost;
+                    } else if (cat === "PROJECT") {
+                        sumProject += o.totalCost;
+                    } else if (cat === "ACCES") {
+                        sumAcces += o.totalCost;
+                    } else {
+                        sumAsset += o.totalCost;
+                    }
+                }
+            });
+
+            document.getElementById("budget-cat-maintenance").innerText = sumMaintenance.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("budget-cat-jig").innerText = sumJig.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("budget-cat-project").innerText = sumProject.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("budget-cat-acces").innerText = sumAcces.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("budget-cat-asset").innerText = sumAsset.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+
+            // Progress bar updates
+            document.getElementById("bar-cat-maintenance").style.width = (sumMaintenance > 0 ? Math.min(100, Math.round((sumMaintenance / totalCap) * 100)) : 0) + "%";
+            document.getElementById("bar-cat-jig").style.width = (sumJig > 0 ? Math.min(100, Math.round((sumJig / totalCap) * 100)) : 0) + "%";
+            document.getElementById("bar-cat-project").style.width = (sumProject > 0 ? Math.min(100, Math.round((sumProject / totalCap) * 100)) : 0) + "%";
+            document.getElementById("bar-cat-acces").style.width = (sumAcces > 0 ? Math.min(100, Math.round((sumAcces / totalCap) * 100)) : 0) + "%";
+            document.getElementById("bar-cat-asset").style.width = (sumAsset > 0 ? Math.min(100, Math.round((sumAsset / totalCap) * 100)) : 0) + "%";
+
+            // Live Update Charts
+            if (budgetChartInstance) {
+                budgetChartInstance.data.datasets[0].data = [sumMaintenance, sumJig, sumProject, sumAcces, sumAsset, remaining];
+                budgetChartInstance.update();
+            }
+
+            // Calculate monthly expenses from PR sheet
+            calculateMonthlyExpenses();
+        }
+
+        // Calculate cost spent per month dynamically from PR sheet
+        function calculateMonthlyExpenses() {
+            const monthlyMap = {};
+            
+            purchaseOrders.forEach(o => {
+                if (o.status === "Cancle" || o.status === "Cancel") return;
+                
+                let monthKey = "";
+                if (o.date.includes("/")) {
+                    const parts = o.date.split("/");
+                    if (parts.length === 3) {
+                        let month = parseInt(parts[0]);
+                        let year = parseInt(parts[2]);
+                        
+                        if (month > 12) {
+                            month = parseInt(parts[1]);
+                        }
+                        
+                        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                        monthKey = `${thaiMonths[month - 1]} ${year}`;
+                    }
+                } else {
+                    const parts = o.date.split(" ");
+                    if (parts.length === 3) {
+                        monthKey = `${parts[1]} ${parts[2]}`;
+                    } else {
+                        monthKey = "ก.ค. 2569";
+                    }
+                }
+                
+                if (!monthlyMap[monthKey]) {
+                    monthlyMap[monthKey] = 0;
+                }
+                monthlyMap[monthKey] += o.totalCost;
+            });
+            
+            // Sort keys by Month/Year
+            const sortedMonths = Object.keys(monthlyMap).sort((a, b) => {
+                const parseMonthKey = (key) => {
+                    const months = {"ม.ค.":1,"ก.พ.":2,"มี.ค.":3,"เม.ย.":4,"พ.ค.":5,"มิ.ย.":6,"ก.ค.":7,"ส.ค.":8,"ก.ย.":9,"ต.ค.":10,"พ.ย.":11,"ธ.ค.":12};
+                    const parts = key.split(' ');
+                    const m = months[parts[0]] || 1;
+                    const y = parseInt(parts[1]) || 2026;
+                    return y * 12 + m;
+                };
+                return parseMonthKey(a) - parseMonthKey(b);
+            });
+            
+            // Render Monthly Expenses Table
+            const tbody = document.getElementById("monthly-expenses-table-body");
+            if (tbody) {
+                tbody.innerHTML = "";
+                sortedMonths.forEach(m => {
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="px-4 py-2 font-semibold text-slate-800 text-xs">${m}</td>
+                            <td class="px-4 py-2 text-right font-bold text-slate-900">${monthlyMap[m].toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Update Monthly line chart
+            updateMonthlyChart(sortedMonths, monthlyMap);
+        }
+
+        function updateMonthlyChart(sortedMonths, monthlyMap) {
+            if (!monthlyChartInstance) return;
+
+            const dataValues = sortedMonths.map(m => monthlyMap[m]);
+
+            monthlyChartInstance.data.labels = sortedMonths;
+            monthlyChartInstance.data.datasets[0].data = dataValues;
+            monthlyChartInstance.update();
+        }
+
+        // Dropdowns setup
+        function populateFormDropdowns() {
+            const rfqSelect = document.getElementById("form-rfq-item");
+            const quoteRfqSelect = document.getElementById("form-quote-rfq");
+
+            rfqSelect.innerHTML = "";
+            quoteRfqSelect.innerHTML = "";
+
+            stockParts.forEach(p => {
+                rfqSelect.innerHTML += `<option value="${p.name}">${p.id} - ${p.name}</option>`;
+            });
+
+            rfqList.forEach(r => {
+                quoteRfqSelect.innerHTML += `<option value="${r.id}">${r.id} (${r.itemName})</option>`;
+            });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+            document.querySelectorAll(".tab-btn").forEach(el => {
+                el.classList.remove("bg-indigo-600", "text-white", "shadow-md", "shadow-indigo-950/20");
+                el.classList.add("text-slate-400", "hover:bg-slate-900", "hover:text-white");
+            });
+
+            document.getElementById(`content-${tabId}`).classList.remove("hidden");
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add("bg-indigo-600", "text-white", "shadow-md", "shadow-indigo-950/20");
+                activeBtn.classList.remove("text-slate-400", "hover:bg-slate-900");
+            }
+
+            const titles = {
+                stock: "คลังอะไหล่คงคลัง (Inventory Stock)",
+                orders: "รายการคำสั่งซื้อ (Purchase Orders)",
+                rfq: "รายการขอราคา (Request for Quotation)",
+                budget: "งบประมาณ (Budget Overview)",
+                quotes: "เปรียบเทียบใบเสนอราคา (Quotation Comparison)"
+            };
+            document.getElementById("current-page-title").innerText = titles[tabId];
+
+            if (window.innerWidth < 768) {
+                document.getElementById("sidebar-nav").classList.add("hidden");
+                document.getElementById("menu-icon").setAttribute("data-lucide", "menu");
+                lucide.createIcons();
+            }
+        }
+
+        function toggleMobileMenu() {
+            const nav = document.getElementById("sidebar-nav");
+            const icon = document.getElementById("menu-icon");
+            const isHidden = nav.classList.contains("hidden");
+
+            if (isHidden) {
+                nav.classList.remove("hidden");
+                icon.setAttribute("data-lucide", "x");
+            } else {
+                nav.classList.add("hidden");
+                icon.setAttribute("data-lucide", "menu");
+            }
+            lucide.createIcons();
+        }
+
+        function openModal(type) {
+            populateFormDropdowns();
+            const modal = document.getElementById(`modal-${type}`);
+            modal.classList.remove("hidden");
+        }
+
+        function closeModal(type) {
+            const modal = document.getElementById(`modal-${type}`);
+            modal.classList.add("hidden");
+        }
+
+        function adjustQty(partId, amount) {
+            const idx = stockParts.findIndex(p => p.id === partId);
+            if (idx !== -1) {
+                if (amount < 0 && stockParts[idx].qty === 0) {
+                    triggerToast(`จำนวนพัสดุเป็น 0 อยู่แล้ว`, 'error');
+                    return;
+                }
+                if (amount < 0 && stockParts[idx].qty + amount <= stockParts[idx].reorder) {
+                    if (!confirm(`คำเตือน: การลดจำนวนพัสดุนี้จะต่ำกว่าจุดปลอดภัยขั้นต่ำ (${stockParts[idx].reorder} ชิ้น) ยืนยันที่จะปรับลดหรือไม่?`)) {
+                        return;
+                    }
+                }
+                stockParts[idx].qty = Math.max(0, stockParts[idx].qty + amount);
+                renderAll();
+                triggerToast(`อัปเดตจำนวนพัสดุเรียบร้อยแล้ว`, 'success');
+            }
+        }
+
+        // Toggle displaying low-stock items
+        function toggleLowStockOnly() {
+            showLowStockOnly = !showLowStockOnly;
+            const btn = document.getElementById("btn-toggle-lowstock");
+            if (showLowStockOnly) {
+                btn.className = "bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2";
+            } else {
+                btn.className = "border border-rose-200 hover:bg-rose-50/50 text-rose-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2";
+            }
+            renderStockTable();
+        }
+
+        // Submit RFQ manually
+        function submitRFQForm(e) {
+            e.preventDefault();
+            const name = document.getElementById("form-rfq-item").value;
+            const qty = parseInt(document.getElementById("form-rfq-qty").value);
+            const supList = document.getElementById("form-rfq-suppliers").value.split(",").length;
+
+            const partObj = stockParts.find(p => p.name === name);
+            const category = partObj ? partObj.category : "เครื่องกล";
+
+            const nextId = "RFQ-2026-" + String(rfqList.length + 1).padStart(3, '0');
+            const newRFQ = {
+                id: nextId,
+                itemName: name,
+                category: category,
+                qty: qty,
+                supplierCount: supList,
+                date: "13 ก.ค. 2026",
+                status: "รอรับใบเสนอราคา"
+            };
+
+            rfqList.unshift(newRFQ);
+            closeModal('rfq');
+            renderAll();
+            triggerToast(`ออกจดหมายสอบราคาสำเร็จ เลขที่ ${nextId}`, 'success');
+        }
+
+        // Submit Supplier Quote manually
+        function submitQuoteForm(e) {
+            e.preventDefault();
+            const rfqRef = document.getElementById("form-quote-rfq").value;
+            const supplier = document.getElementById("form-quote-supplier").value;
+            const unitPrice = parseFloat(document.getElementById("form-quote-unitprice").value);
+            const qty = parseInt(document.getElementById("form-quote-qty").value);
+            const delivery = document.getElementById("form-quote-delivery").value;
+
+            const rfqObj = rfqList.find(r => r.id === rfqRef);
+            const itemName = rfqObj ? rfqObj.itemName : "พัสดุทั่วไป";
+
+            const nextId = "QO-2026-" + String(quoteHistory.length + 1).padStart(3, '0');
+            const newQO = {
+                id: nextId,
+                date: new Date().toLocaleDateString('th-TH'),
+                rfqRef: rfqRef,
+                supplier: supplier,
+                itemName: itemName,
+                unitPrice: unitPrice,
+                qty: qty,
+                unit: "Pc",
+                totalCost: unitPrice * qty,
+                delivery: delivery,
+                status: "รอพิจารณาอนุมัติ"
+            };
+
+            quoteHistory.unshift(newQO);
+            
+            const rfqIdx = rfqList.findIndex(r => r.id === rfqRef);
+            if (rfqIdx !== -1) {
+                rfqList[rfqIdx].status = "ได้รับเสนอราคาแล้ว";
+            }
+
+            closeModal('addQuote');
+            renderAll();
+            triggerToast(`บันทึกใบเสนอราคาจาก ${supplier} เรียบร้อย`, 'success');
+        }
+
+        // RFQ Simulation
+        function simulateQuotationResponse(rfqId) {
+            const rfqObj = rfqList.find(r => r.id === rfqId);
+            if (!rfqObj) return;
+
+            const simSuppliers = ["บริษัท พรีเมียร์แบริ่ง จำกัด", "ไทยรุ่งเรืองซัพพลาย", "บริษัท เอส.พี. ออโตเมติก"];
+            const chosenSupplier = simSuppliers[Math.floor(Math.random() * simSuppliers.length)];
+            const simPrice = Math.floor(Math.random() * 500) + 150;
+            const total = simPrice * rfqObj.qty;
+
+            const nextId = "QO-2026-" + String(quoteHistory.length + 1).padStart(3, '0');
+            const simulatedQuote = {
+                id: nextId,
+                date: new Date().toLocaleDateString('th-TH'),
+                rfqRef: rfqId,
+                supplier: chosenSupplier,
+                itemName: rfqObj.itemName,
+                unitPrice: simPrice,
+                qty: rfqObj.qty,
+                unit: "Pc",
+                totalCost: total,
+                delivery: "3-5 วันทำการ",
+                status: "รอพิจารณาอนุมัติ"
+            };
+
+            quoteHistory.unshift(simulatedQuote);
+            
+            const rfqIdx = rfqList.findIndex(r => r.id === rfqId);
+            if (rfqIdx !== -1) {
+                rfqList[rfqIdx].status = "ได้รับเสนอราคาแล้ว";
+            }
+
+            renderAll();
+            triggerToast(`จำลองการยื่นเสนอราคาจาก ${chosenSupplier} สำเร็จ!`, 'success');
+        }
+
+        // Action: Approve Quote -> Create PO automatically & Debit budget
+        function approveQuotation(qoId) {
+            const idx = quoteHistory.findIndex(q => q.id === qoId);
+            if (idx === -1) return;
+
+            const qObj = quoteHistory[idx];
+            if (!confirm(`ยืนยันการอนุมัติใบเสนอราคาจาก "${qObj.supplier}" ยอดรวม ${qObj.totalCost.toLocaleString()} บาท เพื่อออกใบสั่งซื้อ PO หรือไม่?`)) {
+                return;
+            }
+
+            let totalCap = projectsBudget.reduce((sum, p) => sum + p.budget, 0);
+            let totalSpentBase = projectsBudget.reduce((sum, p) => sum + p.used, 0);
+            let newPoCost = purchaseOrders.reduce((sum, o) => {
+                if (o.status !== "Cancle" && o.status !== "Cancel" && o.date.includes('/') && !o.date.startsWith('1/5/') && !o.date.startsWith('1/12/') && !o.date.startsWith('1/14/') && !o.date.startsWith('1/19/') && !o.date.startsWith('1/20/') && !o.date.startsWith('1/21/')) {
+                    return sum + o.totalCost;
+                }
+                return sum;
+            }, 0);
+
+            if (totalSpentBase + newPoCost + qObj.totalCost > totalCap) {
+                triggerToast("ยอดเงินรวมของใบเสนอราคานี้ สูงกว่างบประมาณคงเหลือ!", "error");
+                return;
+            }
+
+            // Approve quote
+            quoteHistory[idx].status = "อนุมัติเรียบร้อย";
+
+            // Find stock category for mapping
+            const partObj = stockParts.find(p => p.name === qObj.itemName);
+            const category = partObj ? partObj.category : "เครื่องกล";
+
+            // Automatically output purchase order with PR sheet properties
+            const nextPoNo = "3100" + String(purchaseOrders.length + 132455);
+            const nextPrNo = "1100" + String(purchaseOrders.length + 30421);
+            const newPO = {
+                date: new Date().toLocaleDateString('th-TH'),
+                poNo: nextPoNo,
+                prNo: nextPrNo,
+                matCode: partObj ? partObj.id : "-",
+                itemName: qObj.itemName,
+                qty: qObj.qty,
+                unit: qObj.unit || "Pc",
+                unitPrice: qObj.unitPrice,
+                totalCost: qObj.totalCost,
+                status: "DEL.", // Directly goes to transit on supplier guarantee
+                category: category,
+                vendor: qObj.supplier
+            };
+
+            purchaseOrders.unshift(newPO);
+            renderAll();
+            triggerToast(`อนุมัติสำเร็จ! สร้างคำสั่งจัดส่งสินค้า เลขที่ ${nextPoNo}`, 'success');
+        }
+
+        // Action: Receive PO -> Add items directly to current stock inventory!
+        function updateOrderStatus(id, nextStatus) {
+            const idx = purchaseOrders.findIndex(o => o.poNo === id || o.prNo === id);
+            if (idx === -1) return;
+
+            purchaseOrders[idx].status = nextStatus;
+
+            if (nextStatus === "RECEIVED") {
+                const poObj = purchaseOrders[idx];
+                const stockIdx = stockParts.findIndex(p => p.name === poObj.itemName);
+                if (stockIdx !== -1) {
+                    stockParts[stockIdx].qty += poObj.qty;
+                } else {
+                    // Create new stock record if somehow missing
+                    const newId = "SP-" + String(stockParts.length + 101);
+                    stockParts.push({
+                        id: newId,
+                        name: poObj.itemName,
+                        category: poObj.category || "เครื่องกล",
+                        location: "ตู้จัดเก็บพัสดุรับเข้า",
+                        qty: poObj.qty,
+                        reorder: 5
+                    });
+                }
+                triggerToast(`ตรวจรับอะไหล่สำเร็จ! สต็อกพัสดุ ${poObj.itemName} ได้รับการเพิ่มจำนวนแล้ว`, 'success');
+            } else {
+                triggerToast(`ปรับปรุงสถานะ PO เป็น "${nextStatus}" เรียบร้อย`, 'success');
+            }
+
+            renderAll();
+        }
+
+        // Submit new stock
+        function submitStockForm(e) {
+            e.preventDefault();
+            const id = document.getElementById("form-stock-id").value;
+            const category = document.getElementById("form-stock-category").value;
+            const type = document.getElementById("form-stock-type").value;
+            const unit = document.getElementById("form-stock-unit").value;
+            const name = document.getElementById("form-stock-name").value;
+            const location = document.getElementById("form-stock-location").value;
+            const qty = parseInt(document.getElementById("form-stock-qty").value);
+            const reorder = parseInt(document.getElementById("form-stock-reorder").value);
+
+            if (stockParts.some(p => p.id.toLowerCase() === id.toLowerCase())) {
+                triggerToast("รหัสอะไหล่ซ้ำซ้อนในระบบฐานข้อมูล!", "error");
+                return;
+            }
+
+            stockParts.push({ id, name, category, type, unit, location, qty, reorder });
+            closeModal('addStock');
+            renderAll();
+            triggerToast("บันทึกพัสดุลงคลังสำเร็จ!", "success");
+        }
+
+        // Search engine for stock parts
+        function filterStock() {
+            const query = document.getElementById("stock-search").value.toLowerCase();
+            document.querySelectorAll(".stock-row").forEach(row => {
+                const name = row.getAttribute("data-name").toLowerCase();
+                const id = row.getAttribute("data-id").toLowerCase();
+                const match = name.includes(query) || id.includes(query);
+                if (match) {
+                    row.classList.remove("hidden");
+                } else {
+                    row.classList.add("hidden");
+                }
+            });
+        }
+
+        function initializeBudgetChart() {
+            // Category doughnut chart
+            const ctxCategory = document.getElementById("budgetBreakdownChart").getContext("2d");
+            budgetChartInstance = new Chart(ctxCategory, {
+                type: 'doughnut',
+                data: {
+                    labels: ['MAINTENANCE', 'JIG & FIXTURE', 'PROJECT', 'ACCES', 'ASSET / OTHERS', 'งบประมาณคงเหลือ'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0, 100], 
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#f43f5e', '#10b981', '#64748b', '#cbd5e1'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 10,
+                                font: {
+                                    family: 'Sarabun',
+                                    size: 10
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Monthly line chart
+            const ctxMonthly = document.getElementById("monthlySpendChart").getContext("2d");
+            monthlyChartInstance = new Chart(ctxMonthly, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'ยอดใช้จ่ายรายเดือน (฿)',
+                        data: [],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#4f46e5',
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f1f5f9'
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 10
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Sarabun',
+                                    size: 9
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Render all budget info
+            renderBudgetInfo();
+        }
+
+        // Global keydown event listener for closing modals using Esc key
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal('addStock');
+                closeModal('rfq');
+                closeModal('addQuote');
+            }
+        });
+    </script>
+</body>
+</html>
