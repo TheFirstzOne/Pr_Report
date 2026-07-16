@@ -275,17 +275,77 @@
                     </div>
                 </div>
 
+                <!-- Orders Filter Toolbar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </span>
+                            <input type="text" id="order-filter-search" oninput="onOrderSearchInput(this.value)" placeholder="ค้นหารายการ, เลขที่ PR/PO, รหัสพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-all">
+                        </div>
+
+                        <select id="order-filter-month" onchange="onOrderMonthChange(this.value)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                            <option value="all">ทุกเดือน</option>
+                        </select>
+
+                        <div class="relative order-filter-dropdown">
+                            <button type="button" onclick="toggleOrderFilterDropdown('order-filter-status-panel')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex items-center space-x-1.5 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                                <span>สถานะ</span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                            </button>
+                            <div id="order-filter-status-panel" class="hidden absolute z-20 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg">
+                                <div class="flex justify-between items-center px-3 py-2 border-b border-slate-100">
+                                    <button type="button" onclick="selectAllOrderStatus()" class="text-xs font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
+                                    <button type="button" onclick="clearAllOrderStatus()" class="text-xs font-semibold text-slate-500 hover:underline">ล้างทั้งหมด</button>
+                                </div>
+                                <div id="order-filter-status-options" class="max-h-48 overflow-y-auto py-1"></div>
+                            </div>
+                        </div>
+
+                        <div class="relative order-filter-dropdown">
+                            <button type="button" onclick="toggleOrderFilterDropdown('order-filter-category-panel')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex items-center space-x-1.5 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                                <span>ประเภทงาน</span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                            </button>
+                            <div id="order-filter-category-panel" class="hidden absolute z-20 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg">
+                                <div class="flex justify-between items-center px-3 py-2 border-b border-slate-100">
+                                    <button type="button" onclick="selectAllOrderCategory()" class="text-xs font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
+                                    <button type="button" onclick="clearAllOrderCategory()" class="text-xs font-semibold text-slate-500 hover:underline">ล้างทั้งหมด</button>
+                                </div>
+                                <div id="order-filter-category-options" class="max-h-48 overflow-y-auto py-1"></div>
+                            </div>
+                        </div>
+
+                        <div class="relative order-filter-dropdown">
+                            <button type="button" onclick="toggleOrderFilterDropdown('order-filter-vendor-panel')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex items-center space-x-1.5 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                                <span>ซัพพลายเออร์</span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                            </button>
+                            <div id="order-filter-vendor-panel" class="hidden absolute z-20 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg">
+                                <div class="flex justify-between items-center px-3 py-2 border-b border-slate-100">
+                                    <button type="button" onclick="selectAllOrderVendor()" class="text-xs font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
+                                    <button type="button" onclick="clearAllOrderVendor()" class="text-xs font-semibold text-slate-500 hover:underline">ล้างทั้งหมด</button>
+                                </div>
+                                <div id="order-filter-vendor-options" class="max-h-48 overflow-y-auto py-1"></div>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="resetOrderFilters()" class="text-xs font-semibold text-slate-500 hover:text-rose-600 flex items-center space-x-1 px-2">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            <span>ล้างตัวกรองทั้งหมด</span>
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-slate-500 whitespace-nowrap" id="order-filter-count">แสดง 0 จาก 0 รายการ</p>
+                </div>
+
+                <!-- Purchase Orders Table -->
                 <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                         <div>
                             <h3 class="font-bold text-base text-slate-800">บันทึกประวัติการสั่งซื้ออะไหล่ (PO)</h3>
                             <p class="text-xs text-slate-500 mt-1">ประวัติใบสั่งซื้อที่ผ่านการอนุมัติและรอตรวจรับพัสดุ</p>
-                        </div>
-                        <div class="relative w-full md:w-72">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
-                            </span>
-                            <input type="text" id="po-search" oninput="renderOrdersTable()" placeholder="ค้นหาเลขที่ PO, PR หรือชื่อสินค้า..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -753,6 +813,15 @@
         let budgetCap = 1200000;
         let budgetSpent = 168000; // Calculated baseline spent
 
+        // Orders tab filter state. The 3 Sets start null and are populated on first
+        // load (see populateOrderFilterOptions) to "select all" — they then persist
+        // across manual refreshes rather than resetting.
+        let orderSearchText = "";
+        let orderSelectedMonth = "all";
+        let orderSelectedStatuses = null;
+        let orderSelectedCategories = null;
+        let orderSelectedVendors = null;
+
         // Paste your deployed Apps Script Web App exec URL here (Task 2 of the implementation plan)
         const EXEC_URL = "https://script.google.com/macros/s/AKfycbyofRf8n3bW4ZTnfpHOnasHQZh0XCpT7jhS_SUkJJEyGWFSp0y-Emt6VdnbYdNAQcUC/exec";
 
@@ -838,6 +907,182 @@
             const label = btn.querySelector("span");
             if (label) label.innerText = isRefreshing ? "กำลังโหลด..." : "รีเฟรชข้อมูล";
         }
+
+        const ORDER_FILTER_NO_VALUE_LABEL = "(ไม่ระบุ)";
+        const ORDER_FILTER_MONTH_NAMES = ["", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+        // Builds { distinct, selectedSet } for one order field: the sorted list of
+        // real values present in purchaseOrders (blank -> "(ไม่ระบุ)"), and the
+        // Set of currently-selected values (created as "select all" only the first
+        // time this field is populated; an existing Set is returned unchanged so a
+        // manual refresh doesn't wipe out the user's filter choices).
+        function buildOrderFilterOptions(fieldName, existingSet) {
+            const values = new Set();
+            purchaseOrders.forEach(function (order) {
+                const raw = (order[fieldName] || "").toString().trim();
+                values.add(raw === "" ? ORDER_FILTER_NO_VALUE_LABEL : raw);
+            });
+            const distinct = Array.from(values).sort();
+            const selectedSet = existingSet || new Set(distinct);
+            return { distinct: distinct, selectedSet: selectedSet };
+        }
+
+        function renderOrderMultiSelectOptions(elementId, distinct, selectedSet, onChangeFnName) {
+            const container = document.getElementById(elementId);
+            if (!container) return;
+            container.innerHTML = distinct.map(function (value) {
+                const checked = selectedSet.has(value) ? "checked" : "";
+                return '<label class="flex items-center space-x-2 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">' +
+                    '<input type="checkbox" value="' + value + '" onchange="' + onChangeFnName + '(this)" ' + checked + '>' +
+                    '<span>' + value + '</span>' +
+                    '</label>';
+            }).join("");
+        }
+
+        // Rebuilds the month dropdown and the 3 multi-select checkbox lists from
+        // whatever is currently in purchaseOrders. Called once per loadAllData()
+        // cycle, before applyOrderFilters() — never on every render, so a checkbox
+        // click doesn't get its own list regenerated out from under it.
+        function populateOrderFilterOptions() {
+            const monthSet = new Set();
+            purchaseOrders.forEach(function (order) {
+                const parts = (order.date || "").split("/");
+                if (parts.length === 3) monthSet.add(parts[0] + "/" + parts[2]);
+            });
+            const months = Array.from(monthSet).sort(function (a, b) {
+                const aParts = a.split("/").map(Number);
+                const bParts = b.split("/").map(Number);
+                return aParts[1] !== bParts[1] ? aParts[1] - bParts[1] : aParts[0] - bParts[0];
+            });
+            if (months.indexOf(orderSelectedMonth) === -1) orderSelectedMonth = "all";
+            const monthSelect = document.getElementById("order-filter-month");
+            if (monthSelect) {
+                monthSelect.innerHTML = '<option value="all">ทุกเดือน</option>' + months.map(function (m) {
+                    const parts = m.split("/");
+                    const selected = m === orderSelectedMonth ? "selected" : "";
+                    return '<option value="' + m + '" ' + selected + '>' + ORDER_FILTER_MONTH_NAMES[Number(parts[0])] + ' ' + parts[1] + '</option>';
+                }).join("");
+            }
+
+            const statusResult = buildOrderFilterOptions("status", orderSelectedStatuses);
+            orderSelectedStatuses = statusResult.selectedSet;
+            renderOrderMultiSelectOptions("order-filter-status-options", statusResult.distinct, orderSelectedStatuses, "onOrderStatusCheckboxChange");
+
+            const categoryResult = buildOrderFilterOptions("category", orderSelectedCategories);
+            orderSelectedCategories = categoryResult.selectedSet;
+            renderOrderMultiSelectOptions("order-filter-category-options", categoryResult.distinct, orderSelectedCategories, "onOrderCategoryCheckboxChange");
+
+            const vendorResult = buildOrderFilterOptions("vendor", orderSelectedVendors);
+            orderSelectedVendors = vendorResult.selectedSet;
+            renderOrderMultiSelectOptions("order-filter-vendor-options", vendorResult.distinct, orderSelectedVendors, "onOrderVendorCheckboxChange");
+
+            lucide.createIcons();
+        }
+
+        function onOrderSearchInput(value) {
+            orderSearchText = value;
+            applyOrderFilters();
+        }
+
+        function onOrderMonthChange(value) {
+            orderSelectedMonth = value;
+            applyOrderFilters();
+        }
+
+        function onOrderStatusCheckboxChange(checkbox) {
+            if (checkbox.checked) orderSelectedStatuses.add(checkbox.value);
+            else orderSelectedStatuses.delete(checkbox.value);
+            applyOrderFilters();
+        }
+
+        function onOrderCategoryCheckboxChange(checkbox) {
+            if (checkbox.checked) orderSelectedCategories.add(checkbox.value);
+            else orderSelectedCategories.delete(checkbox.value);
+            applyOrderFilters();
+        }
+
+        function onOrderVendorCheckboxChange(checkbox) {
+            if (checkbox.checked) orderSelectedVendors.add(checkbox.value);
+            else orderSelectedVendors.delete(checkbox.value);
+            applyOrderFilters();
+        }
+
+        // We temporarily define a minimal applyOrderFilters function so that the toolbar
+        // UI does not crash the app before Task 2 wires it up.
+        function applyOrderFilters() {
+            // Handled in Task 2
+        }
+
+        function selectAllOrderStatus() {
+            document.querySelectorAll('#order-filter-status-options input[type="checkbox"]').forEach(function (cb) {
+                cb.checked = true;
+                orderSelectedStatuses.add(cb.value);
+            });
+            applyOrderFilters();
+        }
+
+        function clearAllOrderStatus() {
+            document.querySelectorAll('#order-filter-status-options input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+            orderSelectedStatuses.clear();
+            applyOrderFilters();
+        }
+
+        function selectAllOrderCategory() {
+            document.querySelectorAll('#order-filter-category-options input[type="checkbox"]').forEach(function (cb) {
+                cb.checked = true;
+                orderSelectedCategories.add(cb.value);
+            });
+            applyOrderFilters();
+        }
+
+        function clearAllOrderCategory() {
+            document.querySelectorAll('#order-filter-category-options input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+            orderSelectedCategories.clear();
+            applyOrderFilters();
+        }
+
+        function selectAllOrderVendor() {
+            document.querySelectorAll('#order-filter-vendor-options input[type="checkbox"]').forEach(function (cb) {
+                cb.checked = true;
+                orderSelectedVendors.add(cb.value);
+            });
+            applyOrderFilters();
+        }
+
+        function clearAllOrderVendor() {
+            document.querySelectorAll('#order-filter-vendor-options input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+            orderSelectedVendors.clear();
+            applyOrderFilters();
+        }
+
+        function resetOrderFilters() {
+            orderSearchText = "";
+            const searchInput = document.getElementById("order-filter-search");
+            if (searchInput) searchInput.value = "";
+            orderSelectedMonth = "all";
+            const monthSelect = document.getElementById("order-filter-month");
+            if (monthSelect) monthSelect.value = "all";
+            selectAllOrderStatus();
+            selectAllOrderCategory();
+            selectAllOrderVendor();
+        }
+
+        function toggleOrderFilterDropdown(panelId) {
+            ["order-filter-status-panel", "order-filter-category-panel", "order-filter-vendor-panel"].forEach(function (id) {
+                const panel = document.getElementById(id);
+                if (!panel) return;
+                if (id === panelId) panel.classList.toggle("hidden");
+                else panel.classList.add("hidden");
+            });
+        }
+
+        document.addEventListener("click", function (e) {
+            if (e.target.closest(".order-filter-dropdown")) return;
+            ["order-filter-status-panel", "order-filter-category-panel", "order-filter-vendor-panel"].forEach(function (id) {
+                const panel = document.getElementById(id);
+                if (panel) panel.classList.add("hidden");
+            });
+        });
 
         let showLowStockOnly = false;
         let budgetChartInstance = null;
