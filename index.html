@@ -269,12 +269,17 @@
                     </div>
                 </div>
 
-                <!-- Purchase Orders Table -->
                 <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                         <div>
                             <h3 class="font-bold text-base text-slate-800">บันทึกประวัติการสั่งซื้ออะไหล่ (PO)</h3>
                             <p class="text-xs text-slate-500 mt-1">ประวัติใบสั่งซื้อที่ผ่านการอนุมัติและรอตรวจรับพัสดุ</p>
+                        </div>
+                        <div class="relative w-full md:w-72">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                            </span>
+                            <input type="text" id="po-search" oninput="renderOrdersTable()" placeholder="ค้นหาเลขที่ PO, PR หรือชื่อสินค้า..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -335,9 +340,17 @@
                     </div>
                 </div>
                 <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 bg-slate-50/50">
-                        <h3 class="font-bold text-base text-slate-800">รายการขอเทียบราคา (Requests)</h3>
-                        <p class="text-xs text-slate-500 mt-1">คำขอเทียบราคาที่ส่งเข้ามาจากผู้ใช้งาน พร้อมสถานะการตรวจสอบ</p>
+                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">รายการขอเทียบราคา (Requests)</h3>
+                            <p class="text-xs text-slate-500 mt-1">คำขอเทียบราคาที่ส่งเข้ามาจากผู้ใช้งาน พร้อมสถานะการตรวจสอบ</p>
+                        </div>
+                        <div class="relative w-full md:w-72">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                            </span>
+                            <input type="text" id="rfq-search" oninput="renderRFQTable()" placeholder="ค้นหาเลขที่คำขอ, ผู้ขอ หรือชื่อพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm text-slate-600">
@@ -366,8 +379,8 @@
                 <!-- Budget Metrics Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm">
-                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">งบประมาณโครงการทั้งหมด (Total Budget)</h4>
-                        <h2 class="text-3xl font-extrabold text-slate-900 mt-2" id="budget-total-val">1,451,314.80 ฿</h2>
+                        <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">งบประมาณโครงการทั้งหมด (Total Budget)</h3>
+                        <div class="text-3xl font-extrabold text-slate-900 mt-2" id="budget-total-val">1,451,314.80 ฿</div>
                         <div class="mt-4">
                             <div class="flex justify-between text-xs text-slate-500 mb-1">
                                 <span>เปอร์เซ็นต์การใช้งานงบ</span>
@@ -381,8 +394,8 @@
 
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
                         <div>
-                            <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ยอดใช้ออกจริงสะสม (Used)</h4>
-                            <h2 class="text-3xl font-extrabold text-rose-600 mt-2" id="budget-spent-val">0 ฿</h2>
+                            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ยอดใช้ออกจริงสะสม (Used)</h3>
+                            <div class="text-3xl font-extrabold text-rose-600 mt-2" id="budget-spent-val">0 ฿</div>
                         </div>
                         <p class="text-xs text-slate-500 mt-2 flex items-center">
                             <i data-lucide="trending-up" class="w-3.5 h-3.5 text-rose-500 mr-1"></i> ผูกมัดกับโครงการและใบอนุมัติ PO สำเร็จ
@@ -391,8 +404,8 @@
 
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
                         <div>
-                            <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">งบประมาณคงเหลือ (Current)</h4>
-                            <h2 class="text-3xl font-extrabold text-emerald-600 mt-2" id="budget-remain-val">0 ฿</h2>
+                            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">งบประมาณคงเหลือ (Current)</h3>
+                            <div class="text-3xl font-extrabold text-emerald-600 mt-2" id="budget-remain-val">0 ฿</div>
                         </div>
                         <p class="text-xs text-slate-500 mt-2 flex items-center">
                             <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500 mr-1"></i> มีงบประมาณคงเหลือสำหรับบำรุง
@@ -924,7 +937,21 @@
             const tbody = document.getElementById("orders-table-body");
             tbody.innerHTML = "";
 
+            const searchInput = document.getElementById("po-search");
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
             purchaseOrders.forEach(order => {
+                if (query) {
+                    const poNo = (order.poNo || "").toLowerCase();
+                    const prNo = (order.prNo || "").toLowerCase();
+                    const itemName = (order.itemName || "").toLowerCase();
+                    const matCode = (order.matCode || "").toLowerCase();
+                    const vendor = (order.vendor || "").toLowerCase();
+                    if (!poNo.includes(query) && !prNo.includes(query) && !itemName.includes(query) && !matCode.includes(query) && !vendor.includes(query)) {
+                        return;
+                    }
+                }
+
                 let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
 
                 if (order.status === "รอดำเนินการ" || order.status === "Pending") {
@@ -967,7 +994,20 @@
             const tbody = document.getElementById("rfq-table-body");
             tbody.innerHTML = "";
 
+            const searchInput = document.getElementById("rfq-search");
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
             rfqList.forEach(req => {
+                if (query) {
+                    const reqId = (req.id || "").toLowerCase();
+                    const who = (req.who || "").toLowerCase();
+                    const part = (req.part || "").toLowerCase();
+                    const remark = (req.remark || "").toLowerCase();
+                    if (!reqId.includes(query) && !who.includes(query) && !part.includes(query) && !remark.includes(query)) {
+                        return;
+                    }
+                }
+
                 let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
                 if (req.status === "ok") statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
                 else if (req.status === "review") statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
