@@ -201,10 +201,6 @@
                             <i data-lucide="alert-triangle" class="w-4 h-4"></i>
                             <span>แสดงเฉพาะอะไหล่ใกล้หมด</span>
                         </button>
-                        <button onclick="openModal('addStock')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 transition-colors shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            <span>เพิ่มอะไหล่ใหม่</span>
-                        </button>
                     </div>
                 </div>
 
@@ -223,13 +219,10 @@
                                     <th class="px-6 py-4">รหัสอะไหล่ (MAT.)</th>
                                     <th class="px-6 py-4">ชื่ออะไหล่ (Description)</th>
                                     <th class="px-6 py-4">หมวดหมู่ (Category)</th>
-                                    <th class="px-6 py-4">ประเภท (Type)</th>
-                                    <th class="px-6 py-4 text-center">ตำแหน่งจัดเก็บ</th>
                                     <th class="px-6 py-4 text-center">จํานวนคงเหลือ</th>
                                     <th class="px-6 py-4 text-center">หน่วย (Unit)</th>
                                     <th class="px-6 py-4 text-center">จุดปลอดภัยต่ำสุด</th>
                                     <th class="px-6 py-4">สถานะสต็อก</th>
-                                    <th class="px-6 py-4 text-right">ปรับปรุงสต็อก</th>
                                 </tr>
                             </thead>
                             <tbody id="stock-table-body">
@@ -297,7 +290,6 @@
                                     <th class="px-6 py-4">ประเภทงาน</th>
                                     <th class="px-6 py-4">ซัพพลายเออร์</th>
                                     <th class="px-6 py-4">สถานะสั่งซื้อ</th>
-                                    <th class="px-6 py-4 text-right">การจัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="orders-table-body">
@@ -906,8 +898,8 @@
 
             stockParts.forEach(part => {
                 const isLow = part.qty <= part.reorder;
-                const statusBadge = isLow 
-                    ? `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 flex items-center w-max"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1"></i>วิกฤต/ใกล้หมด</span>` 
+                const statusBadge = isLow
+                    ? `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 flex items-center w-max"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1"></i>วิกฤต/ใกล้หมด</span>`
                     : `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 flex items-center w-max"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>มีพร้อมจ่าย</span>`;
 
                 if (showLowStockOnly && !isLow) return;
@@ -917,16 +909,10 @@
                         <td class="px-6 py-4 font-semibold text-slate-800">${part.id}</td>
                         <td class="px-6 py-4 font-bold text-slate-900">${part.name}</td>
                         <td class="px-6 py-4 text-slate-500 text-xs">${part.category}</td>
-                        <td class="px-6 py-4 text-xs font-semibold text-indigo-600">${part.type || "-"}</td>
-                        <td class="px-6 py-4 text-center"><span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-medium">${part.location}</span></td>
                         <td class="px-6 py-4 text-center font-bold text-slate-800 text-base">${part.qty}</td>
                         <td class="px-6 py-4 text-center text-xs font-semibold text-slate-500">${part.unit || "Pc"}</td>
                         <td class="px-6 py-4 text-center text-slate-500 text-xs font-semibold">${part.reorder}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
-                        <td class="px-6 py-4 text-right flex items-center justify-end space-x-1.5">
-                            <button onclick="adjustQty('${part.id}', -1)" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-100 hover:text-slate-900 text-slate-600 font-bold transition-all">-</button>
-                            <button onclick="adjustQty('${part.id}', 1)" class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-100 hover:text-slate-900 text-slate-600 font-bold transition-all">+</button>
-                        </td>
                     </tr>
                 `;
             });
@@ -937,21 +923,16 @@
             tbody.innerHTML = "";
 
             purchaseOrders.forEach(order => {
-                let statusColor = "";
-                let actionBtn = "";
+                let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
 
                 if (order.status === "รอดำเนินการ" || order.status === "Pending") {
                     statusColor = "bg-indigo-50 border border-indigo-100 text-indigo-700";
-                    actionBtn = `<button onclick="updateOrderStatus('${order.poNo !== '-' ? order.poNo : order.prNo}', 'DEL.')" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg transition-colors flex items-center space-x-1 font-bold shadow-sm"><i data-lucide="truck" class="w-3.5 h-3.5"></i> <span>ส่งของ</span></button>`;
                 } else if (order.status === "กำลังจัดส่ง" || order.status === "DEL.") {
                     statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
-                    actionBtn = `<button onclick="updateOrderStatus('${order.poNo !== '-' ? order.poNo : order.prNo}', 'RECEIVED')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg transition-colors flex items-center space-x-1 font-bold shadow-sm"><i data-lucide="package-check" class="w-3.5 h-3.5"></i> <span>ตรวจรับอะไหล่</span></button>`;
                 } else if (order.status === "RECEIVED" || order.status === "ได้รับแล้ว") {
                     statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
-                    actionBtn = `<span class="text-xs text-slate-500 italic">ตรวจรับและเติมคลังเรียบร้อย</span>`;
                 } else if (order.status === "Cancle" || order.status === "Cancel") {
                     statusColor = "bg-rose-50 border border-rose-100 text-rose-700";
-                    actionBtn = `<span class="text-xs text-slate-500 italic">ยกเลิกแล้ว</span>`;
                 }
 
                 tbody.innerHTML += `
@@ -968,12 +949,10 @@
                         <td class="px-6 py-4 text-xs text-slate-500">${order.category}</td>
                         <td class="px-6 py-4 text-xs text-slate-500">${order.vendor || "-"}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-bold rounded-lg ${statusColor}">${order.status}</span></td>
-                        <td class="px-6 py-4 text-right flex items-center justify-end">${actionBtn}</td>
                     </tr>
                 `;
             });
 
-            // Calculate state summary
             const pOrders = purchaseOrders.filter(o => o.status === "รอดำเนินการ" || o.status === "Pending").length;
             const sOrders = purchaseOrders.filter(o => o.status === "กำลังจัดส่ง" || o.status === "DEL.").length;
             const rOrders = purchaseOrders.filter(o => o.status === "ได้รับแล้ว" || o.status === "RECEIVED").length;
