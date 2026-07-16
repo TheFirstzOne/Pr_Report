@@ -520,18 +520,11 @@
                 </div>
             </section>
 
-            <!-- 5. QUOTES TAB -->
             <section id="content-quotes" class="tab-content hidden space-y-6">
                 <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                        <div>
-                            <h3 class="font-bold text-base text-slate-800">ประวัติใบเสนอราคาที่ได้รับจากร้านค้า (Quotation Registry)</h3>
-                            <p class="text-xs text-slate-500 mt-1">เปรียบเทียบข้อมูลราคา อนุมัติการซื้อเพื่อออกเลขใบ PO ได้โดยตรงจากที่นี่</p>
-                        </div>
-                        <button onclick="openModal('addQuote')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center space-x-1.5 shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
-                            <i data-lucide="file-plus-2" class="w-3.5 h-3.5"></i>
-                            <span>เพิ่มใบเสนอราคาเข้าระบบ</span>
-                        </button>
+                    <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                        <h3 class="font-bold text-base text-slate-800">ประวัติใบเสนอราคาที่ได้รับจากร้านค้า (Quotation Registry)</h3>
+                        <p class="text-xs text-slate-500 mt-1">บันทึกใบเสนอราคาที่ได้รับจากซัพพลายเออร์ทั้งหมด</p>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm text-slate-600">
@@ -585,8 +578,6 @@
                                             <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
                                         </div>
                                     </th>
-                                    <th class="px-6 py-4">สถานะอนุมัติ</th>
-                                    <th class="px-6 py-4 text-right">ดำเนินการ</th>
                                 </tr>
                             </thead>
                             <tbody id="quotes-table-body">
@@ -1019,32 +1010,16 @@
             tbody.innerHTML = "";
 
             quoteHistory.forEach(q => {
-                let statusBadge = "";
-                let actionBtn = "";
-
-                if (q.status === "รอพิจารณาอนุมัติ") {
-                    statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-50 border border-amber-100 text-amber-700">รอเปิด PO</span>`;
-                    actionBtn = `<button onclick="approveQuotation('${q.id}')" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold transition-all shadow-sm flex items-center space-x-1"><i data-lucide="check-square" class="w-3.5 h-3.5"></i> <span>อนุมัติสั่งซื้อ</span></button>`;
-                } else if (q.status === "อนุมัติเรียบร้อย") {
-                    statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700">อนุมัติแล้ว</span>`;
-                    actionBtn = `<span class="text-xs text-slate-500 italic">ดำเนินการเรียบร้อย</span>`;
-                } else {
-                    statusBadge = `<span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 border border-slate-200 text-slate-500">ปฏิเสธ</span>`;
-                    actionBtn = `<span class="text-xs text-slate-500 italic">-</span>`;
-                }
-
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td class="px-6 py-4 text-xs font-semibold text-slate-500">${q.date || "-"}</td>
-                        <td class="px-6 py-4 font-semibold text-slate-600 text-xs">${q.id}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-600 text-xs">${q.rfqRef || "-"}</td>
                         <td class="px-6 py-4 text-slate-800 font-medium">${q.supplier}</td>
                         <td class="px-6 py-4 font-bold text-slate-900">${q.itemName}</td>
                         <td class="px-6 py-4 text-center font-semibold text-slate-800">${q.qty}</td>
                         <td class="px-6 py-4 text-center text-xs font-semibold text-slate-600">${q.unit || "Pc"}</td>
                         <td class="px-6 py-4 text-center font-semibold text-slate-800">${q.unitPrice.toLocaleString()} ฿</td>
                         <td class="px-6 py-4 text-right font-bold text-slate-900">${q.totalCost.toLocaleString()} ฿</td>
-                        <td class="px-6 py-4">${statusBadge}</td>
-                        <td class="px-6 py-4 text-right flex items-center justify-end">${actionBtn}</td>
                     </tr>
                 `;
             });
