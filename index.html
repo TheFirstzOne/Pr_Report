@@ -302,32 +302,56 @@
 
             <!-- 3. REQUEST FOR QUOTATION (RFQ) TAB -->
             <section id="content-rfq" class="tab-content hidden space-y-6">
-                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                        <div>
-                            <h3 class="font-bold text-base text-slate-800">รายการขอใบเสนอราคา (RFQ)</h3>
-                            <p class="text-xs text-slate-500 mt-1">บันทึกประวัติเอกสารส่งเทียบราคาคู่ค้าและซัพพลายเออร์ต่างๆ</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
                         </div>
-                        <button onclick="openModal('rfq')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center space-x-1.5 shadow-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
-                            <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
-                            <span>ออกเอกสารขอราคาใหม่</span>
-                        </button>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">คำขอเทียบราคาทั้งหมด</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-total-requests">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รอตรวจสอบ (review)</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-review-requests">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                            <i data-lucide="file-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ใบเสนอราคาที่ได้รับทั้งระบบ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-total-quotes-system">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                        <h3 class="font-bold text-base text-slate-800">รายการขอเทียบราคา (Requests)</h3>
+                        <p class="text-xs text-slate-500 mt-1">คำขอเทียบราคาที่ส่งเข้ามาจากผู้ใช้งาน พร้อมสถานะการตรวจสอบ</p>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm text-slate-600">
                             <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100 font-bold">
                                 <tr>
-                                    <th class="px-6 py-4">เลขที่ RFQ</th>
-                                    <th class="px-6 py-4">รายการอะไหล่พัสดุ</th>
-                                    <th class="px-6 py-4">ประเภทอะไหล่</th>
-                                    <th class="px-6 py-4 text-center">ส่งเทียบราคาทั้งหมด</th>
-                                    <th class="px-6 py-4 text-center">วันที่ออกใบคำขอ</th>
-                                    <th class="px-6 py-4">สถานะปัจจุบัน</th>
-                                    <th class="px-6 py-4 text-right">การจัดการ</th>
+                                    <th class="px-6 py-4">เลขที่คำขอ</th>
+                                    <th class="px-6 py-4">วันที่ขอ</th>
+                                    <th class="px-6 py-4">ผู้ขอ / แผนก</th>
+                                    <th class="px-6 py-4">รายการอะไหล่</th>
+                                    <th class="px-6 py-4 text-center">จำนวน</th>
+                                    <th class="px-6 py-4">หมายเหตุ</th>
+                                    <th class="px-6 py-4 text-center">ด่วน</th>
+                                    <th class="px-6 py-4">สถานะ</th>
                                 </tr>
                             </thead>
                             <tbody id="rfq-table-body">
-                                <!-- Dynamic RFQ List -->
+                                <!-- Dynamic Requests List -->
                             </tbody>
                         </table>
                     </div>
@@ -857,9 +881,6 @@
             const pendingOrdersCount = purchaseOrders.filter(o => o.status === "กำลังจัดส่ง" || o.status === "รอดำเนินการ" || o.status === "Pending" || o.status === "DEL.").length;
             document.getElementById("pending-orders-badge").innerText = pendingOrdersCount;
             
-            const pendingQuotesCount = quoteHistory.filter(q => q.status === "รอพิจารณาอนุมัติ").length;
-            document.getElementById("pending-quotes-badge").innerText = pendingQuotesCount;
-
             const lowStockCount = stockParts.filter(p => p.qty <= p.reorder).length;
             const lowStockBadge = document.getElementById("low-stock-badge");
             if (lowStockCount > 0) {
@@ -965,25 +986,32 @@
             const tbody = document.getElementById("rfq-table-body");
             tbody.innerHTML = "";
 
-            rfqList.forEach(rfq => {
-                let statusColor = "bg-slate-100 text-slate-600";
-                if (rfq.status === "ได้รับเสนอราคาแล้ว") statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
-                else if (rfq.status === "รอรับใบเสนอราคา") statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
+            rfqList.forEach(req => {
+                let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
+                if (req.status === "ok") statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
+                else if (req.status === "review") statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
+
+                const urgentBadge = req.urgent
+                    ? `<span class="px-2 py-0.5 text-xs font-bold rounded-full bg-rose-100 text-rose-700">ด่วน</span>`
+                    : `<span class="text-xs text-slate-400">-</span>`;
 
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                        <td class="px-6 py-4 font-semibold text-slate-800">${rfq.id}</td>
-                        <td class="px-6 py-4 font-bold text-slate-900">${rfq.itemName}</td>
-                        <td class="px-6 py-4 text-xs text-slate-500">${rfq.category}</td>
-                        <td class="px-6 py-4 text-center text-slate-800 font-semibold">${rfq.supplierCount} ราย</td>
-                        <td class="px-6 py-4 text-center text-xs">${rfq.date}</td>
-                        <td class="px-6 py-4"><span class="px-2.5 py-1 text-xs font-bold rounded-lg ${statusColor}">${rfq.status}</span></td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="simulateQuotationResponse('${rfq.id}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200/50 font-bold transition-all">จำลองข้อเสนอคู่ค้า</button>
-                        </td>
+                        <td class="px-6 py-4 font-semibold text-slate-800">${req.id}</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">${req.date}</td>
+                        <td class="px-6 py-4 text-xs text-slate-700">${req.who}${req.role ? " / " + req.role : ""}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900">${req.part}</td>
+                        <td class="px-6 py-4 text-center text-slate-800 font-semibold">${req.qty || "-"}</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">${req.remark || "-"}</td>
+                        <td class="px-6 py-4 text-center">${urgentBadge}</td>
+                        <td class="px-6 py-4"><span class="px-2.5 py-1 text-xs font-bold rounded-lg ${statusColor}">${req.status || "-"}</span></td>
                     </tr>
                 `;
             });
+
+            document.getElementById("stat-total-requests").innerText = rfqList.length;
+            document.getElementById("stat-review-requests").innerText = rfqList.filter(r => r.status === "review").length;
+            document.getElementById("stat-total-quotes-system").innerText = quoteHistory.length;
         }
 
         function renderQuotesTable() {
