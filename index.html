@@ -849,7 +849,7 @@
             return "PENDING"; // Default fallback
         }
 
-        // [DEBUG-perf01 root cause] The Apps Script exec URL this page depends on has
+        // The Apps Script exec URL this page depends on has
         // a measured 2-8s baseline latency (even for the smallest single sheet) and
         // occasionally hangs 2+ minutes — inherent to Apps Script Web Apps, not a bug
         // in Code.gs. Two independent mitigations below: cache-then-revalidate so
@@ -1278,7 +1278,7 @@
         function renderStockTable() {
             const tbody = document.getElementById("stock-table-body");
 
-            // [DEBUG-perf01 fix] Build the full row HTML once via map().join() and
+            // Build the full row HTML once via map().join() and
             // assign it in a single write, instead of tbody.innerHTML += rowHtml per
             // row (each += forces the browser to re-parse/re-render everything
             // accumulated so far, on every single row).
@@ -1309,7 +1309,7 @@
         function renderOrdersTable(orders) {
             const tbody = document.getElementById("orders-table-body");
 
-            // [DEBUG-perf01 fix] Single innerHTML write — see renderStockTable comment.
+            // Single innerHTML write — see renderStockTable comment.
             // This one matters most: 369 real rows, re-run on every filter keystroke.
             const rows = orders.map(order => {
                 let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
@@ -1359,7 +1359,7 @@
             const searchInput = document.getElementById("rfq-search");
             const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
-            // [DEBUG-perf01 fix] Single innerHTML write — see renderStockTable comment.
+            // Single innerHTML write — see renderStockTable comment.
             const rows = rfqList
                 .filter(req => {
                     if (!query) return true;
@@ -1402,7 +1402,7 @@
         function renderQuotesTable() {
             const tbody = document.getElementById("quotes-table-body");
 
-            // [DEBUG-perf01 fix] Single innerHTML write — see renderStockTable comment.
+            // Single innerHTML write — see renderStockTable comment.
             const rows = quoteHistory.map(q => `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td class="px-6 py-4 text-xs font-semibold text-slate-500">${q.date || "-"}</td>
