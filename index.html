@@ -867,6 +867,7 @@
                     normalizedStatus: normalizeOrderStatus(o.status)
                 }));
 
+                populateOrderFilterOptions();
                 renderAll();
             } catch (err) {
                 showLoadError(err && err.message ? err.message : String(err));
@@ -1007,10 +1008,37 @@
             applyOrderFilters();
         }
 
-        // We temporarily define a minimal applyOrderFilters function so that the toolbar
-        // UI does not crash the app before Task 2 wires it up.
         function applyOrderFilters() {
-            // Handled in Task 2
+            const search = orderSearchText.trim().toLowerCase();
+
+            const filteredOrders = purchaseOrders.filter(function (order) {
+                if (search) {
+                    const haystack = [order.itemName, order.prNo, order.poNo, order.matCode].join(" ").toLowerCase();
+                    if (haystack.indexOf(search) === -1) return false;
+                }
+
+                if (orderSelectedMonth !== "all") {
+                    const parts = (order.date || "").split("/");
+                    const orderMonth = parts.length === 3 ? parts[0] + "/" + parts[2] : "";
+                    if (orderMonth !== orderSelectedMonth) return false;
+                }
+
+                const statusValue = (order.status || "").trim() || ORDER_FILTER_NO_VALUE_LABEL;
+                if (orderSelectedStatuses && !orderSelectedStatuses.has(statusValue)) return false;
+
+                const categoryValue = (order.category || "").trim() || ORDER_FILTER_NO_VALUE_LABEL;
+                if (orderSelectedCategories && !orderSelectedCategories.has(categoryValue)) return false;
+
+                const vendorValue = (order.vendor || "").trim() || ORDER_FILTER_NO_VALUE_LABEL;
+                if (orderSelectedVendors && !orderSelectedVendors.has(vendorValue)) return false;
+
+                return true;
+            });
+
+            renderOrdersTable(filteredOrders);
+
+            const counterEl = document.getElementById("order-filter-count");
+            if (counterEl) counterEl.innerText = "แสดง " + filteredOrders.length + " จาก " + purchaseOrders.length + " รายการ";
         }
 
         function selectAllOrderStatus() {
@@ -1135,7 +1163,7 @@
 
         function renderAll() {
             renderStockTable();
-            renderOrdersTable();
+            applyOrderFilters();
             renderRFQTable();
             renderQuotesTable();
             renderBudgetInfo();
@@ -1204,25 +1232,11 @@
             });
         }
 
-        function renderOrdersTable() {
+        function renderOrdersTable(orders) {
             const tbody = document.getElementById("orders-table-body");
             tbody.innerHTML = "";
 
-            const searchInput = document.getElementById("po-search");
-            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
-
-            purchaseOrders.forEach(order => {
-                if (query) {
-                    const poNo = (order.poNo || "").toLowerCase();
-                    const prNo = (order.prNo || "").toLowerCase();
-                    const itemName = (order.itemName || "").toLowerCase();
-                    const matCode = (order.matCode || "").toLowerCase();
-                    const vendor = (order.vendor || "").toLowerCase();
-                    if (!poNo.includes(query) && !prNo.includes(query) && !itemName.includes(query) && !matCode.includes(query) && !vendor.includes(query)) {
-                        return;
-                    }
-                }
-
+            orders.forEach(order => {
                 let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
 
                 if (order.normalizedStatus === "PENDING") {
@@ -1253,6 +1267,7 @@
                 `;
             });
 
+            // Stat cards always reflect the full, unfiltered data set — not the filtered view.
             const pOrders = purchaseOrders.filter(o => o.normalizedStatus === "PENDING").length;
             const sOrders = purchaseOrders.filter(o => o.normalizedStatus === "SHIPPING").length;
             const rOrders = purchaseOrders.filter(o => o.normalizedStatus === "RECEIVED").length;
