@@ -1026,21 +1026,12 @@
         }
 
         function renderBudgetInfo() {
-            // Re-calculate budget statistics based on projectsBudget sheet
+            // Budget statistics come directly from the Budget sheet's own BUDGET/USED figures —
+            // they're already the authoritative per-project totals, no need to re-derive spend from PR rows.
             let totalCap = projectsBudget.reduce((sum, p) => sum + p.budget, 0);
             let totalSpentBase = projectsBudget.reduce((sum, p) => sum + p.used, 0);
-            
-            // Let's add any newly created POs (not present in the baseline sheet)
-            let newPoCost = 0;
-            purchaseOrders.forEach(o => {
-                if (o.status !== "Cancle" && o.status !== "Cancel") {
-                    if (o.date.includes('/') && !o.date.startsWith('1/5/') && !o.date.startsWith('1/12/') && !o.date.startsWith('1/14/') && !o.date.startsWith('1/19/') && !o.date.startsWith('1/20/') && !o.date.startsWith('1/21/')) {
-                        newPoCost += o.totalCost;
-                    }
-                }
-            });
 
-            const spent = totalSpentBase + newPoCost;
+            const spent = totalSpentBase;
             const remaining = Math.max(0, totalCap - spent);
             const pct = Math.min(100, Math.round((spent / totalCap) * 100));
 
