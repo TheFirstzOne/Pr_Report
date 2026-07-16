@@ -96,7 +96,7 @@
         <nav id="sidebar-nav" class="flex-1 px-4 py-6 space-y-6 overflow-y-auto hidden md:block">
             <!-- Group 1: Inventory -->
             <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">พัสดุและคลังสินค้า</p>
+                <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">พัสดุและคลังสินค้า</p>
                 <div class="space-y-1">
                     <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md shadow-indigo-950/20 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="package" class="w-4.5 h-4.5"></i>
@@ -108,31 +108,37 @@
             
             <!-- Group 2: Procurement -->
             <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">การจัดซื้อจัดหา</p>
+                <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">การจัดซื้อจัดหา</p>
                 <div class="space-y-1">
-                    <button onclick="switchTab('rfq')" id="tab-rfq" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('rfq')" id="tab-rfq" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="file-text" class="w-4.5 h-4.5"></i>
                         <span>รายการขอราคา (RFQ)</span>
                     </button>
                     
-                    <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="file-check" class="w-4.5 h-4.5"></i>
                         <span>ประวัติใบเสนอราคา</span>
                     </button>
-
-                    <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+ 
+                    <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="shopping-cart" class="w-4.5 h-4.5"></i>
                         <span>รายการคำสั่งซื้อ (PO)</span>
                         <span class="ml-auto bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full" id="pending-orders-badge">1</span>
                     </button>
                 </div>
             </div>
-
+ 
             <!-- Group 3: Budget & Finance -->
             <div>
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">การเงินและงบประมาณ</p>
+                <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">การเงินและงบประมาณ</p>
                 <div class="space-y-1">
-                    <button onclick="switchTab('budget')" id="tab-budget" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('budget')" id="tab-budget" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="wallet" class="w-4.5 h-4.5"></i>
+                        <span>งบประมาณ (Budget)</span>
+                    </button>
+                </div>
+            </div>
+        </nav>ll duration-200 text-slate-400 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="wallet" class="w-4.5 h-4.5"></i>
                         <span>งบประมาณ (Budget)</span>
                     </button>
@@ -756,6 +762,23 @@
         let quoteHistory = [];
         let purchaseOrders = [];
 
+        function normalizeOrderStatus(status) {
+            const s = (status || "").trim().toUpperCase();
+            if (s === "PENDING" || s === "รอดำเนินการ" || s === "WAITING") {
+                return "PENDING";
+            }
+            if (s === "DEL." || s === "DELIVERING" || s === "SHIPPED" || s === "กำลังจัดส่ง" || s === "SHIPPING") {
+                return "SHIPPING";
+            }
+            if (s === "RECEIVED" || s === "ได้รับแล้ว" || s === "OK" || s === "SUCCESS") {
+                return "RECEIVED";
+            }
+            if (s === "CANCEL" || s === "CANCLE" || s === "ยกเลิก" || s === "CANCELLED") {
+                return "CANCELLED";
+            }
+            return "PENDING"; // Default fallback
+        }
+
         async function loadAllData() {
             hideLoadError();
             setRefreshing(true);
@@ -770,7 +793,10 @@
                 rfqList = data.requests || [];
                 quoteHistory = data.quotes || [];
                 projectsBudget = data.budget || [];
-                purchaseOrders = data.orders || [];
+                purchaseOrders = (data.orders || []).map(o => ({
+                    ...o,
+                    normalizedStatus: normalizeOrderStatus(o.status)
+                }));
 
                 renderAll();
             } catch (err) {
@@ -872,7 +898,7 @@
             populateFormDropdowns();
             
             // Global Badges Update
-            const pendingOrdersCount = purchaseOrders.filter(o => o.status === "กำลังจัดส่ง" || o.status === "รอดำเนินการ" || o.status === "Pending" || o.status === "DEL.").length;
+            const pendingOrdersCount = purchaseOrders.filter(o => o.normalizedStatus === "SHIPPING" || o.normalizedStatus === "PENDING").length;
             document.getElementById("pending-orders-badge").innerText = pendingOrdersCount;
             
             const lowStockCount = stockParts.filter(p => p.qty <= p.reorder).length;
@@ -954,13 +980,13 @@
 
                 let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
 
-                if (order.status === "รอดำเนินการ" || order.status === "Pending") {
+                if (order.normalizedStatus === "PENDING") {
                     statusColor = "bg-indigo-50 border border-indigo-100 text-indigo-700";
-                } else if (order.status === "กำลังจัดส่ง" || order.status === "DEL.") {
+                } else if (order.normalizedStatus === "SHIPPING") {
                     statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
-                } else if (order.status === "RECEIVED" || order.status === "ได้รับแล้ว") {
+                } else if (order.normalizedStatus === "RECEIVED") {
                     statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
-                } else if (order.status === "Cancle" || order.status === "Cancel") {
+                } else if (order.normalizedStatus === "CANCELLED") {
                     statusColor = "bg-rose-50 border border-rose-100 text-rose-700";
                 }
 
@@ -982,9 +1008,9 @@
                 `;
             });
 
-            const pOrders = purchaseOrders.filter(o => o.status === "รอดำเนินการ" || o.status === "Pending").length;
-            const sOrders = purchaseOrders.filter(o => o.status === "กำลังจัดส่ง" || o.status === "DEL.").length;
-            const rOrders = purchaseOrders.filter(o => o.status === "ได้รับแล้ว" || o.status === "RECEIVED").length;
+            const pOrders = purchaseOrders.filter(o => o.normalizedStatus === "PENDING").length;
+            const sOrders = purchaseOrders.filter(o => o.normalizedStatus === "SHIPPING").length;
+            const rOrders = purchaseOrders.filter(o => o.normalizedStatus === "RECEIVED").length;
             document.getElementById("stat-pending-orders").innerText = pOrders;
             document.getElementById("stat-shipping-orders").innerText = sOrders;
             document.getElementById("stat-success-orders").innerText = rOrders;
@@ -1100,18 +1126,10 @@
             let sumAcces = 0;
             let sumAsset = 0;
 
-            // Approximate baseline projects into PR sheet categories
-            projectsBudget.forEach(p => {
-                if (p.desc.toLowerCase().includes("jig") || p.desc.toLowerCase().includes("tooling")) {
-                    sumJig += p.used;
-                } else {
-                    sumProject += p.used;
-                }
-            });
-
             // Group PO costs using EXACT category names from PR sheet
+            // Remove baseline project aggregation to prevent double-counting category spends.
             purchaseOrders.forEach(o => {
-                if (o.status !== "Cancle" && o.status !== "Cancel") {
+                if (o.normalizedStatus !== "CANCELLED") {
                     const cat = (o.category || "").toUpperCase().trim();
                     if (cat === "MAINTENANCE") {
                         sumMaintenance += o.totalCost;
