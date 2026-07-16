@@ -861,7 +861,7 @@
 
         function readCachedData() {
             try {
-                const raw = sessionStorage.getItem(DATA_CACHE_KEY);
+                const raw = localStorage.getItem(DATA_CACHE_KEY);
                 return raw ? JSON.parse(raw) : null;
             } catch (err) {
                 return null;
@@ -870,9 +870,9 @@
 
         function writeCachedData(data) {
             try {
-                sessionStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
+                localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
             } catch (err) {
-                // sessionStorage full/unavailable — caching is a nice-to-have, not fatal.
+                // localStorage full/unavailable — caching is a nice-to-have, not fatal.
             }
         }
 
