@@ -164,6 +164,10 @@
                     กำลังโหลดเวลา...
                 </span>
             </div>
+            <button id="btn-refresh-data" onclick="loadAllData()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1.5 transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>รีเฟรชข้อมูล</span>
+            </button>
         </header>
 
         <!-- Custom Toast Notification Box -->
@@ -731,83 +735,71 @@
         let budgetCap = 1200000;
         let budgetSpent = 168000; // Calculated baseline spent
 
-        // Seeded with real data from Google Sheet "STOCK"
-        let stockParts = [
-            { id: "50000379", name: "ข้อต่อตรง ขนาด 6xM5", category: "ข้อต่อตรง", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 1", qty: 12, reorder: 5 },
-            { id: "50000399", name: "สปีดคอนโทรล ขนาด 6xM5", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 2", qty: 3, reorder: 5 },
-            { id: "50000400", name: "สปีดคอนโทรล ขนาด 6x1/8\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 2", qty: 15, reorder: 10 },
-            { id: "50000401", name: "สปีดคอนโทรล ขนาด 6x1/4\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 2", qty: 8, reorder: 5 },
-            { id: "50000403", name: "สปีดคอนโทรล ขนาด 8x1/8\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 3", qty: 2, reorder: 5 },
-            { id: "50000404", name: "สปีดคอนโทรล ขนาด 8x1/4\"", category: "สปีดคอนโทรล", type: "z50", unit: "Pc", location: "ตู้ A1-ชั้น 3", qty: 20, reorder: 10 },
-            { id: "50002567", name: "Compact Cyl. Bore32-st15D CDQ2A32-15D", category: "กระบอกสูบ", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 1", qty: 4, reorder: 3 },
-            { id: "50002925", name: "Compact Cyl. 40x15 ACQ40-15S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 1", qty: 7, reorder: 5 },
-            { id: "50002926", name: "Compact Cyl. 40x40 ACQ40-40S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 2", qty: 1, reorder: 3 },
-            { id: "50002927", name: "Compact Cyl. 32x30 ACQ32-30S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 2", qty: 6, reorder: 5 },
-            { id: "50002928", name: "Compact Cyl. 50x15 ACQ50-15S", category: "Cyl. Compact", type: "z50", unit: "Pc", location: "ตู้ B1-ชั้น 3", qty: 2, reorder: 3 },
-            { id: "50003077", name: "Cyl : Bored25xst200 MAL25-200", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 1", qty: 5, reorder: 3 },
-            { id: "70003526", name: "บอลวาล์วทองเหลือง 1/4\"", category: "Ball valve", type: "z70", unit: "Pc", location: "ตู้ C1-ชั้น 1", qty: 18, reorder: 10 },
-            { id: "70012794", name: "ข้อต่อ 3 ทางขนาด 6mm.", category: "ข้อต่อ 3 ทาง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 1", qty: 22, reorder: 10 },
-            { id: "70012799", name: "ข้อต่อตรง 6 มิล เกลียว1/8\" (PC6-01)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 2", qty: 14, reorder: 10 },
-            { id: "70012800", name: "ข้อต่อตรง 6 มิล เกลียว1/4\" (PC6-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 2", qty: 9, reorder: 5 },
-            { id: "70012802", name: "ข้อต่อตรง 8 มิล เกลียว1/8\" (PC8-01)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 3", qty: 12, reorder: 10 },
-            { id: "70012803", name: "ข้อต่อตรง 8 มิล เกลียว1/4\" (PC8-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 3", qty: 4, reorder: 5 },
-            { id: "70012804", name: "ข้อต่อตรง 8มิล เกลียว 3/8\"", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 4", qty: 11, reorder: 5 },
-            { id: "70012807", name: "ข้อต่อตรง 10 มิล เกลียว1/4\" (PC10-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 1", qty: 8, reorder: 5 },
-            { id: "70012808", name: "ข้อต่อตรง 10 มิล เกลียว3/8\" (PC10-03)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 1", qty: 16, reorder: 10 },
-            { id: "70012810", name: "ข้อต่อตรง 12มิล เกลียว 1/4\" (PC12-02)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 2", qty: 5, reorder: 5 },
-            { id: "70012811", name: "ข้อต่อตรง 12 มิล เกลียว3/8\" (PC12-03)", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C3-ชั้น 2", qty: 3, reorder: 5 },
-            { id: "70012823", name: "speed control 8mm x 1/4\"", category: "สปีดคอนโทรล", type: "z70", unit: "Pc", location: "ตู้ C4-ชั้น 1", qty: 7, reorder: 5 },
-            { id: "70012837", name: "Sol. valve 4V210 24 VDC", category: "Soliniod valve", type: "z70", unit: "Pc", location: "ตู้ D1-ชั้น 1", qty: 2, reorder: 3 },
-            { id: "70012850", name: "Silencer ทองเหลือง เกลียว1/4\" (B-1/4\")", category: "Silencer", type: "z70", unit: "Pc", location: "ตู้ D2-ชั้น 1", qty: 25, reorder: 10 },
-            { id: "70012851", name: "Silencer ทองเหลือง เกลียว3/8\" (B-3/8\")", category: "Silencer", type: "z70", unit: "Pc", location: "ตู้ D2-ชั้น 2", qty: 13, reorder: 5 },
-            { id: "70024619", name: "Air filter regulator PT1/4\" AW2000-02D", category: "Regulator", type: "z70", unit: "Pc", location: "ตู้ D3-ชั้น 1", qty: 1, reorder: 2 },
-            { id: "70024620", name: "Pressure Seitch IS30A-01-NM", category: "Pressure", type: "z70", unit: "Pc", location: "ตู้ D4-ชั้น 1", qty: 4, reorder: 3 },
-            { id: "70024621", name: "ข้อต่อตรง 6mmXM5", category: "ข้อต่อตรง", type: "z70", unit: "Pc", location: "ตู้ C2-ชั้น 4", qty: 30, reorder: 15 },
-            { id: "70024856", name: "Pressure switch HP-35", category: "Pressure", type: "z70", unit: "Pc", location: "ตู้ D4-ชั้น 2", qty: 2, reorder: 3 },
-            { id: "70025496", name: "ปลั๊กอุดวาล์ว เกลียว1/4\" (BD-1/4\")", category: "Plug", type: "z70", unit: "Pc", location: "ตู้ E1-ชั้น 1", qty: 40, reorder: 20 },
-            { id: "70025497", name: "ปลั๊กอุดวาล์ว เกลียว3/8\" (BD-3/8\")", category: "Plug", type: "z70", unit: "Pc", location: "ตู้ E1-ชั้น 2", qty: 18, reorder: 10 },
-            { id: "50000705", name: "กระบอกลม Air cylinder Bore125xst50", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 2", qty: 2, reorder: 2 },
-            { id: "50003336", name: "CY3R32-450N SMC AIR CYLINDER", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 3", qty: 1, reorder: 2 },
-            { id: "50000472", name: "AIR CYLINDER CY3R32-450", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B2-ชั้น 3", qty: 3, reorder: 2 },
-            { id: "50003469", name: "Cyl. Air SI40x250-S-P Bore40 stoke250", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B3-ชั้น 1", qty: 2, reorder: 2 },
-            { id: "50003470", name: "Cyl. Air CDM2B40x100Z-P Bore40 stoke100", category: "Cyl.", type: "z50", unit: "Pc", location: "ตู้ B3-ชั้น 2", qty: 5, reorder: 3 }
-        ];
+        // Paste your deployed Apps Script Web App exec URL here (Task 2 of the implementation plan)
+        const EXEC_URL = "https://script.google.com/macros/s/AKfycbyofRf8n3bW4ZTnfpHOnasHQZh0XCpT7jhS_SUkJJEyGWFSp0y-Emt6VdnbYdNAQcUC/exec";
 
-        // Seeded with project budget details from Google Sheet "BUDGET"
-        let projectsBudget = [
-            { no: 1, io: "F26011200501", asset: "122150000223", costCenter: "-", desc: "Project:งานปรับปรุงเครื่องตัด-ดัด-ปั๊ม No.01", budget: 173680, used: 173680, current: 0 },
-            { no: 2, io: "P26011200502", asset: "129000000038", costCenter: "-", desc: "Project:เครื่องปั๊ม 5 หัว", budget: 198097.80, used: 204894, current: -6796.20 },
-            { no: 3, io: "P26031200501", asset: "129000000039", costCenter: "-", desc: "Project:เครื่องมาร์กลูกศร", budget: 83910.50, used: 75512, current: 8398.50 },
-            { no: 4, io: "P26041200501", asset: "129000000040", costCenter: "-", desc: "Project : Dark Factory", budget: 486205.50, used: 164435.75, current: 321769.75 },
-            { no: 5, io: "A20261200002", asset: "-", costCenter: "-", desc: "Tooling Jig & Fixture", budget: 509421.00, used: 0, current: 509421.00 },
-            { no: 6, io: "P26051200502", asset: "129000000041", costCenter: "120105", desc: "Project:Inspection MCP", budget: 0, used: 98931, current: -98931 }
-        ];
+        let stockParts = [];
+        let projectsBudget = [];
+        let rfqList = [];
+        let quoteHistory = [];
+        let purchaseOrders = [];
 
-        let rfqList = [
-            { id: "RFQ-2026-001", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", category: "เครื่องกล", qty: 10, supplierCount: 3, date: "10 ก.ค. 2026", status: "ได้รับเสนอราคาแล้ว" },
-            { id: "RFQ-2026-002", itemName: "โซลินอยด์วาล์ว SMC 24VDC", category: "ไฟฟ้า", qty: 5, supplierCount: 1, date: "12 ก.ค. 2026", status: "รอรับใบเสนอราคา" }
-        ];
+        async function loadAllData() {
+            hideLoadError();
+            setRefreshing(true);
+            try {
+                const res = await fetch(EXEC_URL + "?action=all");
+                const data = await res.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
 
-        let quoteHistory = [
-            { id: "QO-2026-001", date: "15 ก.ค. 2026", supplier: "บริษัท สามัญแบริ่ง จำกัด", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", qty: 10, unit: "Pc", unitPrice: 450, totalCost: 4500, rfqRef: "RFQ-2026-001", status: "รอพิจารณาอนุมัติ" },
-            { id: "QO-2026-002", date: "15 ก.ค. 2026", supplier: "ไทยวิวัฒน์ แมชชีนเนอรี่", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", qty: 10, unit: "Pc", unitPrice: 480, totalCost: 4800, rfqRef: "RFQ-2026-001", status: "รอพิจารณาอนุมัติ" },
-            { id: "QO-2026-003", date: "15 ก.ค. 2026", supplier: "สหรุ่งโรจน์ ฮาร์ดแวร์", itemName: "ตลับลูกปืนเม็ดกลม NSK 6204", qty: 10, unit: "Pc", unitPrice: 420, totalCost: 4200, rfqRef: "RFQ-2026-001", status: "รอพิจารณาอนุมัติ" }
-        ];
+                stockParts = data.stock || [];
+                rfqList = data.requests || [];
+                quoteHistory = data.quotes || [];
+                projectsBudget = data.budget || [];
+                purchaseOrders = data.orders || [];
 
-        // Seeded with real PR/PO data from the user Google Sheet
-        let purchaseOrders = [
-            { date: "1/5/2026", poNo: "3100132454", prNo: "1100030413", matCode: "70002801", itemName: "สกรูหัวจม 4x15", qty: 100, unit: "Pc", unitPrice: 1.2, totalCost: 120, status: "RECEIVED", category: "JIG & FIXTURE", vendor: "บริษัท สหรุ่งเรือง จำกัด" },
-            { date: "1/5/2026", poNo: "3100132650", prNo: "1100030416", matCode: "70037099", itemName: "LED TUBE - PHILIPS MASTER 13W 1200mm. DAYLIGHT", qty: 20, unit: "Pc", unitPrice: 210, totalCost: 4200, status: "RECEIVED", category: "MAINTENANCE", vendor: "ไทยวิวัฒน์ แมชชีนเนอรี่" },
-            { date: "1/5/2026", poNo: "3100132575", prNo: "1100030419", matCode: "50000469", itemName: "Air Cyl CDJ2B10-10 bore10 x st10", qty: 10, unit: "Pc", unitPrice: 650, totalCost: 6500, status: "RECEIVED", category: "MAINTENANCE", vendor: "กรุงเทพ ไฮดรอลิก พาร์ท" },
-            { date: "1/12/2026", poNo: "3100133852", prNo: "1100030573", matCode: "50004884", itemName: "Air Cyl Bore40x200 SU40x200S", qty: 3, unit: "Pc", unitPrice: 1560, totalCost: 4680, status: "RECEIVED", category: "MAINTENANCE", vendor: "ไทยแลนด์ ทูลส์ เซ็นเตอร์" },
-            { date: "1/12/2026", poNo: "3100133306", prNo: "1100030506", matCode: "50004740", itemName: "Linear Bearing (GH15-W 2201 1H)", qty: 8, unit: "Pc", unitPrice: 1120, totalCost: 8960, status: "RECEIVED", category: "PROJECT", vendor: "บริษัท สามัญแบริ่ง จำกัด" },
-            { date: "1/12/2026", poNo: "-", prNo: "1100030507", matCode: "50002739", itemName: "PLC : FX5U-80MT/ES", qty: 1, unit: "Pc", unitPrice: 19000, totalCost: 19000, status: "Cancel", category: "PROJECT", vendor: "-" },
-            { date: "1/12/2026", poNo: "-", prNo: "1100030507", matCode: "50002765", itemName: "Weintek Touch screen (MT807IE1)", qty: 1, unit: "Pc", unitPrice: 9500, totalCost: 9500, status: "Cancel", category: "PROJECT", vendor: "-" },
-            { date: "1/14/2026", poNo: "-", prNo: "-", matCode: "-", itemName: "Break the upper clamping mold 拉断夹模块上 (Φ9.52)", qty: 1, unit: "PC", unitPrice: 3490, totalCost: 3490, status: "Pending", category: "MAINTENANCE", vendor: "-" },
-            { date: "1/19/2026", poNo: "3100133859", prNo: "1100030656", matCode: "70038123", itemName: "Fuse DAITO GP150", qty: 5, unit: "PC", unitPrice: 400, totalCost: 2000, status: "DEL.", category: "MAINTENANCE", vendor: "ไทยรุ่งเรืองซัพพลาย" },
-            { date: "1/19/2026", poNo: "3100133513", prNo: "1100030622", matCode: "70038124", itemName: "แกนรีด-PUNCH SPC3-50-P2.6", qty: 12, unit: "PC", unitPrice: 51, totalCost: 612, status: "DEL.", category: "JIG & FIXTURE", vendor: "บริษัท เอส.พี. ออโตเมติก" },
-            { date: "1/20/2026", poNo: "3100133499", prNo: "1100030631", matCode: "50000414", itemName: "สายลม PU ขนาด 6มิล (สีน้ำเงิน) 200M./Roll", qty: 1, unit: "Roll", unitPrice: 1560, totalCost: 1560, status: "RECEIVED", category: "PROJECT", vendor: "กรุงเทพ ไฮดรอลิก พาร์ท" }
-        ];
+                renderAll();
+            } catch (err) {
+                showLoadError(err && err.message ? err.message : String(err));
+            } finally {
+                setRefreshing(false);
+            }
+        }
+
+        function showLoadError(message) {
+            const container = document.getElementById("system-alerts-container");
+            let banner = document.getElementById("load-error-banner");
+            if (!banner) {
+                banner = document.createElement("div");
+                banner.id = "load-error-banner";
+                banner.className = "flex items-center justify-between bg-rose-50 border border-rose-200/50 text-rose-800 px-4 py-3 rounded-xl text-sm shadow-sm";
+                container.prepend(banner);
+            }
+            banner.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+                    <span>โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ: ${message}</span>
+                </div>
+                <button onclick="loadAllData()" class="text-xs font-bold underline hover:text-rose-950 transition-colors">ลองใหม่</button>
+            `;
+            lucide.createIcons();
+        }
+
+        function hideLoadError() {
+            const banner = document.getElementById("load-error-banner");
+            if (banner) banner.remove();
+        }
+
+        function setRefreshing(isRefreshing) {
+            const btn = document.getElementById("btn-refresh-data");
+            if (!btn) return;
+            btn.disabled = isRefreshing;
+            btn.classList.toggle("opacity-50", isRefreshing);
+            const label = btn.querySelector("span");
+            if (label) label.innerText = isRefreshing ? "กำลังโหลด..." : "รีเฟรชข้อมูล";
+        }
 
         let showLowStockOnly = false;
         let budgetChartInstance = null;
@@ -817,11 +809,10 @@
             lucide.createIcons();
             updateLiveTime();
             setInterval(updateLiveTime, 1000);
-            
-            // Render default starting screen
-            renderAll();
+
             initializeBudgetChart();
-            
+            loadAllData();
+
             // Default load into Stock tab
             switchTab('stock');
         }
