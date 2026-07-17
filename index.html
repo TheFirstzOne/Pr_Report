@@ -900,14 +900,222 @@
             renderAll();
         }
 
+        const SHEET_ID = "1oOzyZxcfzzfirdeOKUO1m9S6NjXKFUFgkfhNzNZqtV8";
+
+        function gvizUrl_(sheetName) {
+            return "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
+                "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(sheetName);
+        }
+
+        function unwrapGviz_(text) {
+            const start = text.indexOf('(');
+            const end = text.lastIndexOf(')');
+            if (start === -1 || end === -1) throw new Error('Unexpected gviz response shape');
+            return JSON.parse(text.substring(start + 1, end));
+        }
+
+        function gvizTableToRows_(table) {
+            const headers = table.cols.map(function (col) { return col ? String(col.label || '').trim() : ''; });
+            const rows = (table.rows || []).map(function (r) {
+                return (r.c || []).map(function (cell) { return cell ? cell.v : null; });
+            });
+            return { headers: headers, rows: rows };
+        }
+
+        async function fetchGvizTable_(sheetName, signal) {
+            const res = await fetch(gvizUrl_(sheetName), { signal: signal });
+            const text = await res.text();
+            return gvizTableToRows_(unwrapGviz_(text).table);
+        }
+
+        function formatDate_(rawCellValue) {
+            if (typeof rawCellValue === 'string') {
+                const m = /^Date\((\d+),(\d+),(\d+)\)$/.exec(rawCellValue);
+                if (m) return (Number(m[2]) + 1) + '/' + m[3] + '/' + m[1];
+            }
+            return String(rawCellValue || '');
+        }
+
+        function parseMoney_(val) {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            return parseFloat(String(val).replace(/,/g, '')) || 0;
+        }
+
+        function gvizToStock_(sheetData) {
+            const headers = sheetData.headers;
+            const rows = sheetData.rows;
+            const catIdx = headers.indexOf('CATEGORY');
+            const descIdx = headers.indexOf('DESCRIPTION');
+            const qtyIdx = headers.indexOf('Qty.');
+            const unitIdx = headers.indexOf('Unit');
+            const reorderIdx = headers.indexOf('safety factor');
+            const remarkIdx = headers.indexOf('Remark');
+            const matCodeIdx = 1;
+
+            return rows
+                .filter(function (row) { return row[descIdx]; })
+                .map(function (row) {
+                    return {
+                        id: String(row[matCodeIdx] || ''),
+                        name: String(row[descIdx] || ''),
+                        category: String(row[catIdx] || ''),
+                        unit: String(row[unitIdx] || ''),
+                        qty: Number(row[qtyIdx]) || 0,
+                        reorder: Number(row[reorderIdx]) || 0,
+                        remark: String(row[remarkIdx] || '')
+                    };
+                });
+        }
+
+        function gvizToRequests_(sheetData) {
+            const headers = sheetData.headers;
+            const rows = sheetData.rows;
+            const idIdx = headers.indexOf('req_id');
+            const dateIdx = headers.indexOf('created_at');
+            const whoIdx = headers.indexOf('who');
+            const roleIdx = headers.indexOf('role');
+            const partIdx = headers.indexOf('part');
+            const qtyIdx = headers.indexOf('qty');
+            const remarkIdx = headers.indexOf('remark');
+            const urgentIdx = headers.indexOf('urgent');
+            const statusIdx = headers.indexOf('status');
+            const photoIdx = headers.indexOf('photo_url');
+            const verifyIdx = headers.indexOf('verify');
+
+            return rows
+                .filter(function (row) { return row[idIdx]; })
+                .map(function (row) {
+                    return {
+                        id: String(row[idIdx] || ''),
+                        date: String(row[dateIdx] || ''),
+                        who: String(row[whoIdx] || ''),
+                        role: String(row[roleIdx] || ''),
+                        part: String(row[partIdx] || ''),
+                        qty: Number(row[qtyIdx]) || 0,
+                        remark: String(row[remarkIdx] || ''),
+                        urgent: String(row[urgentIdx]).toUpperCase() === 'TRUE',
+                        status: String(row[statusIdx] || ''),
+                        photoUrl: String(row[photoIdx] || ''),
+                        verify: verifyIdx !== -1 ? String(row[verifyIdx]).toUpperCase() === 'TRUE' : false
+                    };
+                });
+        }
+
+        function gvizToQuotes_(sheetData) {
+            const headers = sheetData.headers;
+            const rows = sheetData.rows;
+            const noIdx = headers.indexOf('ลำดับ');
+            const itemIdx = headers.indexOf('ชื่อสินค้า');
+            const qtyIdx = headers.indexOf('จำนวน');
+            const unitIdx = headers.indexOf('หน่วย');
+            const unitPriceIdx = headers.indexOf('ราคาต่อหน่วย');
+            const totalIdx = headers.indexOf('ราคารวม');
+            const supplierIdx = headers.indexOf('บริษัทผู้เสนอราคา');
+            const rfqRefIdx = headers.indexOf('ใบเสนอราคาเลขที่');
+            const dateIdx = headers.indexOf('วันที่');
+
+            return rows
+                .filter(function (row) { return row[itemIdx]; })
+                .map(function (row) {
+                    return {
+                        id: String(row[noIdx] || ''),
+                        itemName: String(row[itemIdx] || ''),
+                        qty: Number(row[qtyIdx]) || 0,
+                        unit: String(row[unitIdx] || ''),
+                        unitPrice: Number(row[unitPriceIdx]) || 0,
+                        totalCost: Number(row[totalIdx]) || 0,
+                        supplier: String(row[supplierIdx] || ''),
+                        rfqRef: String(row[rfqRefIdx] || ''),
+                        date: String(row[dateIdx] || '')
+                    };
+                });
+        }
+
+        function gvizToBudget_(sheetData) {
+            const headers = sheetData.headers;
+            const rows = sheetData.rows;
+            const noIdx = headers.indexOf('No.');
+            const ioIdx = headers.indexOf('IO');
+            const assetIdx = headers.indexOf('ASSET');
+            const costCenterIdx = headers.indexOf('COST CENTER');
+            const descIdx = headers.indexOf('DESCRIPTION');
+            const budgetIdx = headers.indexOf('BUDGET');
+            const usedIdx = headers.indexOf('USED');
+            const currentIdx = headers.indexOf('CURRENT');
+
+            return rows
+                .filter(function (row) { return row[ioIdx]; })
+                .map(function (row) {
+                    return {
+                        no: Number(row[noIdx]) || 0,
+                        io: String(row[ioIdx] || ''),
+                        asset: String(row[assetIdx] || ''),
+                        costCenter: String(row[costCenterIdx] || ''),
+                        desc: String(row[descIdx] || ''),
+                        budget: parseMoney_(row[budgetIdx]),
+                        used: parseMoney_(row[usedIdx]),
+                        current: parseMoney_(row[currentIdx])
+                    };
+                });
+        }
+
+        function gvizToOrders_(sheetData) {
+            const headers = sheetData.headers;
+            const rows = sheetData.rows;
+            const dateIdx = headers.indexOf('DATE');
+            const poIdx = headers.indexOf('PO No.');
+            const prIdx = headers.indexOf('Pr No.');
+            const matCodeIdx = headers.indexOf('MAT CODE');
+            const itemIdx = headers.indexOf('ORDER');
+            const qtyIdx = headers.indexOf('QTY.');
+            const unitIdx = headers.indexOf('UNIT');
+            const priceIdx = headers.indexOf('PRICES');
+            const totalIdx = headers.indexOf('TOTAL PRICE');
+            const statusIdx = headers.indexOf('STATUS');
+            const categoryIdx = headers.indexOf('Category');
+            const vendorIdx = headers.indexOf('VENDOR');
+
+            return rows
+                .filter(function (row) { return row[itemIdx]; })
+                .map(function (row) {
+                    return {
+                        date: formatDate_(row[dateIdx]),
+                        poNo: String(row[poIdx] || ''),
+                        prNo: String(row[prIdx] || ''),
+                        matCode: String(row[matCodeIdx] || ''),
+                        itemName: String(row[itemIdx] || ''),
+                        qty: Number(row[qtyIdx]) || 0,
+                        unit: String(row[unitIdx] || ''),
+                        unitPrice: Number(row[priceIdx]) || 0,
+                        totalCost: Number(row[totalIdx]) || 0,
+                        status: String(row[statusIdx] || '').trim(),
+                        category: String(row[categoryIdx] || ''),
+                        vendor: String(row[vendorIdx] || '')
+                    };
+                });
+        }
+
         async function fetchAllData() {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            const timeoutId = setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT_MS);
             try {
-                const res = await fetch(EXEC_URL + "?action=all", { signal: controller.signal });
-                return await res.json();
+                const tables = await Promise.all([
+                    fetchGvizTable_('STOCK', controller.signal),
+                    fetchGvizTable_('requests', controller.signal),
+                    fetchGvizTable_('QuotationHistory', controller.signal),
+                    fetchGvizTable_('Budget', controller.signal),
+                    fetchGvizTable_('PR', controller.signal)
+                ]);
+                return {
+                    stock: gvizToStock_(tables[0]),
+                    requests: gvizToRequests_(tables[1]),
+                    quotes: gvizToQuotes_(tables[2]),
+                    budget: gvizToBudget_(tables[3]),
+                    orders: gvizToOrders_(tables[4])
+                };
             } catch (err) {
-                if (err.name === "AbortError") {
+                if (err.name === 'AbortError') {
                     throw new Error("หมดเวลาเชื่อมต่อ (เกิน " + (FETCH_TIMEOUT_MS / 1000) + " วินาที) กรุณาลองใหม่อีกครั้ง");
                 }
                 throw err;
