@@ -246,14 +246,41 @@
             <!-- 2. PURCHASE ORDERS TAB -->
             <section id="content-orders" class="tab-content hidden space-y-6">
                 <!-- Stats Overview For Orders -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                        <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ยกเลิกคำสั่งซื้อ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-cancelled">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-slate-50 text-slate-500 rounded-lg">
                             <i data-lucide="clock" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติจัดซื้อ</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-pending-orders">0</p>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รอคำสั่งซื้อ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-pending">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติคำขอซื้อ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-pr-approval">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-sky-50 text-sky-600 rounded-lg">
+                            <i data-lucide="file-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติคำสั่งซื้อ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-po-approval">0</p>
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
@@ -262,7 +289,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">อยู่ระหว่างจัดส่ง</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-shipping-orders">0</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-shipping">0</p>
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
@@ -270,8 +297,8 @@
                             <i data-lucide="check-circle" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">จัดส่งและตรวจรับสำเร็จ</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-success-orders">0</p>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">จัดส่งสำเร็จ</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-received">0</p>
                         </div>
                     </div>
                 </div>
@@ -835,6 +862,12 @@
             }
             if (s === "CANCEL" || s === "CANCLE" || s === "ยกเลิก" || s === "CANCELLED") {
                 return "CANCELLED";
+            }
+            if (s === "PR") {
+                return "PR_APPROVAL";
+            }
+            if (s === "PO") {
+                return "PO_APPROVAL";
             }
             return "PENDING"; // Default fallback
         }
@@ -1543,12 +1576,19 @@
             tbody.innerHTML = rows.join("");
 
             // Stat cards always reflect the full, unfiltered data set — not the filtered view.
-            const pOrders = purchaseOrders.filter(o => o.normalizedStatus === "PENDING").length;
-            const sOrders = purchaseOrders.filter(o => o.normalizedStatus === "SHIPPING").length;
-            const rOrders = purchaseOrders.filter(o => o.normalizedStatus === "RECEIVED").length;
-            document.getElementById("stat-pending-orders").innerText = pOrders;
-            document.getElementById("stat-shipping-orders").innerText = sOrders;
-            document.getElementById("stat-success-orders").innerText = rOrders;
+            const cancelledCount = purchaseOrders.filter(o => o.normalizedStatus === "CANCELLED").length;
+            const pendingCount = purchaseOrders.filter(o => o.normalizedStatus === "PENDING").length;
+            const prApprovalCount = purchaseOrders.filter(o => o.normalizedStatus === "PR_APPROVAL").length;
+            const poApprovalCount = purchaseOrders.filter(o => o.normalizedStatus === "PO_APPROVAL").length;
+            const shippingCount = purchaseOrders.filter(o => o.normalizedStatus === "SHIPPING").length;
+            const receivedCount = purchaseOrders.filter(o => o.normalizedStatus === "RECEIVED").length;
+
+            document.getElementById("stat-orders-cancelled").innerText = cancelledCount;
+            document.getElementById("stat-orders-pending").innerText = pendingCount;
+            document.getElementById("stat-orders-pr-approval").innerText = prApprovalCount;
+            document.getElementById("stat-orders-po-approval").innerText = poApprovalCount;
+            document.getElementById("stat-orders-shipping").innerText = shippingCount;
+            document.getElementById("stat-orders-received").innerText = receivedCount;
         }
 
         function renderRFQTable() {
