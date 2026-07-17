@@ -377,7 +377,7 @@
 
             <!-- 3. REQUEST FOR QUOTATION (RFQ) TAB -->
             <section id="content-rfq" class="tab-content hidden space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
                         <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
                             <i data-lucide="file-text" class="w-5 h-5"></i>
@@ -385,15 +385,6 @@
                         <div>
                             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">คำขอเทียบราคาทั้งหมด</p>
                             <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-total-requests">0</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
-                            <i data-lucide="clock" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รอตรวจสอบ (review)</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-review-requests">0</p>
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
@@ -429,8 +420,7 @@
                                     <th class="px-6 py-4">รายการอะไหล่</th>
                                     <th class="px-6 py-4 text-center">จำนวน</th>
                                     <th class="px-6 py-4">หมายเหตุ</th>
-                                    <th class="px-6 py-4 text-center">ด่วน</th>
-                                    <th class="px-6 py-4">สถานะ</th>
+                                    <th class="px-6 py-4 text-center">ตรวจสอบ</th>
                                 </tr>
                             </thead>
                             <tbody id="rfq-table-body">
@@ -1569,6 +1559,7 @@
 
             // Single innerHTML write — see renderStockTable comment.
             const rows = rfqList
+                .filter(req => req.status === "ok")
                 .filter(req => {
                     if (!query) return true;
                     const reqId = (req.id || "").toLowerCase();
@@ -1578,13 +1569,10 @@
                     return reqId.includes(query) || who.includes(query) || part.includes(query) || remark.includes(query);
                 })
                 .map(req => {
-                    let statusColor = "bg-slate-100 border border-slate-200 text-slate-600";
-                    if (req.status === "ok") statusColor = "bg-emerald-50 border border-emerald-100 text-emerald-700";
-                    else if (req.status === "review") statusColor = "bg-amber-50 border border-amber-100 text-amber-700";
-
-                    const urgentBadge = req.urgent
-                        ? `<span class="px-2 py-0.5 text-xs font-bold rounded-full bg-rose-100 text-rose-700">ด่วน</span>`
-                        : `<span class="text-xs text-slate-400">-</span>`;
+                    const badgeClass = req.verify
+                        ? "bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                        : "bg-amber-50 border border-amber-100 text-amber-700 hover:bg-amber-100 cursor-pointer";
+                    const badgeText = req.verify ? "ได้ราคา" : "รอราคา";
 
                     return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
@@ -1594,17 +1582,51 @@
                         <td class="px-6 py-4 font-bold text-slate-900">${req.part}</td>
                         <td class="px-6 py-4 text-center text-slate-800 font-semibold">${req.qty || "-"}</td>
                         <td class="px-6 py-4 text-xs text-slate-500">${req.remark || "-"}</td>
-                        <td class="px-6 py-4 text-center">${urgentBadge}</td>
-                        <td class="px-6 py-4"><span class="px-2.5 py-1 text-xs font-bold rounded-lg ${statusColor}">${req.status || "-"}</span></td>
+                        <td class="px-6 py-4 text-center">
+                            <span onclick="toggleVerify('${req.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${badgeClass} select-none transition-colors">${badgeText}</span>
+                        </td>
                     </tr>
                 `;
                 });
 
             tbody.innerHTML = rows.join("");
 
-            document.getElementById("stat-total-requests").innerText = rfqList.length;
-            document.getElementById("stat-review-requests").innerText = rfqList.filter(r => r.status === "review").length;
+            document.getElementById("stat-total-requests").innerText = rfqList.filter(req => req.status === "ok").length;
             document.getElementById("stat-total-quotes-system").innerText = quoteHistory.length;
+        }
+
+        function toggleVerify(reqId) {
+            const req = rfqList.find(function (r) { return r.id === reqId; });
+            if (!req) return;
+
+            const oldVerify = req.verify;
+            const newVerify = !oldVerify;
+
+            // Optimistically update UI
+            req.verify = newVerify;
+            renderRFQTable();
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "setVerify",
+                    reqId: reqId,
+                    verify: newVerify ? "TRUE" : "FALSE"
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                req.verify = (data.verify === true || String(data.verify).toUpperCase() === "TRUE");
+                renderRFQTable();
+            })
+            .catch(function (err) {
+                req.verify = oldVerify;
+                renderRFQTable();
+                triggerToast("ปรับปรุงสถานะการตรวจสอบไม่สำเร็จ: " + err.message, "error");
+            });
         }
 
         function renderQuotesTable() {
