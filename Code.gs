@@ -219,6 +219,90 @@ function getOrders() {
     });
 }
 
+// ==================== WRITE ENDPOINT (doPost) ====================
+// Reads have moved to client-side gviz fetches; Code.gs now exists solely to
+// handle the 2 actions that need write access (gviz is read-only, no auth).
+
+function findRowByColumnValue_(sheetName, matchColumnName, matchValue) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) throw new Error('Sheet not found: ' + sheetName);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(function (h) { return String(h).trim(); });
+  const colIdx = headers.indexOf(matchColumnName);
+  if (colIdx === -1) throw new Error('Column not found: ' + matchColumnName);
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][colIdx]) === String(matchValue)) {
+      return { sheet: sheet, headers: headers, rowNumber: i + 1 };
+    }
+  }
+  return null;
+}
+
+function setVerify_(reqId, verifyValue) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const found = findRowByColumnValue_('requests', 'req_id', reqId);
+    if (!found) return { error: 'Request not found: ' + reqId };
+    const verifyColIdx = found.headers.indexOf('verify');
+    if (verifyColIdx === -1) return { error: 'verify column not found in requests sheet' };
+    const value = (verifyValue === true || String(verifyValue).toUpperCase() === 'TRUE') ? 'TRUE' : 'FALSE';
+    found.sheet.getRange(found.rowNumber, verifyColIdx + 1).setValue(value);
+    return { success: true, reqId: reqId, verify: value };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Client sends a DELTA, not an absolute value — server re-reads fresh before
+// applying it, so two near-simultaneous adjustments don't clobber each other
+// (a stale absolute value from the client would).
+function adjustStockQty_(partId, delta) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName('STOCK');
+    if (!sheet) return { error: 'Sheet not found: STOCK' };
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(function (h) { return String(h).trim(); });
+    const qtyIdx = headers.indexOf('Qty.');
+    const matCodeIdx = 1; // matches getStock()'s existing convention — blank header, column index 1
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][matCodeIdx]) === String(partId)) {
+        const currentQty = Number(data[i][qtyIdx]) || 0;
+        const newQty = Math.max(0, currentQty + Number(delta));
+        sheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
+        return { success: true, partId: partId, qty: newQty };
+      }
+    }
+    return { error: 'Part not found: ' + partId };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function doPost(e) {
+  let payload;
+  try {
+    const body = JSON.parse(e.postData.contents); // parse manually regardless of declared content-type
+    if (body.action === 'setVerify') {
+      if (!body.reqId) throw new Error('Missing reqId');
+      payload = setVerify_(body.reqId, body.verify);
+    } else if (body.action === 'adjustStockQty') {
+      if (!body.partId || typeof body.delta === 'undefined') throw new Error('Missing partId/delta');
+      payload = adjustStockQty_(body.partId, body.delta);
+    } else {
+      payload = { error: 'Unknown action: ' + body.action };
+    }
+  } catch (err) {
+    payload = { error: err.toString() };
+  }
+  return ContentService.createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 // Runnable self-check: in the Apps Script editor, select testAllSheets
 // in the function dropdown and click Run, then read the Execution Log.
 // Confirms every handler reads its sheet without throwing and returns
