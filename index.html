@@ -89,7 +89,7 @@
                     <i data-lucide="layers" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-base leading-tight tracking-wide">MaintX Pro</h1>
+                    <h1 class="font-bold text-base leading-tight tracking-wide">Maintenance System</h1>
                     <p class="text-xs text-slate-300 font-medium">ระบบคลังและจัดซื้อซ่อมบำรุง</p>
                 </div>
             </div>
@@ -107,7 +107,7 @@
                 <div class="space-y-1">
                     <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md shadow-indigo-950/20 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="package" class="w-4.5 h-4.5"></i>
-                        <span>คลังอะไหล่ (Stock)</span>
+                        <span>คลังอะไหล่</span>
                         <span class="ml-auto bg-rose-500 text-white text-xs px-2 py-0.5 rounded-full hidden" id="low-stock-badge">0</span>
                     </button>
                 </div>
@@ -117,20 +117,20 @@
             <div>
                 <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">การจัดซื้อจัดหา</p>
                 <div class="space-y-1">
+                    <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="shopping-cart" class="w-4.5 h-4.5"></i>
+                        <span>รายการคำสั่งซื้อ</span>
+                        <span class="ml-auto bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full" id="pending-orders-badge">1</span>
+                    </button>
+
                     <button onclick="switchTab('rfq')" id="tab-rfq" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="file-text" class="w-4.5 h-4.5"></i>
-                        <span>รายการขอราคา (RFQ)</span>
+                        <span>รายการขอราคา</span>
                     </button>
                     
                     <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="file-check" class="w-4.5 h-4.5"></i>
                         <span>ประวัติใบเสนอราคา</span>
-                    </button>
- 
-                    <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
-                        <i data-lucide="shopping-cart" class="w-4.5 h-4.5"></i>
-                        <span>รายการคำสั่งซื้อ (PO)</span>
-                        <span class="ml-auto bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full" id="pending-orders-badge">1</span>
                     </button>
                 </div>
             </div>
@@ -141,7 +141,7 @@
                 <div class="space-y-1">
                     <button onclick="switchTab('budget')" id="tab-budget" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="wallet" class="w-4.5 h-4.5"></i>
-                        <span>งบประมาณ (Budget)</span>
+                        <span>งบประมาณ</span>
                     </button>
                 </div>
             </div>
@@ -165,7 +165,7 @@
         <!-- TOP HEADER BAR -->
         <header class="bg-white border-b border-slate-200/80 px-6 py-4 flex items-center justify-between flex-shrink-0">
             <div class="flex items-center space-x-4">
-                <h2 id="current-page-title" class="text-lg font-bold text-slate-800 tracking-wide">คลังอะไหล่ (Stock)</h2>
+                <h2 id="current-page-title" class="text-lg font-bold text-slate-800 tracking-wide">คลังอะไหล่</h2>
                 <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium hidden sm:inline-block" id="live-time">
                     กำลังโหลดเวลา...
                 </span>
@@ -1822,11 +1822,11 @@
             }
 
             const titles = {
-                stock: "คลังอะไหล่คงคลัง (Inventory Stock)",
-                orders: "รายการคำสั่งซื้อ (Purchase Orders)",
-                rfq: "รายการขอราคา (Request for Quotation)",
-                budget: "งบประมาณ (Budget Overview)",
-                quotes: "เปรียบเทียบใบเสนอราคา (Quotation Comparison)"
+                stock: "คลังอะไหล่",
+                orders: "รายการคำสั่งซื้อ",
+                rfq: "รายการขอราคา",
+                budget: "งบประมาณ",
+                quotes: "ประวัติใบเสนอราคา"
             };
             document.getElementById("current-page-title").innerText = titles[tabId];
 

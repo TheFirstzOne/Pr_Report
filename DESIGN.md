@@ -1,5 +1,5 @@
 ---
-name: MaintX Pro
+name: Maintenance System
 description: Procurement & Stock Management Dashboard
 colors:
   primary: "#6366f1"
@@ -46,13 +46,13 @@ components:
     padding: "24px"
 ---
 
-# Design System: MaintX Pro
+# Design System: Maintenance System
 
 ## 1. Overview
 
 **Creative North Star: "The Industrial Ledger"**
 
-MaintX Pro is designed with high visual density, clear structure, and industrial reliability. It avoids empty space and decorative flair in favor of high-utility tables, direct inline buttons, and rich data visualization. It explicitly rejects soft beige/cream backgrounds, glowing glassmorphism, or low-contrast text.
+Maintenance System is designed with high visual density, clear structure, and industrial reliability. It avoids empty space and decorative flair in favor of high-utility tables, direct inline buttons, and rich data visualization. It explicitly rejects soft beige/cream backgrounds, glowing glassmorphism, or low-contrast text.
 
 **Key Characteristics:**
 - High-contrast, clean grid layout.
