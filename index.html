@@ -233,6 +233,7 @@
                                     <th class="px-6 py-4 text-center">หน่วย (Unit)</th>
                                     <th class="px-6 py-4 text-center">จุดปลอดภัยต่ำสุด</th>
                                     <th class="px-6 py-4">สถานะสต็อก</th>
+                                    <th class="px-6 py-4 text-center">การจัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="stock-table-body">
@@ -1530,6 +1531,12 @@
                         <td class="px-6 py-4 text-center text-xs font-semibold text-slate-500">${part.unit || "Pc"}</td>
                         <td class="px-6 py-4 text-center text-slate-500 text-xs font-semibold">${part.reorder}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="inline-flex rounded-lg shadow-sm border border-slate-200">
+                                <button onclick="adjustStockQty('${part.id}', -1)" class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-r border-slate-200 focus:outline-none transition-colors" title="ลดจำนวน"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="adjustStockQty('${part.id}', 1)" class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:outline-none transition-colors" title="เพิ่มจำนวน"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </td>
                     </tr>
                 `;
                 });
@@ -1925,22 +1932,48 @@
             modal.classList.add("hidden");
         }
 
-        function adjustQty(partId, amount) {
-            const idx = stockParts.findIndex(p => p.id === partId);
-            if (idx !== -1) {
-                if (amount < 0 && stockParts[idx].qty === 0) {
-                    triggerToast(`จำนวนพัสดุเป็น 0 อยู่แล้ว`, 'error');
+        function adjustStockQty(partId, amount) {
+            const idx = stockParts.findIndex(function (p) { return p.id === partId; });
+            if (idx === -1) return;
+
+            const oldQty = stockParts[idx].qty;
+            if (amount < 0 && oldQty === 0) {
+                triggerToast("จำนวนพัสดุเป็น 0 อยู่แล้ว", "error");
+                return;
+            }
+            if (amount < 0 && oldQty + amount <= stockParts[idx].reorder) {
+                if (!confirm("คำเตือน: การลดจำนวนพัสดุนี้จะต่ำกว่าจุดปลอดภัยขั้นต่ำ (" + stockParts[idx].reorder + " ชิ้น) ยืนยันที่จะปรับลดหรือไม่?")) {
                     return;
                 }
-                if (amount < 0 && stockParts[idx].qty + amount <= stockParts[idx].reorder) {
-                    if (!confirm(`คำเตือน: การลดจำนวนพัสดุนี้จะต่ำกว่าจุดปลอดภัยขั้นต่ำ (${stockParts[idx].reorder} ชิ้น) ยืนยันที่จะปรับลดหรือไม่?`)) {
-                        return;
-                    }
-                }
-                stockParts[idx].qty = Math.max(0, stockParts[idx].qty + amount);
-                renderAll();
-                triggerToast(`อัปเดตจำนวนพัสดุเรียบร้อยแล้ว`, 'success');
             }
+
+            const newQty = Math.max(0, oldQty + amount);
+
+            // Optimistic Update
+            stockParts[idx].qty = newQty;
+            renderAll();
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "adjustStockQty",
+                    partId: partId,
+                    delta: amount
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                stockParts[idx].qty = Number(data.qty) || 0;
+                renderAll();
+            })
+            .catch(function (err) {
+                stockParts[idx].qty = oldQty;
+                renderAll();
+                triggerToast("ปรับปรุงจำนวนไม่สำเร็จ: " + err.message, "error");
+            });
         }
 
         // Toggle displaying low-stock items
