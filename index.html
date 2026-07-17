@@ -1788,7 +1788,7 @@
             const monthlyMap = {};
             
             purchaseOrders.forEach(o => {
-                if (o.status === "Cancle" || o.status === "Cancel") return;
+                if (o.normalizedStatus !== "SHIPPING" && o.normalizedStatus !== "RECEIVED") return;
                 
                 let monthKey = "";
                 if (o.date.includes("/")) {
@@ -1809,7 +1809,7 @@
                     if (parts.length === 3) {
                         monthKey = `${parts[1]} ${parts[2]}`;
                     } else {
-                        monthKey = "ก.ค. 2569";
+                        monthKey = "ไม่ระบุวันที่";
                     }
                 }
                 
@@ -1822,6 +1822,7 @@
             // Sort keys by Month/Year
             const sortedMonths = Object.keys(monthlyMap).sort((a, b) => {
                 const parseMonthKey = (key) => {
+                    if (key === "ไม่ระบุวันที่") return Infinity;
                     const months = {"ม.ค.":1,"ก.พ.":2,"มี.ค.":3,"เม.ย.":4,"พ.ค.":5,"มิ.ย.":6,"ก.ค.":7,"ส.ค.":8,"ก.ย.":9,"ต.ค.":10,"พ.ย.":11,"ธ.ค.":12};
                     const parts = key.split(' ');
                     const m = months[parts[0]] || 1;
@@ -1835,14 +1836,23 @@
             const tbody = document.getElementById("monthly-expenses-table-body");
             if (tbody) {
                 tbody.innerHTML = "";
+                let totalSum = 0;
                 sortedMonths.forEach(m => {
+                    const amt = monthlyMap[m];
+                    totalSum += amt;
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td class="px-4 py-2 font-semibold text-slate-800 text-xs">${m}</td>
-                            <td class="px-4 py-2 text-right font-bold text-slate-900">${monthlyMap[m].toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                            <td class="px-4 py-2 text-right font-bold text-slate-900">${amt.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
                         </tr>
                     `;
                 });
+                tbody.innerHTML += `
+                    <tr class="bg-slate-50 font-bold border-t-2 border-slate-200">
+                        <td class="px-4 py-3 text-slate-800 text-xs font-extrabold">รวมทั้งหมด</td>
+                        <td class="px-4 py-3 text-right text-indigo-700 font-extrabold">${totalSum.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                    </tr>
+                `;
             }
 
             // Update Monthly line chart
