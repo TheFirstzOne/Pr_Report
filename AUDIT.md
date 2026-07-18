@@ -98,3 +98,40 @@ This was Phase 0's exact concern, never checked in a real browser by anyone yet.
 ## Verdict: PASS, all 7 phases
 
 No fixes needed. Two items for you: confirm the app is served over http(s) (not `file://`), and say if you want a real (reversible) write-action test run.
+
+---
+
+## Audit: critique/audit fixes batch (8-item dispatch) + user-reported sheet-filter bug
+
+Commits audited: `3122403` → `33cdb2d` → `f707e1a` (unplanned, self-reverted) → `e2e8c25` (unplanned, kept) → `6ef1766` (Fix 1) → `0e49704` (Fix 2) → `7777476` (Fix 3) → `486dfc6` (Fix 4) → `bf87a06` (Fix 5) → `94add8e` (Fix 6) → `adc5720` (Fix 7) → `d0fe509` (Fix 8)
+
+### Unplanned work found before the dispatched fixes
+
+**`3122403`** — bundled a Tailwind CDN→build-toolchain swap (added `package.json`, `tailwind.config.js`, `dist/output.css`, `input.css`, `package-lock.json`) together with unrelated modal-label/touch-target hardening, despite my dispatch prompt explicitly excluding the Tailwind build-step change ("Explicitly NOT in this batch... Leave it alone"). **Self-corrected**: `33cdb2d` removed all 7 added build-tooling files/lines cleanly, `f707e1a` restored the CDN script tags in `index.html`. Verified clean: no `package.json`/`tailwind.config.js`/`dist/`/`input.css` present in the working tree, CDN `<script src="https://cdn.tailwindcss.com">` confirmed back in place. No lasting damage, but flagging the instruction violation for the record.
+
+**`e2e8c25`** — swapped the entire read layer from gviz JSON (`/gviz/tq`) to CSV export (`/export?format=csv&gid=...`) with a hand-rolled CSV parser, "to ignore sheet filters." This was never part of my dispatch — genuine unplanned scope. **Verified this is not just plausible but demonstrably correct and necessary**, and directly resolves the bug you reported live during testing:
+
+- Live test, right now, same moment, same sheet: `gviz/tq?...&sheet=PR` returns **107 rows**. `/export?format=csv&gid=1646453870` (the PR tab) returns **1204 rows** — matching the known-good unfiltered baseline from the last audit round exactly.
+- This proves a Basic Filter is currently active on the sheet, that gviz's JSON endpoint respects it (silently returns only the filtered/visible subset), and that CSV export does not (returns the true underlying data regardless of any active Basic Filter).
+- Confirmed the fix is intact through all 8 later commits: `fetchCSVTable_`/`csvToStock_`/etc. are the only data-fetch path in the current file, no `gviz`/`fetchGvizTable_` remnants.
+- The hand-rolled `parseCSV` correctly treats newlines inside quoted fields as literal characters, not row breaks — verified against a real multi-line quoted `Remark` field in the live PR data (this is not a hypothetical edge case, it's actually present in the sheet today).
+- Real fragility introduced: `SHEET_GIDS` hardcodes each tab's numeric gid. If a sheet tab is ever deleted and recreated (not renamed — renaming is fine, gid is stable across renames), the hardcoded gid would silently start pointing at nothing or the wrong tab. Not a live bug, just a maintenance note.
+
+### Fix 1-8 (the dispatched batch): all verified PASS
+
+| # | Fix | Verdict | Verification |
+| --- | --- | --- | --- |
+| 1 | Pending-state on writes | PASS | `inFlightRequests`/`inFlightStock` Sets guard both `toggleVerify`/`adjustStockQty` against double-fire; buttons render `disabled` + dimmed while in flight; cleared in `.finally()` on both success and failure |
+| 2 | Verify-toggle keyboard access | PASS | Now a real `<button type="button">` with `aria-label`, exceeds spec |
+| 3 | Delete 3 dead modals | PASS | Zero remaining references to any of the 3 modal ids/submit functions/`openModal` |
+| 4 | Fake-sort Quotes headers | PASS | Chevrons gone from Quotes headers; the 3 `chevron-down` icons still in the file are on the real, functional Orders filter dropdowns (สถานะ/ประเภทงาน/ซัพพลายเออร์) — different feature, correctly left alone |
+| 5 | No raw `err.message` in write toasts | PASS | Both catch blocks use a fixed Thai message + `console.error(err)` for debugging |
+| 6 | Touch target + aria-label on ± buttons | PASS | `w-11 h-11` (44×44px exactly) with `aria-label` on both |
+| 7 | Pin Lucide version | PASS | `lucide@1.25.0`, no longer `@latest` |
+| 8 | Scope `transition-all` | PASS | 0 occurrences remain |
+
+Whole-file sweep: `<div>`/`</div>` and `<script>`/`</script>` tag counts balanced, no duplicate function definitions among the touched functions.
+
+## Verdict: PASS — dispatched batch clean, unplanned CSV-export fix verified correct and necessary
+
+One instruction violation (Tailwind build-step), self-corrected before I saw it. One valuable unplanned fix (CSV export) that resolves a real, live, user-reported bug — verified with a right-now curl comparison, not assumed. If you still see filtered data after this, it's very likely your browser's `localStorage` cache holding data fetched by an older, pre-fix version of the page — do a hard refresh (or clear the app's cached data) rather than assume the fix didn't work.
