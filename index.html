@@ -691,139 +691,7 @@
         </div>
     </main>
 
-    <!-- ==================== MODALS ZONE ==================== -->
 
-    <!-- MODAL 1: ADD NEW STOCK SPARE -->
-    <div id="modal-addStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
-            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-                <h4 class="font-bold text-slate-800 text-base">เพิ่มรายการอะไหล่ใหม่</h4>
-                <button onclick="closeModal('addStock')" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <form onsubmit="submitStockForm(event)" class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="form-stock-id" class="block text-xs font-bold uppercase text-slate-500 mb-1">รหัสอะไหล่ (MAT.)</label>
-                        <input type="text" id="form-stock-id" placeholder="เช่น 50000379" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
-                    </div>
-                    <div>
-                        <label for="form-stock-category" class="block text-xs font-bold uppercase text-slate-500 mb-1">หมวดหมู่สินค้า (Category)</label>
-                        <input type="text" id="form-stock-category" placeholder="เช่น ข้อต่อตรง" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="form-stock-type" class="block text-xs font-bold uppercase text-slate-500 mb-1">ประเภท (Type)</label>
-                        <input type="text" id="form-stock-type" placeholder="เช่น z50" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
-                    </div>
-                    <div>
-                        <label for="form-stock-unit" class="block text-xs font-bold uppercase text-slate-500 mb-1">หน่วย (Unit)</label>
-                        <input type="text" id="form-stock-unit" placeholder="เช่น Pc" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
-                    </div>
-                </div>
-                <div>
-                    <label for="form-stock-name" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่พัสดุ (Description)</label>
-                    <input type="text" id="form-stock-name" placeholder="ระบุชื่อเรียกให้ชัดเจน..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                </div>
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label for="form-stock-location" class="block text-xs font-bold uppercase text-slate-500 mb-1">พิกัดจัดเก็บ (Location)</label>
-                        <input type="text" id="form-stock-location" placeholder="เช่น ชั้น B3" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                    </div>
-                    <div>
-                        <label for="form-stock-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนเริ่มต้น (Qty)</label>
-                        <input type="number" id="form-stock-qty" min="0" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                    </div>
-                    <div>
-                        <label for="form-stock-reorder" class="block text-xs font-bold uppercase text-slate-500 mb-1">ระดับเตือนขั้นต่ำ (Reorder)</label>
-                        <input type="number" id="form-stock-reorder" min="1" value="5" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('addStock')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">บันทึกพัสดุใหม่</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 3: CREATE RFQ -->
-    <div id="modal-rfq" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
-            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-                <h4 class="font-bold text-slate-800 text-base">สร้างใบคำขอเสนอราคา (RFQ)</h4>
-                <button onclick="closeModal('rfq')" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <form onsubmit="submitRFQForm(event)" class="p-6 space-y-4">
-                <div>
-                    <label for="form-rfq-item" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่ที่ต้องการขอราคา</label>
-                    <select id="form-rfq-item" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
-                        <!-- Populate dynamically -->
-                    </select>
-                </div>
-                <div>
-                    <label for="form-rfq-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนที่ต้องการสั่งโดยประมาณ</label>
-                    <input type="number" id="form-rfq-qty" min="1" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                </div>
-                <div>
-                    <label for="form-rfq-suppliers" class="block text-xs font-bold uppercase text-slate-500 mb-1">ส่งเปรียบเทียบซัพพลายเออร์ที่เลือก (พิมพ์คั่นด้วยเครื่องหมายจุลภาค)</label>
-                    <input type="text" id="form-rfq-suppliers" value="บริษัท สหรุ่งเรือง จำกัด, ชัยพัฒนาแบริ่ง, กรุงเทพไฮดรอลิก" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                </div>
-                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('rfq')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">ส่งคำขอ RFQ</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 4: ADD QUOTATION FROM SUPPLIER -->
-    <div id="modal-addQuote" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
-            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-                <h4 class="font-bold text-slate-800 text-base">บันทึกเอกสารใบเสนอราคาเสนอขาย</h4>
-                <button onclick="closeModal('addQuote')" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <form onsubmit="submitQuoteForm(event)" class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="form-quote-rfq" class="block text-xs font-bold uppercase text-slate-500 mb-1">อ้างอิงรหัสใบขอราคา RFQ</label>
-                        <select id="form-quote-rfq" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
-                            <!-- Auto population from RFQ lists -->
-                        </select>
-                    </div>
-                    <div>
-                        <label for="form-quote-supplier" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่อซัพพลายเออร์ผู้ยื่นเอกสาร</label>
-                        <input type="text" id="form-quote-supplier" placeholder="ระบุบริษัทเสนอราคา..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label for="form-quote-unitprice" class="block text-xs font-bold uppercase text-slate-500 mb-1">ราคาต่อชิ้น (บาท)</label>
-                        <input type="number" id="form-quote-unitprice" min="1" value="1500" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                    </div>
-                    <div>
-                        <label for="form-quote-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนหน่วย</label>
-                        <input type="number" id="form-quote-qty" min="1" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                    </div>
-                    <div>
-                        <label for="form-quote-delivery" class="block text-xs font-bold uppercase text-slate-500 mb-1">ใช้เวลาส่งกี่วัน</label>
-                        <input type="text" id="form-quote-delivery" value="3 วันทำการ" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('addQuote')" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">เพิ่มเสนอราคา</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
 
     <!-- ==================== JAVASCRIPT SYSTEM ENGINE ==================== -->
@@ -1499,7 +1367,7 @@
             renderQuotesTable();
             renderBudgetInfo();
             renderSystemAlerts();
-            populateFormDropdowns();
+
             
             // Global Badges Update
             const pendingOrdersCount = purchaseOrders.filter(o => o.normalizedStatus === "SHIPPING" || o.normalizedStatus === "PENDING").length;
@@ -1909,22 +1777,7 @@
             monthlyChartInstance.update();
         }
 
-        // Dropdowns setup
-        function populateFormDropdowns() {
-            const rfqSelect = document.getElementById("form-rfq-item");
-            const quoteRfqSelect = document.getElementById("form-quote-rfq");
 
-            rfqSelect.innerHTML = "";
-            quoteRfqSelect.innerHTML = "";
-
-            stockParts.forEach(p => {
-                rfqSelect.innerHTML += `<option value="${p.name}">${p.id} - ${p.name}</option>`;
-            });
-
-            rfqList.forEach(r => {
-                quoteRfqSelect.innerHTML += `<option value="${r.id}">${r.id} (${r.itemName})</option>`;
-            });
-        }
 
         function switchTab(tabId) {
             document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
@@ -1971,16 +1824,7 @@
             lucide.createIcons();
         }
 
-        function openModal(type) {
-            populateFormDropdowns();
-            const modal = document.getElementById(`modal-${type}`);
-            modal.classList.remove("hidden");
-        }
 
-        function closeModal(type) {
-            const modal = document.getElementById(`modal-${type}`);
-            modal.classList.add("hidden");
-        }
 
         function adjustStockQty(partId, amount) {
             if (inFlightStock.has(partId)) return;
@@ -2043,71 +1887,7 @@
             renderStockTable();
         }
 
-        // Submit RFQ manually
-        function submitRFQForm(e) {
-            e.preventDefault();
-            const name = document.getElementById("form-rfq-item").value;
-            const qty = parseInt(document.getElementById("form-rfq-qty").value);
-            const supList = document.getElementById("form-rfq-suppliers").value.split(",").length;
 
-            const partObj = stockParts.find(p => p.name === name);
-            const category = partObj ? partObj.category : "เครื่องกล";
-
-            const nextId = "RFQ-2026-" + String(rfqList.length + 1).padStart(3, '0');
-            const newRFQ = {
-                id: nextId,
-                itemName: name,
-                category: category,
-                qty: qty,
-                supplierCount: supList,
-                date: "13 ก.ค. 2026",
-                status: "รอรับใบเสนอราคา"
-            };
-
-            rfqList.unshift(newRFQ);
-            closeModal('rfq');
-            renderAll();
-            triggerToast(`ออกจดหมายสอบราคาสำเร็จ เลขที่ ${nextId}`, 'success');
-        }
-
-        // Submit Supplier Quote manually
-        function submitQuoteForm(e) {
-            e.preventDefault();
-            const rfqRef = document.getElementById("form-quote-rfq").value;
-            const supplier = document.getElementById("form-quote-supplier").value;
-            const unitPrice = parseFloat(document.getElementById("form-quote-unitprice").value);
-            const qty = parseInt(document.getElementById("form-quote-qty").value);
-            const delivery = document.getElementById("form-quote-delivery").value;
-
-            const rfqObj = rfqList.find(r => r.id === rfqRef);
-            const itemName = rfqObj ? rfqObj.itemName : "พัสดุทั่วไป";
-
-            const nextId = "QO-2026-" + String(quoteHistory.length + 1).padStart(3, '0');
-            const newQO = {
-                id: nextId,
-                date: new Date().toLocaleDateString('th-TH'),
-                rfqRef: rfqRef,
-                supplier: supplier,
-                itemName: itemName,
-                unitPrice: unitPrice,
-                qty: qty,
-                unit: "Pc",
-                totalCost: unitPrice * qty,
-                delivery: delivery,
-                status: "รอพิจารณาอนุมัติ"
-            };
-
-            quoteHistory.unshift(newQO);
-            
-            const rfqIdx = rfqList.findIndex(r => r.id === rfqRef);
-            if (rfqIdx !== -1) {
-                rfqList[rfqIdx].status = "ได้รับเสนอราคาแล้ว";
-            }
-
-            closeModal('addQuote');
-            renderAll();
-            triggerToast(`บันทึกใบเสนอราคาจาก ${supplier} เรียบร้อย`, 'success');
-        }
 
         // RFQ Simulation
         function simulateQuotationResponse(rfqId) {
@@ -2231,28 +2011,7 @@
             renderAll();
         }
 
-        // Submit new stock
-        function submitStockForm(e) {
-            e.preventDefault();
-            const id = document.getElementById("form-stock-id").value;
-            const category = document.getElementById("form-stock-category").value;
-            const type = document.getElementById("form-stock-type").value;
-            const unit = document.getElementById("form-stock-unit").value;
-            const name = document.getElementById("form-stock-name").value;
-            const location = document.getElementById("form-stock-location").value;
-            const qty = parseInt(document.getElementById("form-stock-qty").value);
-            const reorder = parseInt(document.getElementById("form-stock-reorder").value);
 
-            if (stockParts.some(p => p.id.toLowerCase() === id.toLowerCase())) {
-                triggerToast("รหัสอะไหล่ซ้ำซ้อนในระบบฐานข้อมูล!", "error");
-                return;
-            }
-
-            stockParts.push({ id, name, category, type, unit, location, qty, reorder });
-            closeModal('addStock');
-            renderAll();
-            triggerToast("บันทึกพัสดุลงคลังสำเร็จ!", "success");
-        }
 
         // Search engine for stock parts
         function filterStock() {
@@ -2359,14 +2118,7 @@
             renderBudgetInfo();
         }
 
-        // Global keydown event listener for closing modals using Esc key
-        window.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal('addStock');
-                closeModal('rfq');
-                closeModal('addQuote');
-            }
-        });
+
     </script>
 </body>
 </html>
