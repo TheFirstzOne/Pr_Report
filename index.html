@@ -4,12 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดซื้อและคลังอะไหล่แผนกซ่อมบำรุง (Procurement & Stock Dashboard)</title>
-    <!-- Built/Purged Tailwind CSS stylesheet -->
-    <link rel="stylesheet" href="dist/output.css">
-    <!-- Pinned Lucide Icons CDN for Modern UI Icons -->
-    <script src="https://unpkg.com/lucide@1.25.0"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN for Modern UI Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js CDN for Analytics Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Sarabun', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            950: '#2e1065',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
     <!-- Custom Style for extra refinement -->
     <style>
