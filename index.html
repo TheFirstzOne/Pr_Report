@@ -898,30 +898,58 @@
 
         const SHEET_ID = "1oOzyZxcfzzfirdeOKUO1m9S6NjXKFUFgkfhNzNZqtV8";
 
-        function gvizUrl_(sheetName) {
-            return "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
-                "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(sheetName);
+        const SHEET_GIDS = {
+            'STOCK': '1318466636',
+            'requests': '221818176',
+            'QuotationHistory': '996020767',
+            'Budget': '1651297386',
+            'PR': '1646453870'
+        };
+
+        function parseCSV(text) {
+            const lines = [];
+            let row = [""];
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                const next = text[i+1];
+                if (c === '"') {
+                    if (inQuotes && next === '"') {
+                        row[row.length - 1] += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (c === ',' && !inQuotes) {
+                    row.push("");
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && next === '\n') {
+                        i++;
+                    }
+                    lines.push(row);
+                    row = [""];
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || row[0] !== "") {
+                lines.push(row);
+            }
+            return lines;
         }
 
-        function unwrapGviz_(text) {
-            const start = text.indexOf('(');
-            const end = text.lastIndexOf(')');
-            if (start === -1 || end === -1) throw new Error('Unexpected gviz response shape');
-            return JSON.parse(text.substring(start + 1, end));
-        }
-
-        function gvizTableToRows_(table) {
-            const headers = table.cols.map(function (col) { return col ? String(col.label || '').trim() : ''; });
-            const rows = (table.rows || []).map(function (r) {
-                return (r.c || []).map(function (cell) { return cell ? cell.v : null; });
-            });
-            return { headers: headers, rows: rows };
-        }
-
-        async function fetchGvizTable_(sheetName, signal) {
-            const res = await fetch(gvizUrl_(sheetName), { signal: signal });
+        async function fetchCSVTable_(sheetName, signal) {
+            const gid = SHEET_GIDS[sheetName];
+            const url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=" + gid;
+            const res = await fetch(url, { signal: signal });
             const text = await res.text();
-            return gvizTableToRows_(unwrapGviz_(text).table);
+            const parsed = parseCSV(text);
+            if (parsed.length === 0) {
+                throw new Error("No data received for " + sheetName);
+            }
+            const headers = parsed[0].map(function (h) { return String(h || '').trim(); });
+            const rows = parsed.slice(1);
+            return { headers: headers, rows: rows };
         }
 
         function formatDate_(rawCellValue) {
@@ -938,7 +966,7 @@
             return parseFloat(String(val).replace(/,/g, '')) || 0;
         }
 
-        function gvizToStock_(sheetData) {
+        function csvToStock_(sheetData) {
             const headers = sheetData.headers;
             const rows = sheetData.rows;
             const catIdx = headers.indexOf('CATEGORY');
@@ -964,7 +992,7 @@
                 });
         }
 
-        function gvizToRequests_(sheetData) {
+        function csvToRequests_(sheetData) {
             const headers = sheetData.headers;
             const rows = sheetData.rows;
             const idIdx = headers.indexOf('req_id');
@@ -998,7 +1026,7 @@
                 });
         }
 
-        function gvizToQuotes_(sheetData) {
+        function csvToQuotes_(sheetData) {
             const headers = sheetData.headers;
             const rows = sheetData.rows;
             const noIdx = headers.indexOf('ลำดับ');
@@ -1028,7 +1056,7 @@
                 });
         }
 
-        function gvizToBudget_(sheetData) {
+        function csvToBudget_(sheetData) {
             const headers = sheetData.headers;
             const rows = sheetData.rows;
             const noIdx = headers.indexOf('No.');
@@ -1056,7 +1084,7 @@
                 });
         }
 
-        function gvizToOrders_(sheetData) {
+        function csvToOrders_(sheetData) {
             const headers = sheetData.headers;
             const rows = sheetData.rows;
             const dateIdx = headers.indexOf('DATE');
@@ -1097,18 +1125,18 @@
             const timeoutId = setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT_MS);
             try {
                 const tables = await Promise.all([
-                    fetchGvizTable_('STOCK', controller.signal),
-                    fetchGvizTable_('requests', controller.signal),
-                    fetchGvizTable_('QuotationHistory', controller.signal),
-                    fetchGvizTable_('Budget', controller.signal),
-                    fetchGvizTable_('PR', controller.signal)
+                    fetchCSVTable_('STOCK', controller.signal),
+                    fetchCSVTable_('requests', controller.signal),
+                    fetchCSVTable_('QuotationHistory', controller.signal),
+                    fetchCSVTable_('Budget', controller.signal),
+                    fetchCSVTable_('PR', controller.signal)
                 ]);
                 return {
-                    stock: gvizToStock_(tables[0]),
-                    requests: gvizToRequests_(tables[1]),
-                    quotes: gvizToQuotes_(tables[2]),
-                    budget: gvizToBudget_(tables[3]),
-                    orders: gvizToOrders_(tables[4])
+                    stock: csvToStock_(tables[0]),
+                    requests: csvToRequests_(tables[1]),
+                    quotes: csvToQuotes_(tables[2]),
+                    budget: csvToBudget_(tables[3]),
+                    orders: csvToOrders_(tables[4])
                 };
             } catch (err) {
                 if (err.name === 'AbortError') {
