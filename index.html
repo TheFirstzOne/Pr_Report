@@ -1663,6 +1663,7 @@
                         <td class="px-6 py-4 text-center text-slate-800 font-semibold">${req.qty || "-"}</td>
                         <td class="px-6 py-4 text-xs text-slate-500">${req.remark || "-"}</td>
                         <td class="px-6 py-4 text-center">
+                            <!-- Keyboard-operable button for RFQ verification toggle -->
                             <button type="button" ${disabledAttr} onclick="toggleVerify('${req.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${badgeClass} select-none transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none" aria-label="สถานะการตรวจสอบสำหรับ ${req.id}: ${displayBadgeText}. กดเพื่อเปลี่ยนสถานะ">${displayBadgeText}</button>
                         </td>
                     </tr>
