@@ -1568,7 +1568,7 @@
             .catch(function (err) {
                 console.error(err);
                 req.verify = oldVerify;
-                triggerToast("ปรับปรุงสถานะการตรวจสอบไม่สำเร็จ: " + err.message, "error");
+                triggerToast("ปรับปรุงสถานะการตรวจสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
             })
             .finally(function () {
                 inFlightRequests.delete(reqId);
@@ -1859,7 +1859,7 @@
             .catch(function (err) {
                 console.error(err);
                 stockParts[idx].qty = oldQty;
-                triggerToast("ปรับปรุงจำนวนไม่สำเร็จ: " + err.message, "error");
+                triggerToast("ปรับปรุงจำนวนพัสดุไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
             })
             .finally(function () {
                 inFlightStock.delete(partId);
