@@ -4,40 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดซื้อและคลังอะไหล่แผนกซ่อมบำรุง (Procurement & Stock Dashboard)</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons CDN for Modern UI Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Built/Purged Tailwind CSS stylesheet -->
+    <link rel="stylesheet" href="dist/output.css">
+    <!-- Pinned Lucide Icons CDN for Modern UI Icons -->
+    <script src="https://unpkg.com/lucide@1.25.0"></script>
     <!-- Chart.js CDN for Analytics Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Tailwind Custom Configuration -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'Sarabun', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f5f3ff',
-                            100: '#ede9fe',
-                            200: '#ddd6fe',
-                            300: '#c4b5fd',
-                            400: '#a78bfa',
-                            500: '#8b5cf6',
-                            600: '#7c3aed',
-                            700: '#6d28d9',
-                            800: '#5b21b6',
-                            900: '#4c1d95',
-                            950: '#2e1065',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
 
     <!-- Custom Style for extra refinement -->
     <style>
@@ -81,7 +53,7 @@
     </div>
 
     <!-- SIDEBAR - LEFT SIDE TABS -->
-    <aside class="w-full md:w-64 bg-slate-950 text-white flex flex-col flex-shrink-0 z-30 transition-all duration-300 border-r border-slate-900">
+    <aside class="w-full md:w-64 bg-slate-950 text-white flex flex-col flex-shrink-0 z-30 transition-[transform] duration-300 border-r border-slate-900">
         <!-- Logo & Header -->
         <div class="p-6 border-b border-slate-900 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -105,7 +77,7 @@
             <div>
                 <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">พัสดุและคลังสินค้า</p>
                 <div class="space-y-1">
-                    <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-md shadow-indigo-950/20 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('stock')" id="tab-stock" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 bg-indigo-600 text-white shadow-md shadow-indigo-950/20 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="package" class="w-4.5 h-4.5"></i>
                         <span>คลังอะไหล่</span>
                         <span class="ml-auto bg-rose-500 text-white text-xs px-2 py-0.5 rounded-full hidden" id="low-stock-badge">0</span>
@@ -117,18 +89,18 @@
             <div>
                 <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">การจัดซื้อจัดหา</p>
                 <div class="space-y-1">
-                    <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="shopping-cart" class="w-4.5 h-4.5"></i>
                         <span>รายการคำสั่งซื้อ</span>
                         <span class="ml-auto bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full" id="pending-orders-badge">1</span>
                     </button>
 
-                    <button onclick="switchTab('rfq')" id="tab-rfq" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('rfq')" id="tab-rfq" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="file-text" class="w-4.5 h-4.5"></i>
                         <span>รายการขอราคา</span>
                     </button>
                     
-                    <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('quotes')" id="tab-quotes" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="file-check" class="w-4.5 h-4.5"></i>
                         <span>ประวัติใบเสนอราคา</span>
                     </button>
@@ -139,7 +111,7 @@
             <div>
                 <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">การเงินและงบประมาณ</p>
                 <div class="space-y-1">
-                    <button onclick="switchTab('budget')" id="tab-budget" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                    <button onclick="switchTab('budget')" id="tab-budget" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="wallet" class="w-4.5 h-4.5"></i>
                         <span>งบประมาณ</span>
                     </button>
@@ -203,7 +175,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                             <i data-lucide="search" class="w-4 h-4"></i>
                         </span>
-                        <input type="text" id="stock-search" oninput="filterStock()" placeholder="ค้นหาชื่ออะไหล่ รหัส หรือหมวดหมู่..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-all">
+                        <input type="text" id="stock-search" oninput="filterStock()" placeholder="ค้นหาชื่ออะไหล่ รหัส หรือหมวดหมู่..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-colors">
                     </div>
                     
                     <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -311,7 +283,7 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                                 <i data-lucide="search" class="w-4 h-4"></i>
                             </span>
-                            <input type="text" id="order-filter-search" oninput="onOrderSearchInput(this.value)" placeholder="ค้นหารายการ, เลขที่ PR/PO, รหัสพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-all">
+                            <input type="text" id="order-filter-search" oninput="onOrderSearchInput(this.value)" placeholder="ค้นหารายการ, เลขที่ PR/PO, รหัสพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-colors">
                         </div>
 
                         <select id="order-filter-month" onchange="onOrderMonthChange(this.value)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
@@ -472,7 +444,7 @@
                                 <span id="budget-pct-text">0%</span>
                             </div>
                             <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                <div id="budget-progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                <div id="budget-progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-[width] duration-500" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
@@ -694,8 +666,8 @@
     <!-- ==================== MODALS ZONE ==================== -->
 
     <!-- MODAL 1: ADD NEW STOCK SPARE -->
-    <div id="modal-addStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-all duration-300">
-        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all duration-300 border border-slate-100">
+    <div id="modal-addStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
             <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                 <h4 class="font-bold text-slate-800 text-base">เพิ่มรายการอะไหล่ใหม่</h4>
                 <button onclick="closeModal('addStock')" class="text-slate-400 hover:text-slate-600 transition-colors">
@@ -705,39 +677,39 @@
             <form onsubmit="submitStockForm(event)" class="p-6 space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">รหัสอะไหล่ (MAT.)</label>
+                        <label for="form-stock-id" class="block text-xs font-bold uppercase text-slate-500 mb-1">รหัสอะไหล่ (MAT.)</label>
                         <input type="text" id="form-stock-id" placeholder="เช่น 50000379" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">หมวดหมู่สินค้า (Category)</label>
+                        <label for="form-stock-category" class="block text-xs font-bold uppercase text-slate-500 mb-1">หมวดหมู่สินค้า (Category)</label>
                         <input type="text" id="form-stock-category" placeholder="เช่น ข้อต่อตรง" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ประเภท (Type)</label>
+                        <label for="form-stock-type" class="block text-xs font-bold uppercase text-slate-500 mb-1">ประเภท (Type)</label>
                         <input type="text" id="form-stock-type" placeholder="เช่น z50" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">หน่วย (Unit)</label>
+                        <label for="form-stock-unit" class="block text-xs font-bold uppercase text-slate-500 mb-1">หน่วย (Unit)</label>
                         <input type="text" id="form-stock-unit" placeholder="เช่น Pc" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่พัสดุ (Description)</label>
+                    <label for="form-stock-name" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่พัสดุ (Description)</label>
                     <input type="text" id="form-stock-name" placeholder="ระบุชื่อเรียกให้ชัดเจน..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                 </div>
                 <div class="grid grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">พิกัดจัดเก็บ (Location)</label>
+                        <label for="form-stock-location" class="block text-xs font-bold uppercase text-slate-500 mb-1">พิกัดจัดเก็บ (Location)</label>
                         <input type="text" id="form-stock-location" placeholder="เช่น ชั้น B3" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนเริ่มต้น (Qty)</label>
+                        <label for="form-stock-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนเริ่มต้น (Qty)</label>
                         <input type="number" id="form-stock-qty" min="0" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ระดับเตือนขั้นต่ำ (Reorder)</label>
+                        <label for="form-stock-reorder" class="block text-xs font-bold uppercase text-slate-500 mb-1">ระดับเตือนขั้นต่ำ (Reorder)</label>
                         <input type="number" id="form-stock-reorder" min="1" value="5" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                     </div>
                 </div>
@@ -750,8 +722,8 @@
     </div>
 
     <!-- MODAL 3: CREATE RFQ -->
-    <div id="modal-rfq" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-all duration-300">
-        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all duration-300 border border-slate-100">
+    <div id="modal-rfq" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
             <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                 <h4 class="font-bold text-slate-800 text-base">สร้างใบคำขอเสนอราคา (RFQ)</h4>
                 <button onclick="closeModal('rfq')" class="text-slate-400 hover:text-slate-600 transition-colors">
@@ -760,17 +732,17 @@
             </div>
             <form onsubmit="submitRFQForm(event)" class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่ที่ต้องการขอราคา</label>
+                    <label for="form-rfq-item" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่ที่ต้องการขอราคา</label>
                     <select id="form-rfq-item" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
                         <!-- Populate dynamically -->
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนที่ต้องการสั่งโดยประมาณ</label>
+                    <label for="form-rfq-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนที่ต้องการสั่งโดยประมาณ</label>
                     <input type="number" id="form-rfq-qty" min="1" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ส่งเปรียบเทียบซัพพลายเออร์ที่เลือก (พิมพ์คั่นด้วยเครื่องหมายจุลภาค)</label>
+                    <label for="form-rfq-suppliers" class="block text-xs font-bold uppercase text-slate-500 mb-1">ส่งเปรียบเทียบซัพพลายเออร์ที่เลือก (พิมพ์คั่นด้วยเครื่องหมายจุลภาค)</label>
                     <input type="text" id="form-rfq-suppliers" value="บริษัท สหรุ่งเรือง จำกัด, ชัยพัฒนาแบริ่ง, กรุงเทพไฮดรอลิก" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                 </div>
                 <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
@@ -782,8 +754,8 @@
     </div>
 
     <!-- MODAL 4: ADD QUOTATION FROM SUPPLIER -->
-    <div id="modal-addQuote" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-all duration-300">
-        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all duration-300 border border-slate-100">
+    <div id="modal-addQuote" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
             <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                 <h4 class="font-bold text-slate-800 text-base">บันทึกเอกสารใบเสนอราคาเสนอขาย</h4>
                 <button onclick="closeModal('addQuote')" class="text-slate-400 hover:text-slate-600 transition-colors">
@@ -793,27 +765,27 @@
             <form onsubmit="submitQuoteForm(event)" class="p-6 space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">อ้างอิงรหัสใบขอราคา RFQ</label>
+                        <label for="form-quote-rfq" class="block text-xs font-bold uppercase text-slate-500 mb-1">อ้างอิงรหัสใบขอราคา RFQ</label>
                         <select id="form-quote-rfq" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
                             <!-- Auto population from RFQ lists -->
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่อซัพพลายเออร์ผู้ยื่นเอกสาร</label>
+                        <label for="form-quote-supplier" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่อซัพพลายเออร์ผู้ยื่นเอกสาร</label>
                         <input type="text" id="form-quote-supplier" placeholder="ระบุบริษัทเสนอราคา..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ราคาต่อชิ้น (บาท)</label>
+                        <label for="form-quote-unitprice" class="block text-xs font-bold uppercase text-slate-500 mb-1">ราคาต่อชิ้น (บาท)</label>
                         <input type="number" id="form-quote-unitprice" min="1" value="1500" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนหน่วย</label>
+                        <label for="form-quote-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวนหน่วย</label>
                         <input type="number" id="form-quote-qty" min="1" value="10" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ใช้เวลาส่งกี่วัน</label>
+                        <label for="form-quote-delivery" class="block text-xs font-bold uppercase text-slate-500 mb-1">ใช้เวลาส่งกี่วัน</label>
                         <input type="text" id="form-quote-delivery" value="3 วันทำการ" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
                     </div>
                 </div>
@@ -1494,7 +1466,7 @@
             const lowStockItems = stockParts.filter(p => p.qty <= p.reorder);
             if (lowStockItems.length > 0) {
                 const alertDiv = document.createElement("div");
-                alertDiv.className = "flex items-center justify-between bg-rose-50 border border-rose-200/50 text-rose-800 px-4 py-3 rounded-xl text-sm shadow-sm transition-all";
+                alertDiv.className = "flex items-center justify-between bg-rose-50 border border-rose-200/50 text-rose-800 px-4 py-3 rounded-xl text-sm shadow-sm transition-opacity";
                 alertDiv.innerHTML = `
                     <div class="flex items-center space-x-2">
                         <i data-lucide="bell" class="w-4 h-4 text-rose-600 animate-pulse"></i>
@@ -1532,9 +1504,9 @@
                         <td class="px-6 py-4 text-center text-slate-500 text-xs font-semibold">${part.reorder}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
                         <td class="px-6 py-4 text-center">
-                            <div class="inline-flex rounded-lg shadow-sm border border-slate-200">
-                                <button onclick="adjustStockQty('${part.id}', -1)" class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-r border-slate-200 focus:outline-none transition-colors" title="ลดจำนวน"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
-                                <button onclick="adjustStockQty('${part.id}', 1)" class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:outline-none transition-colors" title="เพิ่มจำนวน"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                            <div class="inline-flex rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                                <button type="button" onclick="adjustStockQty('${part.id}', -1)" class="w-11 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-r border-slate-200 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors" aria-label="ลดจำนวนอะไหล่รหัส ${part.id} ลง 1 ชิ้น" title="ลดจำนวน"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                                <button type="button" onclick="adjustStockQty('${part.id}', 1)" class="w-11 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors" aria-label="เพิ่มจำนวนอะไหล่รหัส ${part.id} ขึ้น 1 ชิ้น" title="เพิ่มจำนวน"><i data-lucide="plus" class="w-4 h-4"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -1630,7 +1602,7 @@
                         <td class="px-6 py-4 text-center text-slate-800 font-semibold">${req.qty || "-"}</td>
                         <td class="px-6 py-4 text-xs text-slate-500">${req.remark || "-"}</td>
                         <td class="px-6 py-4 text-center">
-                            <span onclick="toggleVerify('${req.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${badgeClass} select-none transition-colors">${badgeText}</span>
+                            <button type="button" onclick="toggleVerify('${req.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${badgeClass} select-none transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none" aria-label="สถานะการตรวจสอบสำหรับ ${req.id}: ${badgeText}. กดเพื่อเปลี่ยนสถานะ">${badgeText}</button>
                         </td>
                     </tr>
                 `;
