@@ -50,3 +50,51 @@ Despite the executor doing unplanned work first, when it reached the actual plan
 
 Fixed directly (uncontroversial bug): the corrupted sidebar HTML.
 Left as-is, flagged for your call: the leftover `rfq-search` box (harmless, keep or remove), the `normalizeOrderStatus` refactor (functionally fine today, silent-fallback risk), and the Budget category-breakdown double-counting removal (plausible fix, but never speced or verified — worth its own quick review rather than accepting it bundled in silently).
+
+---
+
+## Audit: gviz migration + write-back + UI cleanup (8-item plan, Antigravity)
+
+Plan: `C:\Users\Tanarat\.claude\plans\1-appscript-distributed-rain.md`
+Commits audited (in order): `fdd5955` (Phase 1 doPost) → `b802718` (Phase 2 gviz swap) → `de287da` (Phase 3 branding/tabs/reorder) → `d176870` (Phase 4 RFQ) → `25b52b4` (Phase 5 Orders stat cards) → `57e442f` (Phase 6 Stock actions) → `52e1bf5` (Phase 7 Budget fix)
+
+## Commit hygiene: clean this round
+
+Unlike the previous round, all 7 commits are exactly the plan's 7 phases in the plan's own sequence, each touching only the files the plan named for that phase (`Code.gs` alone for Phase 1; `index.html` [+`DESIGN.md` for Phase 3] for the rest). No unplanned commits interleaved, no stray files. Whole-file sweep after all 7 commits: `<nav>`/`</nav>`/`<body>`/`<script>` tag counts balanced, every touched function (`fetchAllData`, `renderStockTable`, `renderOrdersTable`, `renderRFQTable`, `renderQuotesTable`, `normalizeOrderStatus`, `toggleVerify`, `adjustStockQty`, `calculateMonthlyExpenses`, all 5 `gvizTo*_` transforms, etc.) defined exactly once, no leftover dead `adjustQty(` calls, no leftover `?action=stock/requests/quotes/budget/orders` GET reads. Antigravity's self-audit held up this time.
+
+## Per-phase verdicts
+
+| Phase | Verdict | Notes |
+|---|---|---|
+| 1 — `Code.gs` `doPost` | PASS | Byte-for-byte match to the plan's code. **Confirmed actually deployed and live**: POSTed an unknown action to the exec URL, got back `{"error":"Unknown action: __probe__"}` — proves the new handler is reachable at the existing URL, not just committed to a file nobody pasted into the Apps Script editor. |
+| 2 — gviz data layer swap | PASS, with a verified deviation | See below — one deliberate deviation from the plan's header-detection approach, empirically confirmed correct rather than assumed. |
+| 3 — branding/tab names/reorder | PASS | "MaintX Pro"→"Maintenance System" in both `index.html` and `DESIGN.md`; all `(...)"` suffixes stripped from sidebar labels; `titles` object in `switchTab()` reconciled to match sidebar text exactly (fixes the pre-existing inconsistency, e.g. quotes tab's old "เปรียบเทียบใบเสนอราคา (Quotation Comparison)"); Procurement group reordered to orders→rfq→quotes with `pending-orders-badge` moved intact. |
+| 4 — RFQ tab | PASS | `.filter(req => req.status === "ok")` added; "ด่วน"/"สถานะ" columns replaced with a single "ตรวจสอบ" toggle column; review stat card removed, grid dropped to 2 cols; `toggleVerify()` does optimistic update → POST (no `Content-Type` header, matches CORS-preflight-avoidance requirement) → reconcile-or-rollback, same pattern as the plan specified. |
+| 5 — Orders stat cards | PASS | 6 cards in the exact specified order/labels/ids; `normalizeOrderStatus()` extended with `PR`→`PR_APPROVAL`/`PO`→`PO_APPROVAL` branches, correctly hitting the uppercased `s` variable; stat cards still computed from full unfiltered `purchaseOrders`, not the filtered param. **Live-data note**: the PR sheet has grown since the plan was written (1204 rows now vs. 434 then) and now genuinely contains `Pr` (68 rows) and `PO` (21 rows) statuses — the "build these cards now, anticipating future data" call was correct, they'll show real non-zero counts today, not just 0. |
+| 6 — Stock +/- actions | PASS | New "การจัดการ" column; `adjustQty` cleanly renamed to `adjustStockQty` (no leftover old name anywhere); optimistic update → POST `{action:'adjustStockQty', partId, delta}` → reconcile to server's returned `qty` → rollback + toast on failure. Matches the plan's delta-not-absolute design, matches `Code.gs`'s stringified-partId comparison convention. |
+| 7 — Budget fix | PASS | Hardcoded `"ก.ค. 2569"` replaced with `"ไม่ระบุวันที่"`; sort comparator guards it to `Infinity` (sorts last); exclusion check upgraded from raw-string Cancle/Cancel matching to `normalizedStatus !== "SHIPPING" && normalizedStatus !== "RECEIVED"` — this also correctly excludes the new PR_APPROVAL/PO_APPROVAL statuses from monthly spend (not explicitly asked, but the right call: unapproved orders aren't spend yet, and this phase explicitly depends on Phase 5's status extension per the plan's own sequencing); totals row added, bold/bordered, sums including the no-date bucket. |
+
+### Phase 2 deviation — verified, not a defect
+
+The plan mandated treating `rows[0]` as the literal header row, because earlier research in this project had found `table.cols[].label` came back blank for STOCK. The committed code instead added `&headers=1` to the gviz URL and reads `table.cols[].label` (trimmed). I re-fetched all 5 sheets live to check which approach is actually true today:
+
+- `&headers=1` **does** now populate `cols[].label` correctly for every sheet — verified STOCK (`"CATEGORY "` etc., trimmed correctly by the code's own `.trim()`), `requests` (`req_id`...`verify`, all 12 fields matching `gvizToRequests_`'s lookups exactly), `Budget` (all 8 fields matching), `PR` (all 16 fields matching, including `Category`/`VENDOR`).
+- `QuotationHistory` has 0 data rows today (unchanged from earlier research — sheet is genuinely empty), so its column-label path is unexercised by real data, but the header array itself parses fine.
+- This is a legitimate, better solution than the plan's own fallback — not scope creep, not a corruption. Flagging only so you know the implementation departed from the written plan and why that's fine.
+
+## Open risk found during this audit: `file://` will break the read path
+
+Tested gviz's CORS behavior directly (not assumed): the endpoint reflects back `Access-Control-Allow-Origin: <origin>` for any real `http(s)://` origin sent, but returns **no CORS header at all** when `Origin: null` (which is what a browser sends when `index.html` is opened directly via `file://`, e.g. double-clicking it). That means:
+
+- **Opening `index.html` by double-click will silently CORS-fail all 5 gviz reads.**
+- Serving it from any local server (`python -m http.server`, a VS Code Live Server, actual hosting, etc.) works fine — confirmed via the Origin-reflection behavior above.
+
+This was Phase 0's exact concern, never checked in a real browser by anyone yet. I don't have browser access either, but the curl-level CORS evidence is a strong, concrete signal, stronger than "unverified." Please confirm this project is (or will be) served over http(s) when you open it — if it's currently opened via `file://`, that's the read path breaking, not a bug in the code above.
+
+## Not tested this round (would mutate live production data)
+
+`setVerify`/`adjustStockQty` write paths are logic-verified against `Code.gs` (deployed and reachable, confirmed above) but I did not fire a real write — that would flip a real `verify` flag or change a real stock quantity in the live sheet without your say-so. Say the word and I'll run one real round-trip test (e.g. toggle one request's verify on and back off) if you want it confirmed beyond code review.
+
+## Verdict: PASS, all 7 phases
+
+No fixes needed. Two items for you: confirm the app is served over http(s) (not `file://`), and say if you want a real (reversible) write-action test run.
