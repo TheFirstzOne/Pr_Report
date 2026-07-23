@@ -442,7 +442,7 @@
                             <div class="flex items-center gap-1.5" id="rfq-filter-group">
                                 <button type="button" id="rfq-filter-all" onclick="setRfqVerifyFilter('all')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white border border-transparent transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">ทั้งหมด</button>
                                 <button type="button" id="rfq-filter-pending" onclick="setRfqVerifyFilter('pending')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">รอราคา</button>
-                                <button type="button" id="rfq-filter-received" onclick="setRfqVerifyFilter('received')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">ได้ราคา</button>
+                                <button type="button" id="rfq-filter-received" onclick="setRfqVerifyFilter('received')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">ได้รับราคา</button>
                             </div>
                             <!-- Search Box -->
                             <div class="relative w-full md:w-72">
@@ -1589,6 +1589,15 @@
             const searchInput = document.getElementById("rfq-search");
             const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
+            const okRequests = rfqList.filter(req => req.status === "ok");
+            const countAll = okRequests.length;
+            const countPending = okRequests.filter(req => !req.verify).length;
+            const countReceived = okRequests.filter(req => !!req.verify).length;
+
+            document.getElementById("rfq-filter-all").textContent = `ทั้งหมด (${countAll})`;
+            document.getElementById("rfq-filter-pending").textContent = `รอราคา (${countPending})`;
+            document.getElementById("rfq-filter-received").textContent = `ได้รับราคา (${countReceived})`;
+
             // Single innerHTML write — see renderStockTable comment.
             const rows = rfqList
                 .filter(req => req.status === "ok")
@@ -1609,7 +1618,7 @@
                     const badgeClass = req.verify
                         ? "bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100 cursor-pointer"
                         : "bg-amber-50 border border-amber-100 text-amber-700 hover:bg-amber-100 cursor-pointer";
-                    const badgeText = req.verify ? "ได้ราคา" : "รอราคา";
+                    const badgeText = req.verify ? "ได้รับราคา" : "รอราคา";
                     const isInFlight = inFlightRequests.has(req.id);
                     const disabledAttr = isInFlight ? "disabled style='opacity:0.5; pointer-events:none;'" : "";
                     const displayBadgeText = isInFlight ? "กำลังบันทึก..." : badgeText;
