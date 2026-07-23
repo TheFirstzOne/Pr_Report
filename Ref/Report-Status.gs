@@ -1,6 +1,6 @@
 // เปลี่ยนค่าเหล่านี้ด้วยข้อมูลของคุณ
 const SHEET_ID = '189G2MUOTfR1en6_8pjLJ2zP4TKEGQWF4gxNtwkCacj0'; // รหัส Google Sheet ของคุณ
-const TELEGRAM_BOT_TOKEN = '7967646027:AAHti6Dd_mSGdta6XfArgwhzigzpt8f1DaQ'; // โทเคนของ Telegram Bot ของคุณ
+const TELEGRAM_BOT_TOKEN = ''; // โทเคนของ Telegram Bot ของคุณ
 const TELEGRAM_CHAT_ID = '7572101335'; // รหัสแชท Telegram ที่คุณต้องการส่งข้อความไป
 
 // ============================================
