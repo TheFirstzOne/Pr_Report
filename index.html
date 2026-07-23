@@ -437,11 +437,20 @@
                             <h3 class="font-bold text-base text-slate-800">รายการขอเทียบราคา (Requests)</h3>
                             <p class="text-xs text-slate-500 mt-1">คำขอเทียบราคาที่ส่งเข้ามาจากผู้ใช้งาน พร้อมสถานะการตรวจสอบ</p>
                         </div>
-                        <div class="relative w-full md:w-72">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
-                            </span>
-                            <input type="text" id="rfq-search" oninput="renderRFQTable()" placeholder="ค้นหาเลขที่คำขอ, ผู้ขอ หรือชื่อพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                            <!-- Segmented Control for RFQ Verify Status -->
+                            <div class="flex items-center gap-1.5" id="rfq-filter-group">
+                                <button type="button" id="rfq-filter-all" onclick="setRfqVerifyFilter('all')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white border border-transparent transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">ทั้งหมด</button>
+                                <button type="button" id="rfq-filter-pending" onclick="setRfqVerifyFilter('pending')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">รอราคา</button>
+                                <button type="button" id="rfq-filter-received" onclick="setRfqVerifyFilter('received')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">ได้ราคา</button>
+                            </div>
+                            <!-- Search Box -->
+                            <div class="relative w-full md:w-72">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                                </span>
+                                <input type="text" id="rfq-search" oninput="renderRFQTable()" placeholder="ค้นหาเลขที่คำขอ, ผู้ขอ หรือชื่อพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                            </div>
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -758,6 +767,9 @@
         let orderSelectedStatuses = null;
         let orderSelectedCategories = null;
         let orderSelectedVendors = null;
+
+        // RFQ tab filter state.
+        let rfqVerifyFilter = "all";
 
         // Paste your deployed Apps Script Web App exec URL here (Task 2 of the implementation plan)
         const EXEC_URL = "https://script.google.com/macros/s/AKfycbyofRf8n3bW4ZTnfpHOnasHQZh0XCpT7jhS_SUkJJEyGWFSp0y-Emt6VdnbYdNAQcUC/exec";
@@ -1546,6 +1558,31 @@
             document.getElementById("stat-orders-received").innerText = receivedCount;
         }
 
+        function setRfqVerifyFilter(value) {
+            rfqVerifyFilter = value;
+            
+            const btnAll = document.getElementById("rfq-filter-all");
+            const btnPending = document.getElementById("rfq-filter-pending");
+            const btnReceived = document.getElementById("rfq-filter-received");
+            
+            if (btnAll && btnPending && btnReceived) {
+                [btnAll, btnPending, btnReceived].forEach(btn => {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none";
+                });
+                
+                let activeBtn;
+                if (value === "all") activeBtn = btnAll;
+                else if (value === "pending") activeBtn = btnPending;
+                else if (value === "received") activeBtn = btnReceived;
+                
+                if (activeBtn) {
+                    activeBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white border border-transparent transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none";
+                }
+            }
+            
+            renderRFQTable();
+        }
+
         function renderRFQTable() {
             const tbody = document.getElementById("rfq-table-body");
 
@@ -1555,6 +1592,11 @@
             // Single innerHTML write — see renderStockTable comment.
             const rows = rfqList
                 .filter(req => req.status === "ok")
+                .filter(req => {
+                    if (rfqVerifyFilter === "pending") return !req.verify;
+                    if (rfqVerifyFilter === "received") return !!req.verify;
+                    return true; // "all"
+                })
                 .filter(req => {
                     if (!query) return true;
                     const reqId = (req.id || "").toLowerCase();
