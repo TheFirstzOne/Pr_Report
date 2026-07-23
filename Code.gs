@@ -72,7 +72,7 @@ function getStock() {
   const unitIdx = headers.indexOf('Unit');
   const reorderIdx = headers.indexOf('safety factor');
   const remarkIdx = headers.indexOf('Remark');
-  const matCodeIdx = 1; // source sheet leaves this column's header blank
+  const matCodeIdx = headers.indexOf('MAT.');
 
   return rows
     .filter(function (row) { return row[descIdx]; })
@@ -268,7 +268,7 @@ function adjustStockQty_(partId, delta) {
     const data = sheet.getDataRange().getValues();
     const headers = data[0].map(function (h) { return String(h).trim(); });
     const qtyIdx = headers.indexOf('Qty.');
-    const matCodeIdx = 1; // matches getStock()'s existing convention — blank header, column index 1
+    const matCodeIdx = headers.indexOf('MAT.');
     for (let i = 1; i < data.length; i++) {
       if (String(data[i][matCodeIdx]) === String(partId)) {
         const currentQty = Number(data[i][qtyIdx]) || 0;
@@ -278,6 +278,54 @@ function adjustStockQty_(partId, delta) {
       }
     }
     return { error: 'Part not found: ' + partId };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Exists-vs-new decided server-side under one lock, so two people adding the
+// same brand-new MAT code at nearly the same moment can't both create a
+// duplicate row (the risk a client-side-only check couldn't rule out).
+function addStock_(item) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName('STOCK');
+    if (!sheet) return { error: 'Sheet not found: STOCK' };
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(function (h) { return String(h).trim(); });
+    const catIdx = headers.indexOf('CATEGORY');
+    const matCodeIdx = headers.indexOf('MAT.');
+    const descIdx = headers.indexOf('DESCRIPTION');
+    const qtyIdx = headers.indexOf('Qty.');
+    const unitIdx = headers.indexOf('Unit');
+    const reorderIdx = headers.indexOf('safety factor');
+    const remarkIdx = headers.indexOf('Remark');
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][matCodeIdx]) === String(item.matCode)) {
+        // Existing row: only bump Qty., leave every other field untouched.
+        const currentQty = Number(data[i][qtyIdx]) || 0;
+        const newQty = currentQty + Number(item.qty);
+        sheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
+        return { success: true, matCode: item.matCode, qty: newQty, isNew: false };
+      }
+    }
+
+    // Not found: append a new row, placing each value by its resolved header
+    // index rather than assuming a fixed column order (the sheet has already
+    // drifted once — a "No." column got inserted at A after this was written).
+    const newRow = new Array(headers.length).fill('');
+    newRow[catIdx] = item.category;
+    newRow[matCodeIdx] = item.matCode;
+    newRow[descIdx] = item.description;
+    newRow[qtyIdx] = Number(item.qty) || 0;
+    newRow[unitIdx] = item.unit;
+    newRow[reorderIdx] = Number(item.reorder) || 0;
+    newRow[remarkIdx] = item.remark || '';
+    sheet.appendRow(newRow);
+    return { success: true, matCode: item.matCode, qty: Number(item.qty) || 0, isNew: true };
   } finally {
     lock.releaseLock();
   }
@@ -293,6 +341,11 @@ function doPost(e) {
     } else if (body.action === 'adjustStockQty') {
       if (!body.partId || typeof body.delta === 'undefined') throw new Error('Missing partId/delta');
       payload = adjustStockQty_(body.partId, body.delta);
+    } else if (body.action === 'addStock') {
+      if (!body.matCode || !body.category || !body.description || !body.unit) {
+        throw new Error('Missing required fields');
+      }
+      payload = addStock_(body);
     } else {
       payload = { error: 'Unknown action: ' + body.action };
     }
