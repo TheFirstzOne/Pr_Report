@@ -711,10 +711,9 @@
             </div>
             <div class="w-full border-t border-slate-100 my-1"></div>
             <div class="w-full text-left">
-                <label for="login-member-select" class="block text-xs font-bold uppercase text-slate-500 mb-2">เลือกผู้ใช้งานเพื่อเข้าสู่ระบบ</label>
-                <select id="login-member-select" onchange="onLoginSelectChange()" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-700 bg-white">
-                    <option value="" disabled selected>-- เลือกรายชื่อผู้ใช้งาน --</option>
-                </select>
+                <label for="login-username-input" class="block text-xs font-bold uppercase text-slate-500 mb-2">ระบุรหัสผู้ใช้งานเพื่อเข้าสู่ระบบ</label>
+                <input type="text" id="login-username-input" oninput="onLoginInputChange()" placeholder="ใส่รหัสผู้ใช้งาน..." class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-700 bg-white">
+                <p id="login-error" class="hidden text-xs text-rose-600 mt-2">ไม่พบผู้ใช้งาน</p>
             </div>
             <button type="button" id="login-submit-btn" disabled onclick="submitLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-500/10">เข้าสู่ระบบ</button>
         </div>
@@ -896,19 +895,16 @@
 
         function showLoginGate() {
             const gate = document.getElementById("login-gate");
-            const select = document.getElementById("login-member-select");
+            const input = document.getElementById("login-username-input");
             const btn = document.getElementById("login-submit-btn");
+            const error = document.getElementById("login-error");
             
-            if (select) {
-                select.innerHTML = '<option value="" disabled selected>-- เลือกรายชื่อผู้ใช้งาน --</option>';
-                membersList.forEach(function (m) {
-                    const option = document.createElement("option");
-                    option.value = m.name;
-                    option.textContent = m.name + " (" + m.role + ")";
-                    select.appendChild(option);
-                });
+            if (input) {
+                input.value = "";
             }
-            
+            if (error) {
+                error.classList.add("hidden");
+            }
             if (btn) {
                 btn.setAttribute("disabled", "true");
             }
@@ -922,10 +918,16 @@
             }
         }
 
-        function onLoginSelectChange() {
-            const select = document.getElementById("login-member-select");
+        function onLoginInputChange() {
+            const input = document.getElementById("login-username-input");
             const btn = document.getElementById("login-submit-btn");
-            if (select && select.value !== "") {
+            const error = document.getElementById("login-error");
+            
+            if (error) {
+                error.classList.add("hidden");
+            }
+            
+            if (input && input.value.trim() !== "") {
                 btn.removeAttribute("disabled");
             } else if (btn) {
                 btn.setAttribute("disabled", "true");
@@ -933,13 +935,24 @@
         }
 
         function submitLogin() {
-            const select = document.getElementById("login-member-select");
-            if (!select) return;
-            const selectedName = select.value;
-            const member = membersList.find(function (m) { return m.name === selectedName; });
-            if (!member) return;
+            const input = document.getElementById("login-username-input");
+            const error = document.getElementById("login-error");
+            if (!input) return;
             
-            localStorage.setItem("maintxProCurrentUser", JSON.stringify(member));
+            const typedValue = input.value.trim();
+            const member = membersList.find(function (m) { return m.userName === typedValue; });
+            
+            if (!member) {
+                if (error) {
+                    error.classList.remove("hidden");
+                }
+                return;
+            }
+            
+            localStorage.setItem("maintxProCurrentUser", JSON.stringify({
+                name: member.name,
+                role: member.role
+            }));
             updateUserProfileSidebar();
             
             const gate = document.getElementById("login-gate");
@@ -1049,6 +1062,7 @@
             const rows = sheetData.rows;
             const nameIdx = headers.indexOf('name');
             const roleIdx = headers.indexOf('role');
+            const usernameIdx = headers.indexOf('user_name');
 
             return rows
                 .filter(function (row) { 
@@ -1057,7 +1071,8 @@
                 .map(function (row) {
                     return {
                         name: String(row[nameIdx] || '').trim(),
-                        role: String(row[roleIdx] || '').trim()
+                        role: String(row[roleIdx] || '').trim(),
+                        userName: String(row[usernameIdx] || '').trim()
                     };
                 });
         }
