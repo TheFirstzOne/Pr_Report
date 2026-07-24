@@ -283,6 +283,41 @@ function adjustStockQty_(partId, delta) {
   }
 }
 
+// Core function to adjust or add stock, lock-free.
+function addStockCore_(item, sheet, data, headers) {
+  const catIdx = headers.indexOf('CATEGORY');
+  const matCodeIdx = headers.indexOf('MAT.');
+  const descIdx = headers.indexOf('DESCRIPTION');
+  const qtyIdx = headers.indexOf('Qty.');
+  const unitIdx = headers.indexOf('Unit');
+  const reorderIdx = headers.indexOf('safety factor');
+  const remarkIdx = headers.indexOf('Remark');
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][matCodeIdx]) === String(item.matCode)) {
+      // Existing row: only bump Qty., leave every other field untouched.
+      const currentQty = Number(data[i][qtyIdx]) || 0;
+      const newQty = currentQty + Number(item.qty);
+      sheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
+      return { success: true, matCode: item.matCode, qty: newQty, isNew: false };
+    }
+  }
+
+  // Not found: append a new row, placing each value by its resolved header
+  // index rather than assuming a fixed column order (the sheet has already
+  // drifted once — a "No." column got inserted at A after this was written).
+  const newRow = new Array(headers.length).fill('');
+  if (catIdx !== -1) newRow[catIdx] = item.category;
+  if (matCodeIdx !== -1) newRow[matCodeIdx] = item.matCode;
+  if (descIdx !== -1) newRow[descIdx] = item.description;
+  if (qtyIdx !== -1) newRow[qtyIdx] = Number(item.qty) || 0;
+  if (unitIdx !== -1) newRow[unitIdx] = item.unit;
+  if (reorderIdx !== -1) newRow[reorderIdx] = Number(item.reorder) || 0;
+  if (remarkIdx !== -1) newRow[remarkIdx] = item.remark || '';
+  sheet.appendRow(newRow);
+  return { success: true, matCode: item.matCode, qty: Number(item.qty) || 0, isNew: true };
+}
+
 // Exists-vs-new decided server-side under one lock, so two people adding the
 // same brand-new MAT code at nearly the same moment can't both create a
 // duplicate row (the risk a client-side-only check couldn't rule out).
@@ -295,37 +330,85 @@ function addStock_(item) {
     if (!sheet) return { error: 'Sheet not found: STOCK' };
     const data = sheet.getDataRange().getValues();
     const headers = data[0].map(function (h) { return String(h).trim(); });
-    const catIdx = headers.indexOf('CATEGORY');
-    const matCodeIdx = headers.indexOf('MAT.');
-    const descIdx = headers.indexOf('DESCRIPTION');
-    const qtyIdx = headers.indexOf('Qty.');
-    const unitIdx = headers.indexOf('Unit');
-    const reorderIdx = headers.indexOf('safety factor');
-    const remarkIdx = headers.indexOf('Remark');
+    return addStockCore_(item, sheet, data, headers);
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][matCodeIdx]) === String(item.matCode)) {
-        // Existing row: only bump Qty., leave every other field untouched.
-        const currentQty = Number(data[i][qtyIdx]) || 0;
-        const newQty = currentQty + Number(item.qty);
-        sheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
-        return { success: true, matCode: item.matCode, qty: newQty, isNew: false };
+function receiveOrder_(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const prSheet = ss.getSheetByName('PR');
+    if (!prSheet) return { error: 'Sheet not found: PR' };
+    const prData = prSheet.getDataRange().getValues();
+    const prHeaders = prData[0].map(function (h) { return String(h).trim(); });
+
+    const poIdx = prHeaders.indexOf('PO No.');
+    const prIdx = prHeaders.indexOf('Pr No.');
+    const matCodeIdx = prHeaders.indexOf('MAT CODE');
+    const qtyIdx = prHeaders.indexOf('QTY.');
+    const statusIdx = prHeaders.indexOf('STATUS');
+
+    if (poIdx === -1 || prIdx === -1 || matCodeIdx === -1 || qtyIdx === -1 || statusIdx === -1) {
+      return { error: 'Required columns not found in PR sheet' };
+    }
+
+    const matches = [];
+    for (let i = 1; i < prData.length; i++) {
+      const row = prData[i];
+      const matchPo = String(row[poIdx] || '') === String(payload.poNo || '');
+      const matchPr = String(row[prIdx] || '') === String(payload.prNo || '');
+      const matchMat = String(row[matCodeIdx] || '') === String(payload.matCode || '');
+      const matchQty = Number(row[qtyIdx]) == Number(payload.qty);
+
+      if (matchPo && matchPr && matchMat && matchQty) {
+        matches.push(i + 1);
       }
     }
 
-    // Not found: append a new row, placing each value by its resolved header
-    // index rather than assuming a fixed column order (the sheet has already
-    // drifted once — a "No." column got inserted at A after this was written).
-    const newRow = new Array(headers.length).fill('');
-    newRow[catIdx] = item.category;
-    newRow[matCodeIdx] = item.matCode;
-    newRow[descIdx] = item.description;
-    newRow[qtyIdx] = Number(item.qty) || 0;
-    newRow[unitIdx] = item.unit;
-    newRow[reorderIdx] = Number(item.reorder) || 0;
-    newRow[remarkIdx] = item.remark || '';
-    sheet.appendRow(newRow);
-    return { success: true, matCode: item.matCode, qty: Number(item.qty) || 0, isNew: true };
+    if (matches.length === 0) {
+      return { error: 'ไม่พบรายการ กรุณารีเฟรชและลองใหม่' };
+    }
+    if (matches.length > 1) {
+      return { error: 'พบข้อมูลซ้ำ กรุณารีเฟรชและลองใหม่' };
+    }
+
+    const matchedRowIndex = matches[0];
+
+    // Set that row's STATUS cell to 'RECEIVED'
+    prSheet.getRange(matchedRowIndex, statusIdx + 1).setValue('RECEIVED');
+
+    // Open STOCK sheet
+    const stockSheet = ss.getSheetByName('STOCK');
+    if (!stockSheet) return { error: 'Sheet not found: STOCK' };
+    const stockData = stockSheet.getDataRange().getValues();
+    const stockHeaders = stockData[0].map(function (h) { return String(h).trim(); });
+
+    // Call addStockCore_
+    const stockItem = {
+      matCode: payload.matCode,
+      category: payload.category || '',
+      description: payload.description || '',
+      unit: payload.unit || 'Pc',
+      qty: Number(payload.qty) || 0,
+      reorder: 0,
+      remark: ''
+    };
+
+    const stockResult = addStockCore_(stockItem, stockSheet, stockData, stockHeaders);
+    if (stockResult.error) {
+      return { error: stockResult.error };
+    }
+
+    return {
+      success: true,
+      matCode: payload.matCode,
+      qty: stockResult.qty,
+      isNew: stockResult.isNew
+    };
   } finally {
     lock.releaseLock();
   }
@@ -346,6 +429,11 @@ function doPost(e) {
         throw new Error('Missing required fields');
       }
       payload = addStock_(body);
+    } else if (body.action === 'receiveOrder') {
+      if ((!body.poNo && !body.prNo) || !body.matCode || !body.qty) {
+        throw new Error('Missing required fields');
+      }
+      payload = receiveOrder_(body);
     } else {
       payload = { error: 'Unknown action: ' + body.action };
     }

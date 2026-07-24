@@ -400,6 +400,7 @@
                                     <th class="px-6 py-4">ประเภทงาน</th>
                                     <th class="px-6 py-4">ซัพพลายเออร์</th>
                                     <th class="px-6 py-4">สถานะสั่งซื้อ</th>
+                                    <th class="px-6 py-4 text-center">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="orders-table-body">
@@ -803,6 +804,7 @@
         let membersList = [];
         const inFlightRequests = new Set();
         const inFlightStock = new Set();
+        const inFlightReceiving = new Set();
 
         function normalizeOrderStatus(status) {
             const s = (status || "").trim().toUpperCase();
@@ -1688,6 +1690,24 @@
                     statusColor = "bg-rose-50 border border-rose-100 text-rose-700";
                 }
 
+                const isBtnVisible = order.normalizedStatus !== 'RECEIVED' && order.normalizedStatus !== 'CANCELLED' && order.matCode;
+                let actionsCell = `<td class="px-6 py-4 text-center">-</td>`;
+                
+                if (isBtnVisible) {
+                    const key = `${order.poNo || ''}|${order.prNo || ''}|${order.matCode || ''}|${order.qty}`;
+                    const isInFlight = inFlightReceiving.has(key);
+                    const disabledAttr = isInFlight ? "disabled style='opacity:0.5; pointer-events:none;'" : "";
+                    const btnText = isInFlight ? "กำลังบันทึก..." : "รับของแล้ว";
+                    
+                    actionsCell = `
+                        <td class="px-6 py-4 text-center">
+                            <button type="button" ${disabledAttr} onclick="receiveOrder('${order.poNo || ''}', '${order.prNo || ''}', '${order.matCode || ''}', ${order.qty})" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors select-none">
+                                ${btnText}
+                            </button>
+                        </td>
+                    `;
+                }
+
                 return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td class="px-6 py-4 text-xs font-semibold text-slate-500">${order.date}</td>
@@ -1702,6 +1722,7 @@
                         <td class="px-6 py-4 text-xs text-slate-500">${order.category}</td>
                         <td class="px-6 py-4 text-xs text-slate-500">${order.vendor || "-"}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 text-xs font-bold rounded-lg ${statusColor}">${order.status}</span></td>
+                        ${actionsCell}
                     </tr>
                 `;
             });
@@ -2092,6 +2113,91 @@
         }
 
 
+
+        function receiveOrder(poNo, prNo, matCode, qty) {
+            const key = (poNo || '') + "|" + (prNo || '') + "|" + (matCode || '') + "|" + qty;
+            if (inFlightReceiving.has(key)) return;
+
+            const orderIdx = purchaseOrders.findIndex(function (o) {
+                return (o.poNo || '') === poNo && (o.prNo || '') === prNo && (o.matCode || '') === matCode && o.qty === qty;
+            });
+            if (orderIdx === -1) return;
+
+            const order = purchaseOrders[orderIdx];
+            const oldStatus = order.status;
+
+            inFlightReceiving.add(key);
+
+            // Optimistic Update
+            order.status = "RECEIVED";
+            order.normalizedStatus = "RECEIVED";
+
+            const stockIdx = stockParts.findIndex(function (p) { return p.id === matCode; });
+            const isExisting = stockIdx !== -1;
+            const oldStockQty = isExisting ? stockParts[stockIdx].qty : null;
+
+            if (isExisting) {
+                stockParts[stockIdx].qty += qty;
+            } else {
+                stockParts.push({
+                    id: matCode,
+                    name: order.itemName,
+                    category: order.category,
+                    unit: order.unit || "Pc",
+                    qty: qty,
+                    reorder: 0,
+                    remark: ""
+                });
+            }
+
+            renderAll();
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "receiveOrder",
+                    poNo: poNo,
+                    prNo: prNo,
+                    matCode: matCode,
+                    qty: qty,
+                    category: order.category,
+                    description: order.itemName,
+                    unit: order.unit
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                const finalIdx = stockParts.findIndex(function (p) { return p.id === matCode; });
+                if (finalIdx !== -1) {
+                    stockParts[finalIdx].qty = Number(data.qty) || 0;
+                }
+                triggerToast("บันทึกการรับพัสดุเข้าคลังสำเร็จ", "success");
+            })
+            .catch(function (err) {
+                console.error(err);
+                // Rollback order status
+                purchaseOrders[orderIdx].status = oldStatus;
+                purchaseOrders[orderIdx].normalizedStatus = normalizeOrderStatus(oldStatus);
+
+                // Rollback stock qty
+                if (isExisting) {
+                    stockParts[stockIdx].qty = oldStockQty;
+                } else {
+                    const rollbackIdx = stockParts.findIndex(function (p) { return p.id === matCode; });
+                    if (rollbackIdx !== -1) {
+                        stockParts.splice(rollbackIdx, 1);
+                    }
+                }
+                triggerToast("บันทึกการรับพัสดุไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
+            })
+            .finally(function () {
+                inFlightReceiving.delete(key);
+                renderAll();
+            });
+        }
 
         function adjustStockQty(partId, amount) {
             if (inFlightStock.has(partId)) return;
