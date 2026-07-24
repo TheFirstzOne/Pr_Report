@@ -1089,6 +1089,8 @@
             const reorderIdx = headers.indexOf('safety factor');
             const remarkIdx = headers.indexOf('Remark');
             const matCodeIdx = headers.indexOf('MAT.');
+            const leadTimeIdx = headers.indexOf('lead time (days)');
+            const avgUsageIdx = headers.indexOf('avg monthly usage');
 
             return rows
                 .filter(function (row) { return row[descIdx]; })
@@ -1100,9 +1102,19 @@
                         unit: String(row[unitIdx] || ''),
                         qty: Number(row[qtyIdx]) || 0,
                         reorder: Number(row[reorderIdx]) || 0,
-                        remark: String(row[remarkIdx] || '')
+                        remark: String(row[remarkIdx] || ''),
+                        leadTimeDays: leadTimeIdx !== -1 ? (Number(row[leadTimeIdx]) || 0) : 0,
+                        avgMonthlyUsage: avgUsageIdx !== -1 ? (Number(row[avgUsageIdx]) || 0) : 0
                     };
                 });
+        }
+
+        function getDynamicReorderPoint_(part) {
+            if (!part) return 0;
+            const hasLeadTimeData = part.leadTimeDays > 0 && part.avgMonthlyUsage > 0;
+            return hasLeadTimeData
+                ? Math.ceil((part.avgMonthlyUsage / 30) * part.leadTimeDays) + part.reorder
+                : part.reorder;
         }
 
         function csvToRequests_(sheetData) {
@@ -1603,7 +1615,7 @@
             const pendingOrdersCount = purchaseOrders.filter(o => o.normalizedStatus === "SHIPPING" || o.normalizedStatus === "PENDING").length;
             document.getElementById("pending-orders-badge").innerText = pendingOrdersCount;
             
-            const lowStockCount = stockParts.filter(p => p.qty <= p.reorder).length;
+            const lowStockCount = stockParts.filter(p => p.qty <= getDynamicReorderPoint_(p)).length;
             const lowStockBadge = document.getElementById("low-stock-badge");
             if (lowStockCount > 0) {
                 lowStockBadge.innerText = lowStockCount;
@@ -1619,7 +1631,7 @@
             const container = document.getElementById("system-alerts-container");
             container.innerHTML = "";
 
-            const lowStockItems = stockParts.filter(p => p.qty <= p.reorder);
+            const lowStockItems = stockParts.filter(p => p.qty <= getDynamicReorderPoint_(p));
             if (lowStockItems.length > 0) {
                 const alertDiv = document.createElement("div");
                 alertDiv.className = "flex items-center justify-between bg-rose-50 border border-rose-200/50 text-rose-800 px-4 py-3 rounded-xl text-sm shadow-sm transition-opacity";
@@ -1643,12 +1655,18 @@
             // row (each += forces the browser to re-parse/re-render everything
             // accumulated so far, on every single row).
             const rows = stockParts
-                .filter(part => !showLowStockOnly || part.qty <= part.reorder)
+                .filter(part => !showLowStockOnly || part.qty <= getDynamicReorderPoint_(part))
                 .map(part => {
-                    const isLow = part.qty <= part.reorder;
+                    const dynamicReorderPoint = getDynamicReorderPoint_(part);
+                    const isLow = part.qty <= dynamicReorderPoint;
                     const statusBadge = isLow
                         ? `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 flex items-center w-max"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1"></i>วิกฤต/ใกล้หมด</span>`
                         : `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 flex items-center w-max"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>มีพร้อมจ่าย</span>`;
+
+                    const hasLeadTimeData = part.leadTimeDays > 0 && part.avgMonthlyUsage > 0;
+                    const tooltipAttr = hasLeadTimeData
+                        ? `title="lead time ${part.leadTimeDays} วัน × เบิกเฉลี่ย ${part.avgMonthlyUsage}/เดือน + buffer ${part.reorder} = ${dynamicReorderPoint}" class="px-6 py-4 text-center text-slate-500 text-xs font-semibold underline decoration-dotted cursor-help"`
+                        : `class="px-6 py-4 text-center text-slate-500 text-xs font-semibold"`;
 
                     return `
                     <tr class="stock-row border-b border-slate-100 hover:bg-slate-50 transition-colors" data-id="${part.id}" data-name="${part.name}">
@@ -1657,7 +1675,7 @@
                         <td class="px-6 py-4 text-slate-500 text-xs">${part.category}</td>
                         <td class="px-6 py-4 text-center font-bold text-slate-800 text-base">${part.qty}</td>
                         <td class="px-6 py-4 text-center text-xs font-semibold text-slate-500">${part.unit || "Pc"}</td>
-                        <td class="px-6 py-4 text-center text-slate-500 text-xs font-semibold">${part.reorder}</td>
+                        <td ${tooltipAttr}>${dynamicReorderPoint}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="inline-flex rounded-lg shadow-sm border border-slate-200 overflow-hidden">
@@ -2209,8 +2227,9 @@
                 triggerToast("จำนวนพัสดุเป็น 0 อยู่แล้ว", "error");
                 return;
             }
-            if (amount < 0 && oldQty + amount <= stockParts[idx].reorder) {
-                if (!confirm("คำเตือน: การลดจำนวนพัสดุนี้จะต่ำกว่าจุดปลอดภัยขั้นต่ำ (" + stockParts[idx].reorder + " ชิ้น) ยืนยันที่จะปรับลดหรือไม่?")) {
+            const dynamicReorderPoint = getDynamicReorderPoint_(stockParts[idx]);
+            if (amount < 0 && oldQty + amount <= dynamicReorderPoint) {
+                if (!confirm("คำเตือน: การลดจำนวนพัสดุนี้จะต่ำกว่าจุดปลอดภัยขั้นต่ำ (" + dynamicReorderPoint + " ชิ้น) ยืนยันที่จะปรับลดหรือไม่?")) {
                     return;
                 }
             }
