@@ -151,12 +151,13 @@
 
         <!-- User Profile Footer -->
         <div class="p-4 border-t border-slate-900 flex items-center space-x-3 bg-slate-950/60">
-            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm tracking-wider">
+            <div id="user-profile-avatar" class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm tracking-wider flex-shrink-0">
                 XX
             </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold truncate">xxxx</p>
-                <p class="text-xs text-slate-300 truncate">หัวหน้าแผนกจัดซื้อซ่อมบำรุง</p>
+            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                <p id="user-profile-name" class="text-sm font-semibold truncate">xxxx</p>
+                <p id="user-profile-role" class="text-xs text-slate-300 truncate">หัวหน้าแผนกจัดซื้อซ่อมบำรุง</p>
+                <button type="button" onclick="logoutUser()" class="text-[10px] text-slate-400 hover:text-white transition-colors text-left focus:outline-none underline mt-1">ออกจากระบบ</button>
             </div>
         </div>
     </aside>
@@ -698,6 +699,27 @@
         </div>
     </main>
 
+    <!-- LOGIN GATE OVERLAY -->
+    <div id="login-gate" class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100 p-8 flex flex-col items-center text-center gap-6">
+            <div class="bg-indigo-600 p-3.5 rounded-xl text-white shadow-lg shadow-indigo-950/20">
+                <i data-lucide="layers" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl leading-tight tracking-wide text-slate-900">Maintenance System</h1>
+                <p class="text-xs text-slate-500 font-medium mt-1">ระบบจัดซื้อและคลังอะไหล่แผนกซ่อมบำรุง</p>
+            </div>
+            <div class="w-full border-t border-slate-100 my-1"></div>
+            <div class="w-full text-left">
+                <label for="login-member-select" class="block text-xs font-bold uppercase text-slate-500 mb-2">เลือกผู้ใช้งานเพื่อเข้าสู่ระบบ</label>
+                <select id="login-member-select" onchange="onLoginSelectChange()" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-700 bg-white">
+                    <option value="" disabled selected>-- เลือกรายชื่อผู้ใช้งาน --</option>
+                </select>
+            </div>
+            <button type="button" id="login-submit-btn" disabled onclick="submitLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-500/10">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
     <!-- ==================== MODALS ZONE ==================== -->
 
     <!-- MODAL: ADD STOCK -->
@@ -779,6 +801,7 @@
         let rfqList = [];
         let quoteHistory = [];
         let purchaseOrders = [];
+        let membersList = [];
         const inFlightRequests = new Set();
         const inFlightStock = new Set();
 
@@ -832,6 +855,99 @@
             }
         }
 
+        function updateUserProfileSidebar() {
+            const userRaw = localStorage.getItem("maintxProCurrentUser");
+            const nameEl = document.getElementById("user-profile-name");
+            const roleEl = document.getElementById("user-profile-role");
+            const avatarEl = document.getElementById("user-profile-avatar");
+            
+            if (userRaw) {
+                try {
+                    const user = JSON.parse(userRaw);
+                    if (nameEl) nameEl.textContent = user.name || "xxxx";
+                    if (roleEl) roleEl.textContent = user.role || "";
+                    if (avatarEl) {
+                        const nameParts = (user.name || "XX").trim().split(" ");
+                        let initials = "XX";
+                        if (nameParts.length > 0) {
+                            if (nameParts.length >= 2) {
+                                initials = (nameParts[0].substring(0, 1) + nameParts[1].substring(0, 1)).toUpperCase();
+                            } else {
+                                initials = nameParts[0].substring(0, 2).toUpperCase();
+                            }
+                        }
+                        avatarEl.textContent = initials;
+                    }
+                } catch (e) {
+                    console.error("Error parsing current user", e);
+                }
+            } else {
+                if (nameEl) nameEl.textContent = "xxxx";
+                if (roleEl) roleEl.textContent = "หัวหน้าแผนกจัดซื้อซ่อมบำรุง";
+                if (avatarEl) avatarEl.textContent = "XX";
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem("maintxProCurrentUser");
+            updateUserProfileSidebar();
+            showLoginGate();
+        }
+
+        function showLoginGate() {
+            const gate = document.getElementById("login-gate");
+            const select = document.getElementById("login-member-select");
+            const btn = document.getElementById("login-submit-btn");
+            
+            if (select) {
+                select.innerHTML = '<option value="" disabled selected>-- เลือกรายชื่อผู้ใช้งาน --</option>';
+                membersList.forEach(function (m) {
+                    const option = document.createElement("option");
+                    option.value = m.name;
+                    option.textContent = m.name + " (" + m.role + ")";
+                    select.appendChild(option);
+                });
+            }
+            
+            if (btn) {
+                btn.setAttribute("disabled", "true");
+            }
+            
+            if (gate) {
+                gate.classList.remove("hidden");
+            }
+            
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function onLoginSelectChange() {
+            const select = document.getElementById("login-member-select");
+            const btn = document.getElementById("login-submit-btn");
+            if (select && select.value !== "") {
+                btn.removeAttribute("disabled");
+            } else if (btn) {
+                btn.setAttribute("disabled", "true");
+            }
+        }
+
+        function submitLogin() {
+            const select = document.getElementById("login-member-select");
+            if (!select) return;
+            const selectedName = select.value;
+            const member = membersList.find(function (m) { return m.name === selectedName; });
+            if (!member) return;
+            
+            localStorage.setItem("maintxProCurrentUser", JSON.stringify(member));
+            updateUserProfileSidebar();
+            
+            const gate = document.getElementById("login-gate");
+            if (gate) {
+                gate.classList.add("hidden");
+            }
+        }
+
         function showLoadingOverlay() {
             const overlay = document.getElementById("initial-loading-overlay");
             if (overlay) overlay.classList.remove("hidden");
@@ -851,6 +967,7 @@
                 ...o,
                 normalizedStatus: normalizeOrderStatus(o.status)
             }));
+            membersList = data.members || [];
 
             populateOrderFilterOptions();
             renderAll();
@@ -863,7 +980,8 @@
             'requests': '221818176',
             'QuotationHistory': '996020767',
             'Budget': '1651297386',
-            'PR': '1646453870'
+            'PR': '1646453870',
+            'members': '380548139'
         };
 
         function parseCSV(text) {
@@ -924,6 +1042,24 @@
             if (typeof val === 'number') return val;
             if (!val) return 0;
             return parseFloat(String(val).replace(/,/g, '')) || 0;
+        }
+
+        function csvToMembers_(sheetData) {
+            const headers = sheetData.headers;
+            const rows = sheetData.rows;
+            const nameIdx = headers.indexOf('name');
+            const roleIdx = headers.indexOf('role');
+
+            return rows
+                .filter(function (row) { 
+                    return row[nameIdx] && String(row[nameIdx]).trim() !== ""; 
+                })
+                .map(function (row) {
+                    return {
+                        name: String(row[nameIdx] || '').trim(),
+                        role: String(row[roleIdx] || '').trim()
+                    };
+                });
         }
 
         function csvToStock_(sheetData) {
@@ -1089,14 +1225,16 @@
                     fetchCSVTable_('requests', controller.signal),
                     fetchCSVTable_('QuotationHistory', controller.signal),
                     fetchCSVTable_('Budget', controller.signal),
-                    fetchCSVTable_('PR', controller.signal)
+                    fetchCSVTable_('PR', controller.signal),
+                    fetchCSVTable_('members', controller.signal)
                 ]);
                 return {
                     stock: csvToStock_(tables[0]),
                     requests: csvToRequests_(tables[1]),
                     quotes: csvToQuotes_(tables[2]),
                     budget: csvToBudget_(tables[3]),
-                    orders: csvToOrders_(tables[4])
+                    orders: csvToOrders_(tables[4]),
+                    members: csvToMembers_(tables[5])
                 };
             } catch (err) {
                 if (err.name === 'AbortError') {
@@ -1115,6 +1253,11 @@
             if (cached) {
                 applyLoadedData(cached);
                 hideLoadingOverlay();
+                updateUserProfileSidebar();
+                const userRaw = localStorage.getItem("maintxProCurrentUser");
+                if (!userRaw) {
+                    showLoginGate();
+                }
             } else {
                 showLoadingOverlay();
             }
@@ -1129,6 +1272,14 @@
                 applyLoadedData(data);
                 writeCachedData(data);
                 hideLoadingOverlay();
+                updateUserProfileSidebar();
+                const userRaw = localStorage.getItem("maintxProCurrentUser");
+                if (!userRaw) {
+                    showLoginGate();
+                } else {
+                    const gate = document.getElementById("login-gate");
+                    if (gate) gate.classList.add("hidden");
+                }
             } catch (err) {
                 hideLoadingOverlay();
                 showLoadError(err && err.message ? err.message : String(err));
