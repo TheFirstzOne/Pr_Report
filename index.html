@@ -1236,8 +1236,8 @@
                         itemName: String(row[itemIdx] || ''),
                         qty: Number(row[qtyIdx]) || 0,
                         unit: String(row[unitIdx] || ''),
-                        unitPrice: Number(row[priceIdx]) || 0,
-                        totalCost: Number(row[totalIdx]) || 0,
+                        unitPrice: parseMoney_(row[priceIdx]),
+                        totalCost: parseMoney_(row[totalIdx]),
                         status: String(row[statusIdx] || '').trim(),
                         category: String(row[categoryIdx] || ''),
                         vendor: String(row[vendorIdx] || '')
