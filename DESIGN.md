@@ -71,6 +71,8 @@ All colors carry high contrast ratios (>4.5:1) for optimal readability under amb
 - **Deep Navy Sidebar** (#020617): High contrast left side navigation bar.
 - **White Surface** (#ffffff): Card and container backgrounds.
 - **Slate Border / Scrollbar Track** (#f1f5f9): Border and scrollbar track neutral styling.
+- **Scrollbar Thumb / Slate 300** (#cbd5e1): Scrollbar thumb neutral styling.
+- **Scrollbar Thumb Hover / Slate 400** (#94a3b8): Scrollbar thumb hover state styling.
 
 ### Named Rules
 **The 10% Highlight Rule.** Bold indigo accent is reserved only for active state selections and main call-to-actions, keeping the rest of the interface focused on raw data.

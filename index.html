@@ -96,7 +96,7 @@
                 </div>
             </div>
             <!-- Mobile Menu Toggle Button -->
-            <button onclick="toggleMobileMenu()" class="md:hidden text-slate-300 hover:text-white focus:ring-2 focus:ring-slate-500 focus:outline-none transition-colors">
+            <button onclick="toggleMobileMenu()" class="md:hidden text-slate-300 hover:text-white focus:ring-2 focus:ring-slate-500 focus:outline-none transition-colors w-11 h-11 flex items-center justify-center rounded-lg hover:bg-slate-900">
                 <i data-lucide="menu" id="menu-icon" class="w-6 h-6"></i>
             </button>
         </div>
@@ -157,7 +157,7 @@
             <div class="flex-1 min-w-0 flex flex-col justify-center">
                 <p id="user-profile-name" class="text-sm font-semibold truncate">xxxx</p>
                 <p id="user-profile-role" class="text-xs text-slate-300 truncate">หัวหน้าแผนกจัดซื้อซ่อมบำรุง</p>
-                <button type="button" onclick="logoutUser()" class="text-[10px] text-slate-400 hover:text-white transition-colors text-left focus:outline-none underline mt-1">ออกจากระบบ</button>
+                <button type="button" onclick="logoutUser()" class="text-xs text-slate-500 hover:text-white transition-colors text-left focus:outline-none underline mt-1">ออกจากระบบ</button>
             </div>
         </div>
     </aside>
@@ -180,7 +180,7 @@
         </header>
 
         <!-- Custom Toast Notification Box -->
-        <div id="toast-notification" class="fixed top-4 right-4 z-50 transform translate-x-full transition-transform duration-300 bg-slate-950 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 pointer-events-none">
+        <div id="toast-notification" role="status" aria-live="polite" class="fixed top-4 right-4 z-50 transform translate-x-full transition-transform duration-300 bg-slate-950 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 pointer-events-none">
             <div class="bg-emerald-500 p-1.5 rounded-lg text-white animate-pulse" id="toast-icon-box">
                 <i data-lucide="check" class="w-4 h-4"></i>
             </div>
@@ -206,7 +206,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                             <i data-lucide="search" class="w-4 h-4"></i>
                         </span>
-                        <input type="text" id="stock-search" oninput="filterStock()" placeholder="ค้นหาชื่ออะไหล่ รหัส หรือหมวดหมู่..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-colors">
+                        <input type="text" id="stock-search" oninput="filterStock()" placeholder="ค้นหาชื่ออะไหล่ รหัส หรือหมวดหมู่..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-colors placeholder:text-slate-500">
                     </div>
                     
                     <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -254,60 +254,79 @@
             <!-- 2. PURCHASE ORDERS TAB -->
             <section id="content-orders" class="tab-content hidden space-y-6">
                 <!-- Stats Overview For Orders -->
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
-                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <!-- Card 1: PR Approval -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                                <i data-lucide="file-text" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติคำขอซื้อ</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-pr-approval">0</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ยกเลิกคำสั่งซื้อ</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-cancelled">0</p>
+                        <!-- Card 2: PO Approval -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                            <div class="p-3 bg-sky-50 text-sky-600 rounded-lg">
+                                <i data-lucide="file-check" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติคำสั่งซื้อ</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-po-approval">0</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-slate-50 text-slate-500 rounded-lg">
-                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        <!-- Card 3: Shipping -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                            <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                                <i data-lucide="truck" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">อยู่ระหว่างจัดส่ง</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-shipping">0</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รอคำสั่งซื้อ</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-pending">0</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
-                            <i data-lucide="file-text" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติคำขอซื้อ</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-pr-approval">0</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-sky-50 text-sky-600 rounded-lg">
-                            <i data-lucide="file-check" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รออนุมัติคำสั่งซื้อ</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-po-approval">0</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
-                            <i data-lucide="truck" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">อยู่ระหว่างจัดส่ง</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-shipping">0</p>
+                        <!-- Card 4: Received -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">จัดส่งสำเร็จ</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-received">0</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
-                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    
+                    <!-- Extra Stats (Hidden by default) -->
+                    <div id="orders-extra-stats" class="hidden grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-slate-100">
+                        <!-- Card 5: Pending -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                            <div class="p-3 bg-slate-50 text-slate-500 rounded-lg">
+                                <i data-lucide="clock" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รอคำสั่งซื้อ</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-pending">0</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">จัดส่งสำเร็จ</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-received">0</p>
+                        <!-- Card 6: Cancelled -->
+                        <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                            <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
+                                <i data-lucide="x-circle" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ยกเลิกคำสั่งซื้อ</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-orders-cancelled">0</p>
+                            </div>
                         </div>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="button" onclick="toggleOrdersExtraStats()" id="btn-orders-extra-stats-toggle" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1 focus:outline-none focus:underline select-none">
+                            <span>แสดงสถิติเพิ่มเติม</span>
+                            <i data-lucide="chevron-down" id="orders-extra-stats-icon" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -318,7 +337,7 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                                 <i data-lucide="search" class="w-4 h-4"></i>
                             </span>
-                            <input type="text" id="order-filter-search" oninput="onOrderSearchInput(this.value)" placeholder="ค้นหารายการ, เลขที่ PR/PO, รหัสพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-colors">
+                            <input type="text" id="order-filter-search" oninput="onOrderSearchInput(this.value)" placeholder="ค้นหารายการ, เลขที่ PR/PO, รหัสพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-sm transition-colors placeholder:text-slate-500">
                         </div>
 
                         <select id="order-filter-month" onchange="onOrderMonthChange(this.value)" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
@@ -326,44 +345,47 @@
                         </select>
 
                         <div class="relative order-filter-dropdown">
-                            <button type="button" onclick="toggleOrderFilterDropdown('order-filter-status-panel')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex items-center space-x-1.5 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
-                                <span>สถานะ</span>
+                            <button type="button" id="btn-orders-filter-toggle" onclick="toggleOrderFilterDropdown('orders-filter-combined-panel')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex items-center space-x-1.5 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                                <i data-lucide="filter" class="w-4 h-4 text-slate-400"></i>
+                                <span id="orders-filter-btn-text">ตัวกรอง</span>
                                 <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
                             </button>
-                            <div id="order-filter-status-panel" class="hidden absolute z-20 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg">
-                                <div class="flex justify-between items-center px-3 py-2 border-b border-slate-100">
-                                    <button type="button" onclick="selectAllOrderStatus()" class="text-xs font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
-                                    <button type="button" onclick="clearAllOrderStatus()" class="text-xs font-semibold text-slate-500 hover:underline">ล้างทั้งหมด</button>
+                            <div id="orders-filter-combined-panel" class="hidden absolute z-20 mt-1 w-80 bg-white border border-slate-200 rounded-lg shadow-xl p-4 space-y-4 right-0 sm:left-0 sm:right-auto">
+                                <!-- Status Filter -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <span class="text-xs font-bold text-slate-700">สถานะ</span>
+                                        <div class="space-x-2">
+                                            <button type="button" onclick="selectAllOrderStatus()" class="text-[10px] font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
+                                            <button type="button" onclick="clearAllOrderStatus()" class="text-[10px] font-semibold text-slate-500 hover:underline">ล้าง</button>
+                                        </div>
+                                    </div>
+                                    <div id="order-filter-status-options" class="max-h-32 overflow-y-auto py-1 border border-slate-100 rounded-md p-1.5 text-xs space-y-1 bg-slate-50/50"></div>
                                 </div>
-                                <div id="order-filter-status-options" class="max-h-48 overflow-y-auto py-1"></div>
-                            </div>
-                        </div>
+                                
+                                <!-- Category Filter -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <span class="text-xs font-bold text-slate-700">ประเภทงาน</span>
+                                        <div class="space-x-2">
+                                            <button type="button" onclick="selectAllOrderCategory()" class="text-[10px] font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
+                                            <button type="button" onclick="clearAllOrderCategory()" class="text-[10px] font-semibold text-slate-500 hover:underline">ล้าง</button>
+                                        </div>
+                                    </div>
+                                    <div id="order-filter-category-options" class="max-h-32 overflow-y-auto py-1 border border-slate-100 rounded-md p-1.5 text-xs space-y-1 bg-slate-50/50"></div>
+                                </div>
 
-                        <div class="relative order-filter-dropdown">
-                            <button type="button" onclick="toggleOrderFilterDropdown('order-filter-category-panel')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex items-center space-x-1.5 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
-                                <span>ประเภทงาน</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
-                            </button>
-                            <div id="order-filter-category-panel" class="hidden absolute z-20 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg">
-                                <div class="flex justify-between items-center px-3 py-2 border-b border-slate-100">
-                                    <button type="button" onclick="selectAllOrderCategory()" class="text-xs font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
-                                    <button type="button" onclick="clearAllOrderCategory()" class="text-xs font-semibold text-slate-500 hover:underline">ล้างทั้งหมด</button>
+                                <!-- Vendor Filter -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <span class="text-xs font-bold text-slate-700">ซัพพลายเออร์</span>
+                                        <div class="space-x-2">
+                                            <button type="button" onclick="selectAllOrderVendor()" class="text-[10px] font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
+                                            <button type="button" onclick="clearAllOrderVendor()" class="text-[10px] font-semibold text-slate-500 hover:underline">ล้าง</button>
+                                        </div>
+                                    </div>
+                                    <div id="order-filter-vendor-options" class="max-h-32 overflow-y-auto py-1 border border-slate-100 rounded-md p-1.5 text-xs space-y-1 bg-slate-50/50"></div>
                                 </div>
-                                <div id="order-filter-category-options" class="max-h-48 overflow-y-auto py-1"></div>
-                            </div>
-                        </div>
-
-                        <div class="relative order-filter-dropdown">
-                            <button type="button" onclick="toggleOrderFilterDropdown('order-filter-vendor-panel')" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex items-center space-x-1.5 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
-                                <span>ซัพพลายเออร์</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
-                            </button>
-                            <div id="order-filter-vendor-panel" class="hidden absolute z-20 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg">
-                                <div class="flex justify-between items-center px-3 py-2 border-b border-slate-100">
-                                    <button type="button" onclick="selectAllOrderVendor()" class="text-xs font-semibold text-indigo-600 hover:underline">เลือกทั้งหมด</button>
-                                    <button type="button" onclick="clearAllOrderVendor()" class="text-xs font-semibold text-slate-500 hover:underline">ล้างทั้งหมด</button>
-                                </div>
-                                <div id="order-filter-vendor-options" class="max-h-48 overflow-y-auto py-1"></div>
                             </div>
                         </div>
 
@@ -451,7 +473,7 @@
                                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
                                 </span>
-                                <input type="text" id="rfq-search" oninput="renderRFQTable()" placeholder="ค้นหาเลขที่คำขอ, ผู้ขอ หรือชื่อพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                                <input type="text" id="rfq-search" oninput="renderRFQTable()" placeholder="ค้นหาเลขที่คำขอ, ผู้ขอ หรือชื่อพัสดุ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500">
                             </div>
                         </div>
                     </div>
@@ -713,8 +735,8 @@
             <div class="w-full border-t border-slate-100 my-1"></div>
             <div class="w-full text-left">
                 <label for="login-username-input" class="block text-xs font-bold uppercase text-slate-500 mb-2">ระบุรหัสผู้ใช้งานเพื่อเข้าสู่ระบบ</label>
-                <input type="text" id="login-username-input" oninput="onLoginInputChange()" placeholder="ใส่รหัสผู้ใช้งาน..." class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-700 bg-white">
-                <p id="login-error" class="hidden text-xs text-rose-600 mt-2">ไม่พบผู้ใช้งาน</p>
+                <input type="text" id="login-username-input" aria-describedby="login-error" oninput="onLoginInputChange()" placeholder="ใส่รหัสผู้ใช้งาน..." class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-700 bg-white placeholder:text-slate-500">
+                <p id="login-error" class="hidden text-xs text-rose-600 mt-2">ไม่พบผู้ใช้งาน<br><span class="text-slate-500 font-medium">ติดต่อผู้ดูแลระบบหากไม่พบรหัสของคุณ</span></p>
             </div>
             <button type="button" id="login-submit-btn" disabled onclick="submitLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-500/10">เข้าสู่ระบบ</button>
         </div>
@@ -727,7 +749,7 @@
         <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
             <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                 <h4 class="font-bold text-slate-800 text-base">เพิ่มพัสดุเข้าคลัง</h4>
-                <button type="button" onclick="closeAddStockModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <button type="button" onclick="closeAddStockModal()" class="text-slate-400 hover:text-slate-600 transition-colors w-11 h-11 flex items-center justify-center rounded-lg hover:bg-slate-50 -mr-2">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -735,21 +757,21 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="form-stock-matcode" class="block text-xs font-bold uppercase text-slate-500 mb-1">รหัสอะไหล่ (MAT.)</label>
-                        <input type="text" id="form-stock-matcode" placeholder="เช่น 50000379" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                        <input type="text" id="form-stock-matcode" placeholder="เช่น 50000379" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold placeholder:text-slate-500" required>
                     </div>
                     <div>
                         <label for="form-stock-category" class="block text-xs font-bold uppercase text-slate-500 mb-1">หมวดหมู่ (Category)</label>
-                        <input type="text" id="form-stock-category" placeholder="เช่น ข้อต่อตรง" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold" required>
+                        <input type="text" id="form-stock-category" placeholder="เช่น ข้อต่อตรง" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold placeholder:text-slate-500" required>
                     </div>
                 </div>
                 <div>
                     <label for="form-stock-description" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่ (Description)</label>
-                    <input type="text" id="form-stock-description" placeholder="ระบุชื่อเรียกให้ชัดเจน..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    <input type="text" id="form-stock-description" placeholder="ระบุชื่อเรียกให้ชัดเจน..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500" required>
                 </div>
                 <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label for="form-stock-unit" class="block text-xs font-bold uppercase text-slate-500 mb-1">หน่วย (Unit)</label>
-                        <input type="text" id="form-stock-unit" placeholder="เช่น Pc" value="Pc" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                        <input type="text" id="form-stock-unit" placeholder="เช่น Pc" value="Pc" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500" required>
                     </div>
                     <div>
                         <label for="form-stock-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวน (Qty)</label>
@@ -762,9 +784,9 @@
                 </div>
                 <div>
                     <label for="form-stock-remark" class="block text-xs font-bold uppercase text-slate-500 mb-1">หมายเหตุ (Remark)</label>
-                    <input type="text" id="form-stock-remark" placeholder="ไม่บังคับ" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    <input type="text" id="form-stock-remark" placeholder="ไม่บังคับ" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500">
                 </div>
-                <p class="text-xs text-slate-400">ถ้ารหัสอะไหล่นี้มีอยู่แล้วในคลัง ระบบจะบวกจำนวนเข้ากับรายการเดิมแทนการสร้างรายการซ้ำ</p>
+                <p class="text-xs text-slate-500">ถ้ารหัสอะไหล่นี้มีอยู่แล้วในคลัง ระบบจะบวกจำนวนเข้ากับรายการเดิมแทนการสร้างรายการซ้ำ</p>
                 <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
                     <button type="button" onclick="closeAddStockModal()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
                     <button type="submit" id="add-stock-submit-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">บันทึกพัสดุ</button>
@@ -773,13 +795,33 @@
         </div>
     </div>
 
+    <!-- MODAL: CONFIRM LOW STOCK -->
+    <div id="modal-confirmLowStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="bg-white border-b border-slate-100 px-6 py-4">
+                <h4 class="font-bold text-slate-800 text-base">ยืนยันการปรับลดพัสดุ</h4>
+            </div>
+            <div class="p-6 space-y-3">
+                <p class="text-sm text-slate-600 font-medium">คำเตือน: การลดจำนวนพัสดุนี้จะต่ำกว่าจุดปลอดภัยขั้นต่ำ</p>
+                <div class="bg-rose-50 border border-rose-100 rounded-lg p-4 text-xs space-y-1.5 text-rose-800 font-semibold">
+                    <p>รายการ: <span id="confirm-lowstock-name" class="font-bold text-slate-900"></span></p>
+                    <p>จำนวนปัจจุบัน: <span id="confirm-lowstock-current" class="font-bold text-slate-900"></span></p>
+                    <p>จำนวนหลังปรับลด: <span id="confirm-lowstock-next" class="font-bold text-rose-600"></span></p>
+                    <p>จุดปลอดภัยขั้นต่ำ: <span id="confirm-lowstock-threshold" class="font-bold text-slate-900"></span></p>
+                </div>
+                <p class="text-xs text-slate-500 font-medium">คุณยืนยันที่จะดำเนินการปรับลดจำนวนนี้หรือไม่?</p>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end space-x-3">
+                <button type="button" id="confirm-lowstock-cancel" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">ยกเลิก</button>
+                <button type="button" id="confirm-lowstock-ok" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-colors">ยืนยันปรับลด</button>
+            </div>
+        </div>
+    </div>
+
 
 
     <!-- ==================== JAVASCRIPT SYSTEM ENGINE ==================== -->
     <script>
-        // Global variables for closed procure-to-pay loop simulation
-        let budgetCap = 1200000;
-        let budgetSpent = 168000; // Calculated baseline spent
 
         // Orders tab filter state. The 3 Sets start null and are populated on first
         // load (see populateOrderFilterOptions) to "select all" — they then persist
@@ -1480,6 +1522,37 @@
 
             const counterEl = document.getElementById("order-filter-count");
             if (counterEl) counterEl.innerText = "แสดง " + filteredOrders.length + " จาก " + purchaseOrders.length + " รายการ";
+            updateFilterBadge();
+        }
+
+        function updateFilterBadge() {
+            let activeFilters = 0;
+            const statusChecked = document.querySelectorAll('#order-filter-status-options input[type="checkbox"]:checked').length;
+            const statusTotal = document.querySelectorAll('#order-filter-status-options input[type="checkbox"]').length;
+            if (statusTotal > 0 && statusChecked < statusTotal) {
+                activeFilters++;
+            }
+            
+            const catChecked = document.querySelectorAll('#order-filter-category-options input[type="checkbox"]:checked').length;
+            const catTotal = document.querySelectorAll('#order-filter-category-options input[type="checkbox"]').length;
+            if (catTotal > 0 && catChecked < catTotal) {
+                activeFilters++;
+            }
+
+            const vendorChecked = document.querySelectorAll('#order-filter-vendor-options input[type="checkbox"]:checked').length;
+            const vendorTotal = document.querySelectorAll('#order-filter-vendor-options input[type="checkbox"]').length;
+            if (vendorTotal > 0 && vendorChecked < vendorTotal) {
+                activeFilters++;
+            }
+
+            const btnText = document.getElementById("orders-filter-btn-text");
+            if (btnText) {
+                if (activeFilters > 0) {
+                    btnText.innerHTML = `ตัวกรอง <span class="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold">${activeFilters}</span>`;
+                } else {
+                    btnText.textContent = "ตัวกรอง";
+                }
+            }
         }
 
         function selectAllOrderStatus() {
@@ -1537,7 +1610,7 @@
         }
 
         function toggleOrderFilterDropdown(panelId) {
-            ["order-filter-status-panel", "order-filter-category-panel", "order-filter-vendor-panel"].forEach(function (id) {
+            ["orders-filter-combined-panel"].forEach(function (id) {
                 const panel = document.getElementById(id);
                 if (!panel) return;
                 if (id === panelId) panel.classList.toggle("hidden");
@@ -1547,7 +1620,7 @@
 
         document.addEventListener("click", function (e) {
             if (e.target.closest(".order-filter-dropdown")) return;
-            ["order-filter-status-panel", "order-filter-category-panel", "order-filter-vendor-panel"].forEach(function (id) {
+            ["orders-filter-combined-panel"].forEach(function (id) {
                 const panel = document.getElementById(id);
                 if (panel) panel.classList.add("hidden");
             });
@@ -1675,7 +1748,10 @@
                         <td class="px-6 py-4 text-slate-500 text-xs">${part.category}</td>
                         <td class="px-6 py-4 text-center font-bold text-slate-800 text-base">${part.qty}</td>
                         <td class="px-6 py-4 text-center text-xs font-semibold text-slate-500">${part.unit || "Pc"}</td>
-                        <td ${tooltipAttr}>${dynamicReorderPoint}</td>
+                        <td ${tooltipAttr}>
+                            <div>${dynamicReorderPoint}</div>
+                            ${hasLeadTimeData ? `<span class="block text-xs text-slate-500 font-normal mt-0.5">LT ${part.leadTimeDays} วัน × ${part.avgMonthlyUsage}/ด. + ${part.reorder}</span>` : ''}
+                        </td>
                         <td class="px-6 py-4">${statusBadge}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="inline-flex rounded-lg shadow-sm border border-slate-200 overflow-hidden">
@@ -1687,7 +1763,11 @@
                 `;
                 });
 
-            tbody.innerHTML = rows.join("");
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 font-medium">ไม่พบรายการพัสดุที่ตรงกับตัวกรอง</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join("");
+            }
         }
 
         function renderOrdersTable(orders) {
@@ -1745,7 +1825,11 @@
                 `;
             });
 
-            tbody.innerHTML = rows.join("");
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="px-6 py-8 text-center text-slate-500 font-medium">ไม่พบประวัติการสั่งซื้อที่ตรงกับตัวกรอง</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join("");
+            }
 
             // Stat cards always reflect the full, unfiltered data set — not the filtered view.
             const cancelledCount = purchaseOrders.filter(o => o.normalizedStatus === "CANCELLED").length;
@@ -1844,7 +1928,11 @@
                 `;
                 });
 
-            tbody.innerHTML = rows.join("");
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500 font-medium">ไม่พบคำขอเทียบราคาที่ตรงกับตัวกรอง</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join("");
+            }
 
             document.getElementById("stat-total-requests").innerText = rfqList.filter(req => req.status === "ok").length;
             document.getElementById("stat-total-quotes-system").innerText = quoteHistory.length;
@@ -1907,7 +1995,11 @@
                     </tr>
                 `);
 
-            tbody.innerHTML = rows.join("");
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 font-medium">ไม่พบประวัติใบเสนอราคา</td></tr>`;
+            } else {
+                tbody.innerHTML = rows.join("");
+            }
         }
 
         function renderBudgetInfo() {
@@ -1929,23 +2021,27 @@
             // Render Projects Budget Table
             const tbody = document.getElementById("projects-budget-table-body");
             if (tbody) {
-                tbody.innerHTML = "";
-                projectsBudget.forEach(p => {
-                    const currentVal = p.current;
-                    const curClass = currentVal < 0 ? "text-rose-600 font-bold" : "text-emerald-600 font-bold";
-                    tbody.innerHTML += `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td class="px-4 py-3 text-xs text-slate-500 font-semibold">${p.no}</td>
-                            <td class="px-4 py-3 text-xs font-semibold text-slate-600">${p.io || "-"}</td>
-                            <td class="px-4 py-3 text-xs text-slate-500">${p.asset || "-"}</td>
-                            <td class="px-4 py-3 text-xs text-slate-500">${p.costCenter || "-"}</td>
-                            <td class="px-4 py-3 font-semibold text-slate-800 text-xs">${p.desc}</td>
-                            <td class="px-4 py-3 text-right font-bold text-slate-700">${p.budget.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
-                            <td class="px-4 py-3 text-right font-bold text-slate-700">${p.used.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
-                            <td class="px-4 py-3 text-right ${curClass}">${p.current.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
-                        </tr>
-                    `;
-                });
+                if (projectsBudget.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-500 font-medium">ไม่พบโครงการที่ตรงกับตัวกรอง</td></tr>`;
+                } else {
+                    const rows = projectsBudget.map(p => {
+                        const currentVal = p.current;
+                        const curClass = currentVal < 0 ? "text-rose-600 font-bold" : "text-emerald-600 font-bold";
+                        return `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3 text-xs text-slate-500 font-semibold">${p.no}</td>
+                                <td class="px-4 py-3 text-xs font-semibold text-slate-600">${p.io || "-"}</td>
+                                <td class="px-4 py-3 text-xs text-slate-500">${p.asset || "-"}</td>
+                                <td class="px-4 py-3 text-xs text-slate-500">${p.costCenter || "-"}</td>
+                                <td class="px-4 py-3 font-semibold text-slate-800 text-xs">${p.desc}</td>
+                                <td class="px-4 py-3 text-right font-bold text-slate-700">${p.budget.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                                <td class="px-4 py-3 text-right font-bold text-slate-700">${p.used.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                                <td class="px-4 py-3 text-right ${curClass}">${p.current.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = rows.join("");
+                }
             }
 
             // Category detail breakdown directly from purchaseOrders (PR sheet)
@@ -2049,24 +2145,28 @@
             // Render Monthly Expenses Table
             const tbody = document.getElementById("monthly-expenses-table-body");
             if (tbody) {
-                tbody.innerHTML = "";
-                let totalSum = 0;
-                sortedMonths.forEach(m => {
-                    const amt = monthlyMap[m];
-                    totalSum += amt;
-                    tbody.innerHTML += `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td class="px-4 py-2 font-semibold text-slate-800 text-xs">${m}</td>
-                            <td class="px-4 py-2 text-right font-bold text-slate-900">${amt.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                if (sortedMonths.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="px-4 py-8 text-center text-slate-500 font-medium">ไม่พบข้อมูลค่าใช้จ่ายรายเดือน</td></tr>`;
+                } else {
+                    let totalSum = 0;
+                    const rows = sortedMonths.map(m => {
+                        const amt = monthlyMap[m];
+                        totalSum += amt;
+                        return `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-2 font-semibold text-slate-800 text-xs">${m}</td>
+                                <td class="px-4 py-2 text-right font-bold text-slate-900">${amt.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
+                            </tr>
+                        `;
+                    });
+                    const totalRow = `
+                        <tr class="bg-slate-50 font-bold border-t-2 border-slate-200">
+                            <td class="px-4 py-3 text-slate-800 text-xs font-extrabold">รวมทั้งหมด</td>
+                            <td class="px-4 py-3 text-right text-indigo-700 font-extrabold">${totalSum.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
                         </tr>
                     `;
-                });
-                tbody.innerHTML += `
-                    <tr class="bg-slate-50 font-bold border-t-2 border-slate-200">
-                        <td class="px-4 py-3 text-slate-800 text-xs font-extrabold">รวมทั้งหมด</td>
-                        <td class="px-4 py-3 text-right text-indigo-700 font-extrabold">${totalSum.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
-                    </tr>
-                `;
+                    tbody.innerHTML = rows.join("") + totalRow;
+                }
             }
 
             // Update Monthly line chart
@@ -2112,6 +2212,23 @@
                 document.getElementById("sidebar-nav").classList.add("hidden");
                 document.getElementById("menu-icon").setAttribute("data-lucide", "menu");
                 lucide.createIcons();
+            }
+        }
+
+        function toggleOrdersExtraStats() {
+            const panel = document.getElementById("orders-extra-stats");
+            const btnSpan = document.querySelector("#btn-orders-extra-stats-toggle span");
+            const icon = document.getElementById("orders-extra-stats-icon");
+            if (panel && btnSpan) {
+                if (panel.classList.contains("hidden")) {
+                    panel.classList.remove("hidden");
+                    btnSpan.textContent = "ซ่อนสถิติเพิ่มเติม";
+                    if (icon) icon.classList.add("rotate-180");
+                } else {
+                    panel.classList.add("hidden");
+                    btnSpan.textContent = "แสดงสถิติเพิ่มเติม";
+                    if (icon) icon.classList.remove("rotate-180");
+                }
             }
         }
 
@@ -2227,44 +2344,65 @@
                 triggerToast("จำนวนพัสดุเป็น 0 อยู่แล้ว", "error");
                 return;
             }
+
+            const proceedWithAdjustment = function() {
+                inFlightStock.add(partId);
+                const newQty = Math.max(0, oldQty + amount);
+
+                // Optimistic Update
+                stockParts[idx].qty = newQty;
+                renderAll();
+
+                fetch(EXEC_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "adjustStockQty",
+                        partId: partId,
+                        delta: amount
+                    })
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    stockParts[idx].qty = Number(data.qty) || 0;
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    stockParts[idx].qty = oldQty;
+                    triggerToast("ปรับปรุงจำนวนพัสดุไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
+                })
+                .finally(function () {
+                    inFlightStock.delete(partId);
+                    renderAll();
+                });
+            };
+
             const dynamicReorderPoint = getDynamicReorderPoint_(stockParts[idx]);
             if (amount < 0 && oldQty + amount <= dynamicReorderPoint) {
-                if (!confirm("คำเตือน: การลดจำนวนพัสดุนี้จะต่ำกว่าจุดปลอดภัยขั้นต่ำ (" + dynamicReorderPoint + " ชิ้น) ยืนยันที่จะปรับลดหรือไม่?")) {
-                    return;
-                }
+                const modal = document.getElementById("modal-confirmLowStock");
+                document.getElementById("confirm-lowstock-name").textContent = stockParts[idx].name;
+                document.getElementById("confirm-lowstock-current").textContent = oldQty + " " + stockParts[idx].unit;
+                document.getElementById("confirm-lowstock-next").textContent = Math.max(0, oldQty + amount) + " " + stockParts[idx].unit;
+                document.getElementById("confirm-lowstock-threshold").textContent = dynamicReorderPoint + " " + stockParts[idx].unit;
+
+                modal.classList.remove("hidden");
+
+                const cancelBtn = document.getElementById("confirm-lowstock-cancel");
+                const okBtn = document.getElementById("confirm-lowstock-ok");
+
+                cancelBtn.onclick = function() {
+                    modal.classList.add("hidden");
+                };
+
+                okBtn.onclick = function() {
+                    modal.classList.add("hidden");
+                    proceedWithAdjustment();
+                };
+            } else {
+                proceedWithAdjustment();
             }
-
-            inFlightStock.add(partId);
-            const newQty = Math.max(0, oldQty + amount);
-
-            // Optimistic Update
-            stockParts[idx].qty = newQty;
-            renderAll();
-
-            fetch(EXEC_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "adjustStockQty",
-                    partId: partId,
-                    delta: amount
-                })
-            })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                stockParts[idx].qty = Number(data.qty) || 0;
-            })
-            .catch(function (err) {
-                console.error(err);
-                stockParts[idx].qty = oldQty;
-                triggerToast("ปรับปรุงจำนวนพัสดุไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
-            })
-            .finally(function () {
-                inFlightStock.delete(partId);
-                renderAll();
-            });
         }
 
         function openAddStockModal() {
@@ -2367,127 +2505,6 @@
 
 
 
-        // RFQ Simulation
-        function simulateQuotationResponse(rfqId) {
-            const rfqObj = rfqList.find(r => r.id === rfqId);
-            if (!rfqObj) return;
-
-            const simSuppliers = ["บริษัท พรีเมียร์แบริ่ง จำกัด", "ไทยรุ่งเรืองซัพพลาย", "บริษัท เอส.พี. ออโตเมติก"];
-            const chosenSupplier = simSuppliers[Math.floor(Math.random() * simSuppliers.length)];
-            const simPrice = Math.floor(Math.random() * 500) + 150;
-            const total = simPrice * rfqObj.qty;
-
-            const nextId = "QO-2026-" + String(quoteHistory.length + 1).padStart(3, '0');
-            const simulatedQuote = {
-                id: nextId,
-                date: new Date().toLocaleDateString('th-TH'),
-                rfqRef: rfqId,
-                supplier: chosenSupplier,
-                itemName: rfqObj.itemName,
-                unitPrice: simPrice,
-                qty: rfqObj.qty,
-                unit: "Pc",
-                totalCost: total,
-                delivery: "3-5 วันทำการ",
-                status: "รอพิจารณาอนุมัติ"
-            };
-
-            quoteHistory.unshift(simulatedQuote);
-            
-            const rfqIdx = rfqList.findIndex(r => r.id === rfqId);
-            if (rfqIdx !== -1) {
-                rfqList[rfqIdx].status = "ได้รับเสนอราคาแล้ว";
-            }
-
-            renderAll();
-            triggerToast(`จำลองการยื่นเสนอราคาจาก ${chosenSupplier} สำเร็จ!`, 'success');
-        }
-
-        // Action: Approve Quote -> Create PO automatically & Debit budget
-        function approveQuotation(qoId) {
-            const idx = quoteHistory.findIndex(q => q.id === qoId);
-            if (idx === -1) return;
-
-            const qObj = quoteHistory[idx];
-            if (!confirm(`ยืนยันการอนุมัติใบเสนอราคาจาก "${qObj.supplier}" ยอดรวม ${qObj.totalCost.toLocaleString()} บาท เพื่อออกใบสั่งซื้อ PO หรือไม่?`)) {
-                return;
-            }
-
-            let totalCap = projectsBudget.reduce((sum, p) => sum + p.budget, 0);
-            let totalSpentBase = projectsBudget.reduce((sum, p) => sum + p.used, 0);
-            let newPoCost = purchaseOrders.reduce((sum, o) => {
-                if (o.status !== "Cancle" && o.status !== "Cancel" && o.date.includes('/') && !o.date.startsWith('1/5/') && !o.date.startsWith('1/12/') && !o.date.startsWith('1/14/') && !o.date.startsWith('1/19/') && !o.date.startsWith('1/20/') && !o.date.startsWith('1/21/')) {
-                    return sum + o.totalCost;
-                }
-                return sum;
-            }, 0);
-
-            if (totalSpentBase + newPoCost + qObj.totalCost > totalCap) {
-                triggerToast("ยอดเงินรวมของใบเสนอราคานี้ สูงกว่างบประมาณคงเหลือ!", "error");
-                return;
-            }
-
-            // Approve quote
-            quoteHistory[idx].status = "อนุมัติเรียบร้อย";
-
-            // Find stock category for mapping
-            const partObj = stockParts.find(p => p.name === qObj.itemName);
-            const category = partObj ? partObj.category : "เครื่องกล";
-
-            // Automatically output purchase order with PR sheet properties
-            const nextPoNo = "3100" + String(purchaseOrders.length + 132455);
-            const nextPrNo = "1100" + String(purchaseOrders.length + 30421);
-            const newPO = {
-                date: new Date().toLocaleDateString('th-TH'),
-                poNo: nextPoNo,
-                prNo: nextPrNo,
-                matCode: partObj ? partObj.id : "-",
-                itemName: qObj.itemName,
-                qty: qObj.qty,
-                unit: qObj.unit || "Pc",
-                unitPrice: qObj.unitPrice,
-                totalCost: qObj.totalCost,
-                status: "DEL.", // Directly goes to transit on supplier guarantee
-                category: category,
-                vendor: qObj.supplier
-            };
-
-            purchaseOrders.unshift(newPO);
-            renderAll();
-            triggerToast(`อนุมัติสำเร็จ! สร้างคำสั่งจัดส่งสินค้า เลขที่ ${nextPoNo}`, 'success');
-        }
-
-        // Action: Receive PO -> Add items directly to current stock inventory!
-        function updateOrderStatus(id, nextStatus) {
-            const idx = purchaseOrders.findIndex(o => o.poNo === id || o.prNo === id);
-            if (idx === -1) return;
-
-            purchaseOrders[idx].status = nextStatus;
-
-            if (nextStatus === "RECEIVED") {
-                const poObj = purchaseOrders[idx];
-                const stockIdx = stockParts.findIndex(p => p.name === poObj.itemName);
-                if (stockIdx !== -1) {
-                    stockParts[stockIdx].qty += poObj.qty;
-                } else {
-                    // Create new stock record if somehow missing
-                    const newId = "SP-" + String(stockParts.length + 101);
-                    stockParts.push({
-                        id: newId,
-                        name: poObj.itemName,
-                        category: poObj.category || "เครื่องกล",
-                        location: "ตู้จัดเก็บพัสดุรับเข้า",
-                        qty: poObj.qty,
-                        reorder: 5
-                    });
-                }
-                triggerToast(`ตรวจรับอะไหล่สำเร็จ! สต็อกพัสดุ ${poObj.itemName} ได้รับการเพิ่มจำนวนแล้ว`, 'success');
-            } else {
-                triggerToast(`ปรับปรุงสถานะ PO เป็น "${nextStatus}" เรียบร้อย`, 'success');
-            }
-
-            renderAll();
-        }
 
 
 
