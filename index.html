@@ -927,6 +927,42 @@
         </div>
     </div>
 
+    <!-- MODAL: SAP ME5A VERIFY RESULTS -->
+    <div id="modal-sapVerifyResults" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-4xl w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100 max-h-[85vh] flex flex-col">
+            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-slate-800 text-base">ผลตรวจสอบกับ SAP (ME5A)</h4>
+                    <p class="text-xs text-slate-500 mt-1" id="sap-verify-summary"></p>
+                </div>
+                <button type="button" onclick="closeSapVerifyModal()" class="text-slate-400 hover:text-slate-600 transition-colors w-11 h-11 flex items-center justify-center rounded-lg hover:bg-slate-50 -mr-2">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <p id="sap-verify-empty-message" class="hidden text-sm text-emerald-700 font-semibold bg-emerald-50 border border-emerald-100 rounded-lg p-4">ตรวจสอบแล้ว ไม่พบความไม่ตรงกัน</p>
+                <div id="sap-verify-table-wrapper" class="hidden overflow-x-auto border border-slate-100 rounded-lg">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100">
+                            <tr>
+                                <th class="px-4 py-3">Pr No.</th>
+                                <th class="px-4 py-3">Mat Code</th>
+                                <th class="px-4 py-3">ชื่อ (SAP &rarr; ระบบ)</th>
+                                <th class="px-4 py-3 text-center">จำนวน (SAP &rarr; ระบบ)</th>
+                                <th class="px-4 py-3 text-right">ราคา/หน่วย (SAP &rarr; ระบบ)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sap-verify-results-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end border-t border-slate-100">
+                <button type="button" onclick="closeSapVerifyModal()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ปิด</button>
+            </div>
+        </div>
+    </div>
 
 
     <!-- ==================== JAVASCRIPT SYSTEM ENGINE ==================== -->
