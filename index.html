@@ -239,6 +239,7 @@
                                     <th class="px-6 py-4 text-center">จํานวนคงเหลือ</th>
                                     <th class="px-6 py-4 text-center">หน่วย (Unit)</th>
                                     <th class="px-6 py-4 text-center">จุดปลอดภัยต่ำสุด</th>
+                                    <th class="px-6 py-4 text-right">มูลค่ารวม</th>
                                     <th class="px-6 py-4">สถานะสต็อก</th>
                                     <th class="px-6 py-4 text-center">การจัดการ</th>
                                 </tr>
@@ -1747,6 +1748,8 @@
                         ? `title="lead time ${part.leadTimeDays} วัน × เบิกเฉลี่ย ${part.avgMonthlyUsage}/เดือน + buffer ${part.reorder} = ${dynamicReorderPoint}" class="px-6 py-4 text-center text-slate-500 text-xs font-semibold underline decoration-dotted cursor-help"`
                         : `class="px-6 py-4 text-center text-slate-500 text-xs font-semibold"`;
 
+                    const totalValue = part.qty * (part.value || 0);
+
                     return `
                     <tr class="stock-row border-b border-slate-100 hover:bg-slate-50 transition-colors" data-id="${part.id}" data-name="${part.name}">
                         <td class="px-6 py-4 font-semibold text-slate-800">${part.id}</td>
@@ -1758,9 +1761,11 @@
                             <div>${dynamicReorderPoint}</div>
                             ${hasLeadTimeData ? `<span class="block text-xs text-slate-500 font-normal mt-0.5">LT ${part.leadTimeDays} วัน × ${part.avgMonthlyUsage}/ด. + ${part.reorder}</span>` : ''}
                         </td>
+                        <td class="px-6 py-4 text-right font-semibold text-slate-700">${totalValue.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿</td>
                         <td class="px-6 py-4">${statusBadge}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="inline-flex rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                                <button type="button" onclick="openEditStockModal('${part.id}')" class="w-11 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-r border-slate-200 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors" aria-label="แก้ไขพัสดุ" title="แก้ไขพัสดุ"><i data-lucide="pencil" class="w-4 h-4"></i></button>
                                 <button type="button" ${inFlightStock.has(part.id) ? "disabled style='opacity:0.5; pointer-events:none;'" : ""} onclick="adjustStockQty('${part.id}', -1)" class="w-11 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-r border-slate-200 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors" aria-label="ลดจำนวน" title="ลดจำนวน"><i data-lucide="minus" class="w-4 h-4"></i></button>
                                 <button type="button" ${inFlightStock.has(part.id) ? "disabled style='opacity:0.5; pointer-events:none;'" : ""} onclick="adjustStockQty('${part.id}', 1)" class="w-11 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors" aria-label="เพิ่มจำนวน" title="เพิ่มจำนวน"><i data-lucide="plus" class="w-4 h-4"></i></button>
                             </div>
@@ -1770,7 +1775,7 @@
                 });
 
             if (rows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 font-medium">ไม่พบรายการพัสดุที่ตรงกับตัวกรอง</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-8 text-center text-slate-500 font-medium">ไม่พบรายการพัสดุที่ตรงกับตัวกรอง</td></tr>`;
             } else {
                 tbody.innerHTML = rows.join("");
             }
