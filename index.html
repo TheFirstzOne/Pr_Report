@@ -200,6 +200,46 @@
             
             <!-- 1. STOCK TAB -->
             <section id="content-stock" class="tab-content space-y-6">
+                <!-- Stock Status Bar -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                            <i data-lucide="package" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">รายการทั้งหมด</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-stock-total-items">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                            <i data-lucide="wallet" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">มูลค่าคงคลังรวม</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-stock-total-value">0 ฿</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ใกล้หมด</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-stock-low">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm flex items-center space-x-4">
+                        <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">หมดสต็อก</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-0.5" id="stat-stock-zero">0</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Stock Controls & Filter -->
                 <div class="bg-white p-4 rounded-xl border border-slate-200/60 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm">
                     <div class="relative w-full sm:w-80">
@@ -1739,6 +1779,7 @@
 
         function renderAll() {
             renderStockTable();
+            renderStockStats();
             applyOrderFilters();
             renderRFQTable();
             renderQuotesTable();
@@ -1780,6 +1821,19 @@
                 container.appendChild(alertDiv);
             }
             lucide.createIcons();
+        }
+
+        function renderStockStats() {
+            const totalItems = stockParts.length;
+            const totalValue = stockParts.reduce(function (sum, p) { return sum + (p.qty * (p.value || 0)); }, 0);
+            const lowCount = stockParts.filter(function (p) { return p.qty <= getDynamicReorderPoint_(p); }).length;
+            const zeroCount = stockParts.filter(function (p) { return p.qty === 0; }).length;
+
+            document.getElementById("stat-stock-total-items").innerText = totalItems;
+            document.getElementById("stat-stock-total-value").innerText =
+                totalValue.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " ฿";
+            document.getElementById("stat-stock-low").innerText = lowCount;
+            document.getElementById("stat-stock-zero").innerText = zeroCount;
         }
 
         function renderStockTable() {
