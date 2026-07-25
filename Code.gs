@@ -292,10 +292,11 @@ function addStockCore_(item, sheet, data, headers) {
   const unitIdx = headers.indexOf('Unit');
   const reorderIdx = headers.indexOf('safety factor');
   const remarkIdx = headers.indexOf('Remark');
+  const valueIdx = headers.indexOf('Value');
 
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][matCodeIdx]) === String(item.matCode)) {
-      // Existing row: only bump Qty., leave every other field untouched.
+      // Existing row: only bump Qty., leave every other field (incl. Value) untouched.
       const currentQty = Number(data[i][qtyIdx]) || 0;
       const newQty = currentQty + Number(item.qty);
       sheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
@@ -314,6 +315,7 @@ function addStockCore_(item, sheet, data, headers) {
   if (unitIdx !== -1) newRow[unitIdx] = item.unit;
   if (reorderIdx !== -1) newRow[reorderIdx] = Number(item.reorder) || 0;
   if (remarkIdx !== -1) newRow[remarkIdx] = item.remark || '';
+  if (valueIdx !== -1) newRow[valueIdx] = Number(item.value) || 0;
   sheet.appendRow(newRow);
   return { success: true, matCode: item.matCode, qty: Number(item.qty) || 0, isNew: true };
 }
@@ -331,6 +333,49 @@ function addStock_(item) {
     const data = sheet.getDataRange().getValues();
     const headers = data[0].map(function (h) { return String(h).trim(); });
     return addStockCore_(item, sheet, data, headers);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Full overwrite by MAT code — distinct from adjustStockQty_'s delta semantics.
+// Used by the Stock tab's edit modal to correct any field, including a
+// directly-entered absolute Qty. (a deliberate user correction, not a
+// receive/issue delta).
+function updateStock_(item) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const found = findRowByColumnValue_('STOCK', 'MAT.', item.matCode);
+    if (!found) return { error: 'Part not found: ' + item.matCode };
+
+    const catIdx = found.headers.indexOf('CATEGORY');
+    const descIdx = found.headers.indexOf('DESCRIPTION');
+    const qtyIdx = found.headers.indexOf('Qty.');
+    const unitIdx = found.headers.indexOf('Unit');
+    const reorderIdx = found.headers.indexOf('safety factor');
+    const remarkIdx = found.headers.indexOf('Remark');
+    const valueIdx = found.headers.indexOf('Value');
+
+    if (catIdx !== -1) found.sheet.getRange(found.rowNumber, catIdx + 1).setValue(item.category || '');
+    if (descIdx !== -1) found.sheet.getRange(found.rowNumber, descIdx + 1).setValue(item.description || '');
+    if (qtyIdx !== -1) found.sheet.getRange(found.rowNumber, qtyIdx + 1).setValue(Number(item.qty) || 0);
+    if (unitIdx !== -1) found.sheet.getRange(found.rowNumber, unitIdx + 1).setValue(item.unit || '');
+    if (reorderIdx !== -1) found.sheet.getRange(found.rowNumber, reorderIdx + 1).setValue(Number(item.reorder) || 0);
+    if (remarkIdx !== -1) found.sheet.getRange(found.rowNumber, remarkIdx + 1).setValue(item.remark || '');
+    if (valueIdx !== -1) found.sheet.getRange(found.rowNumber, valueIdx + 1).setValue(Number(item.value) || 0);
+
+    return {
+      success: true,
+      matCode: item.matCode,
+      category: item.category || '',
+      description: item.description || '',
+      qty: Number(item.qty) || 0,
+      unit: item.unit || '',
+      reorder: Number(item.reorder) || 0,
+      remark: item.remark || '',
+      value: Number(item.value) || 0
+    };
   } finally {
     lock.releaseLock();
   }
@@ -429,6 +474,11 @@ function doPost(e) {
         throw new Error('Missing required fields');
       }
       payload = addStock_(body);
+    } else if (body.action === 'updateStock') {
+      if (!body.matCode || !body.category || !body.description || !body.unit) {
+        throw new Error('Missing required fields');
+      }
+      payload = updateStock_(body);
     } else if (body.action === 'receiveOrder') {
       if ((!body.poNo && !body.prNo) || !body.matCode || !body.qty) {
         throw new Error('Missing required fields');
