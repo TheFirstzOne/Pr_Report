@@ -1133,6 +1133,7 @@
             const matCodeIdx = headers.indexOf('MAT.');
             const leadTimeIdx = headers.indexOf('lead time (days)');
             const avgUsageIdx = headers.indexOf('avg monthly usage');
+            const valueIdx = headers.indexOf('Value');
 
             return rows
                 .filter(function (row) { return row[descIdx]; })
@@ -1146,7 +1147,8 @@
                         reorder: Number(row[reorderIdx]) || 0,
                         remark: String(row[remarkIdx] || ''),
                         leadTimeDays: leadTimeIdx !== -1 ? (Number(row[leadTimeIdx]) || 0) : 0,
-                        avgMonthlyUsage: avgUsageIdx !== -1 ? (Number(row[avgUsageIdx]) || 0) : 0
+                        avgMonthlyUsage: avgUsageIdx !== -1 ? (Number(row[avgUsageIdx]) || 0) : 0,
+                        value: valueIdx !== -1 ? (Number(row[valueIdx]) || 0) : 0
                     };
                 });
         }
