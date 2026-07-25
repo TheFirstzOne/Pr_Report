@@ -2142,6 +2142,88 @@
             return { matchedCount: matchedCount, mismatches: mismatches };
         }
 
+        function triggerSapVerifyUpload() {
+            document.getElementById("sap-verify-file-input").click();
+        }
+
+        function handleSapVerifyFile(event) {
+            const file = event.target.files[0];
+            event.target.value = "";
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                let workbook;
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: "array" });
+                } catch (err) {
+                    console.error(err);
+                    triggerToast("ไฟล์ไม่ถูกต้องหรืออ่านไม่ได้ กรุณาตรวจสอบไฟล์อีกครั้ง", "error");
+                    return;
+                }
+
+                let sapRows;
+                try {
+                    sapRows = parseSapExport_(workbook);
+                } catch (err) {
+                    console.error(err);
+                    triggerToast(err.message, "error");
+                    return;
+                }
+
+                const result = compareSapWithOrders_(sapRows, purchaseOrders);
+                renderSapVerifyResults_(result);
+            };
+            reader.onerror = function () {
+                triggerToast("ไฟล์ไม่ถูกต้องหรืออ่านไม่ได้ กรุณาตรวจสอบไฟล์อีกครั้ง", "error");
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderSapVerifyResults_(result) {
+            document.getElementById("sap-verify-summary").innerText =
+                "จับคู่ได้ " + result.matchedCount + " รายการ, ไม่ตรงกัน " + result.mismatches.length + " รายการ";
+
+            const tbody = document.getElementById("sap-verify-results-body");
+            const wrapper = document.getElementById("sap-verify-table-wrapper");
+            const emptyMsg = document.getElementById("sap-verify-empty-message");
+
+            if (result.mismatches.length === 0) {
+                wrapper.classList.add("hidden");
+                emptyMsg.classList.remove("hidden");
+            } else {
+                emptyMsg.classList.add("hidden");
+                wrapper.classList.remove("hidden");
+                tbody.innerHTML = result.mismatches.map(function (m) {
+                    const nameCellClass = m.nameMismatch ? "text-rose-700 font-bold bg-rose-50" : "text-slate-600";
+                    const qtyCellClass = m.qtyMismatch ? "text-rose-700 font-bold bg-rose-50" : "text-slate-600";
+                    const priceCellClass = m.priceMismatch ? "text-rose-700 font-bold bg-rose-50" : "text-slate-600";
+                    return `
+                        <tr class="border-b border-slate-100">
+                            <td class="px-4 py-3 font-semibold text-slate-800">${m.prNo}</td>
+                            <td class="px-4 py-3 text-xs font-semibold text-slate-600">${m.matCode}</td>
+                            <td class="px-4 py-3 text-xs ${nameCellClass}">${m.sapName} &rarr; ${m.systemName}</td>
+                            <td class="px-4 py-3 text-center text-xs ${qtyCellClass}">${m.sapQty} &rarr; ${m.systemQty}</td>
+                            <td class="px-4 py-3 text-right text-xs ${priceCellClass}">${m.sapPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} &rarr; ${m.systemPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+
+            document.getElementById("modal-sapVerifyResults").classList.remove("hidden");
+            window.addEventListener("keydown", sapVerifyEscHandler);
+        }
+
+        function closeSapVerifyModal() {
+            document.getElementById("modal-sapVerifyResults").classList.add("hidden");
+            window.removeEventListener("keydown", sapVerifyEscHandler);
+        }
+
+        function sapVerifyEscHandler(e) {
+            if (e.key === "Escape") closeSapVerifyModal();
+        }
+
         function setRfqVerifyFilter(value) {
             rfqVerifyFilter = value;
             
