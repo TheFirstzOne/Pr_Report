@@ -800,6 +800,61 @@
         </div>
     </div>
 
+    <!-- MODAL: EDIT STOCK -->
+    <div id="modal-editStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
+            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <h4 class="font-bold text-slate-800 text-base">แก้ไขพัสดุ</h4>
+                <button type="button" onclick="closeEditStockModal()" class="text-slate-400 hover:text-slate-600 transition-colors w-11 h-11 flex items-center justify-center rounded-lg hover:bg-slate-50 -mr-2">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="submitEditStock(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="form-edit-stock-matcode" class="block text-xs font-bold uppercase text-slate-500 mb-1">รหัสอะไหล่ (MAT.)</label>
+                        <input type="text" id="form-edit-stock-matcode" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-500 font-semibold" disabled>
+                    </div>
+                    <div>
+                        <label for="form-edit-stock-category" class="block text-xs font-bold uppercase text-slate-500 mb-1">หมวดหมู่ (Category)</label>
+                        <input type="text" id="form-edit-stock-category" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold placeholder:text-slate-500" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="form-edit-stock-description" class="block text-xs font-bold uppercase text-slate-500 mb-1">ชื่ออะไหล่ (Description)</label>
+                    <input type="text" id="form-edit-stock-description" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500" required>
+                </div>
+                <div class="grid grid-cols-4 gap-4">
+                    <div>
+                        <label for="form-edit-stock-unit" class="block text-xs font-bold uppercase text-slate-500 mb-1">หน่วย (Unit)</label>
+                        <input type="text" id="form-edit-stock-unit" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500" required>
+                    </div>
+                    <div>
+                        <label for="form-edit-stock-qty" class="block text-xs font-bold uppercase text-slate-500 mb-1">จำนวน (Qty)</label>
+                        <input type="number" id="form-edit-stock-qty" min="0" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label for="form-edit-stock-reorder" class="block text-xs font-bold uppercase text-slate-500 mb-1">จุดปลอดภัยขั้นต่ำ</label>
+                        <input type="number" id="form-edit-stock-reorder" min="0" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label for="form-edit-stock-value" class="block text-xs font-bold uppercase text-slate-500 mb-1">ราคา/หน่วย (฿)</label>
+                        <input type="number" id="form-edit-stock-value" min="0" step="0.01" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label for="form-edit-stock-remark" class="block text-xs font-bold uppercase text-slate-500 mb-1">หมายเหตุ (Remark)</label>
+                    <input type="text" id="form-edit-stock-remark" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500">
+                </div>
+                <p class="text-xs text-slate-500">การแก้ไขจำนวนที่นี่คือการตั้งค่าจำนวนใหม่โดยตรง (ไม่ใช่การบวก/ลบ) ใช้สำหรับแก้ไขข้อมูลผิดพลาดหรือปรับยอดหลังนับสต็อก</p>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeEditStockModal()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                    <button type="submit" id="edit-stock-submit-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">บันทึกการแก้ไข</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: CONFIRM LOW STOCK -->
     <div id="modal-confirmLowStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
         <div class="bg-white rounded-xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100">
@@ -2497,6 +2552,98 @@
                     if (rollbackIdx !== -1) stockParts.splice(rollbackIdx, 1);
                 }
                 triggerToast("บันทึกพัสดุไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
+            })
+            .finally(function () {
+                inFlightStock.delete(matCode);
+                renderAll();
+            });
+        }
+
+        let editStockEscHandlerRef = null;
+
+        function openEditStockModal(matCode) {
+            const part = stockParts.find(function (p) { return p.id === matCode; });
+            if (!part) return;
+
+            document.getElementById("form-edit-stock-matcode").value = part.id;
+            document.getElementById("form-edit-stock-category").value = part.category;
+            document.getElementById("form-edit-stock-description").value = part.name;
+            document.getElementById("form-edit-stock-unit").value = part.unit;
+            document.getElementById("form-edit-stock-qty").value = part.qty;
+            document.getElementById("form-edit-stock-reorder").value = part.reorder;
+            document.getElementById("form-edit-stock-remark").value = part.remark || "";
+            document.getElementById("form-edit-stock-value").value = part.value || 0;
+
+            document.getElementById("modal-editStock").classList.remove("hidden");
+            editStockEscHandlerRef = function (e) {
+                if (e.key === "Escape") closeEditStockModal();
+            };
+            window.addEventListener("keydown", editStockEscHandlerRef);
+        }
+
+        function closeEditStockModal() {
+            document.getElementById("modal-editStock").classList.add("hidden");
+            if (editStockEscHandlerRef) {
+                window.removeEventListener("keydown", editStockEscHandlerRef);
+                editStockEscHandlerRef = null;
+            }
+        }
+
+        function submitEditStock(event) {
+            event.preventDefault();
+
+            const matCode = document.getElementById("form-edit-stock-matcode").value.trim();
+            const category = document.getElementById("form-edit-stock-category").value.trim();
+            const description = document.getElementById("form-edit-stock-description").value.trim();
+            const unit = document.getElementById("form-edit-stock-unit").value.trim();
+            const qty = Number(document.getElementById("form-edit-stock-qty").value) || 0;
+            const reorder = Number(document.getElementById("form-edit-stock-reorder").value) || 0;
+            const remark = document.getElementById("form-edit-stock-remark").value.trim();
+            const value = Number(document.getElementById("form-edit-stock-value").value) || 0;
+
+            if (inFlightStock.has(matCode)) return;
+
+            const idx = stockParts.findIndex(function (p) { return p.id === matCode; });
+            if (idx === -1) return;
+
+            const snapshot = Object.assign({}, stockParts[idx]);
+
+            inFlightStock.add(matCode);
+
+            // Optimistic update
+            stockParts[idx] = Object.assign({}, stockParts[idx], {
+                category: category, name: description, unit: unit,
+                qty: qty, reorder: reorder, remark: remark, value: value
+            });
+            closeEditStockModal();
+            renderAll();
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "updateStock",
+                    matCode: matCode,
+                    category: category,
+                    description: description,
+                    unit: unit,
+                    qty: qty,
+                    reorder: reorder,
+                    remark: remark,
+                    value: value
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                triggerToast("บันทึกการแก้ไขพัสดุสำเร็จ", "success");
+            })
+            .catch(function (err) {
+                console.error(err);
+                const rollbackIdx = stockParts.findIndex(function (p) { return p.id === matCode; });
+                if (rollbackIdx !== -1) stockParts[rollbackIdx] = snapshot;
+                triggerToast("บันทึกการแก้ไขพัสดุไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
             })
             .finally(function () {
                 inFlightStock.delete(matCode);
