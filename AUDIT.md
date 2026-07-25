@@ -135,3 +135,43 @@ Whole-file sweep: `<div>`/`</div>` and `<script>`/`</script>` tag counts balance
 ## Verdict: PASS — dispatched batch clean, unplanned CSV-export fix verified correct and necessary
 
 One instruction violation (Tailwind build-step), self-corrected before I saw it. One valuable unplanned fix (CSV export) that resolves a real, live, user-reported bug — verified with a right-now curl comparison, not assumed. If you still see filtered data after this, it's very likely your browser's `localStorage` cache holding data fetched by an older, pre-fix version of the page — do a hard refresh (or clear the app's cached data) rather than assume the fix didn't work.
+
+---
+
+## Audit: Stock value tracking + edit modal + status bar (6-task plan, Antigravity)
+
+Plan: `docs/superpowers/plans/2026-07-25-stock-value-edit-statusbar.md`
+Spec: `docs/superpowers/specs/2026-07-25-stock-value-edit-statusbar-design.md`
+Commits audited (in order): `1239a03` (Task 1) → `66cb2a2` (Task 2) → `1a4ea5d` (Task 3) → `a896eb6` (Task 4) → `8319799` (Task 5) → `2309241` (Task 6)
+
+## Commit hygiene: clean
+
+Exactly 6 commits, one per plan task, in the plan's own order, each with the exact commit message specified in the plan and touching only the file(s) that task named (`index.html` alone for Tasks 1, 3, 4, 5, 6; `Code.gs` alone for Task 2). No unplanned commits interleaved, no stray files, no bundled unrelated changes.
+
+## Per-task verdicts
+
+| Task | Verdict | Notes |
+|---|---|---|
+| 1 — `Value` column read in `csvToStock_` | PASS | Byte-for-byte match to plan's find/replace. |
+| 2 — `Code.gs`: `addStockCore_` value support + new `updateStock_` + `doPost` routing | PASS | Byte-for-byte match. `updateStock_` uses `findRowByColumnValue_`/`LockService` exactly per plan and existing write-path convention. **Not live-tested**: requires manual paste + redeploy into the Apps Script editor, which the executor cannot do — plan's Task 2 curl verification step was correctly skipped, not silently omitted. |
+| 3 — Add Stock modal: Value field | PASS | Byte-for-byte match, `grid-cols-3`→`grid-cols-4`, payload/optimistic-update both send `value`. |
+| 4 — Stock table: Total Value column + edit button wiring | PASS | Byte-for-byte match, `colspan` correctly bumped 8→9, matches the table's actual 9 `<th>` count (verified). Edit button intentionally references `openEditStockModal` before Task 5 defines it, per the plan's own note — resolved one commit later. |
+| 5 — Edit Stock modal | PASS | Byte-for-byte match. MAT code field correctly `disabled`. Optimistic-update-then-reconcile-or-rollback pattern matches every other write in the file. |
+| 6 — Stock status bar | PASS | Byte-for-byte match. `renderStockStats()` wired into `renderAll()` right after `renderStockTable()`, matches Orders-tab card markup exactly. |
+
+## Whole-file sweep (post all 6 commits)
+
+- `<div>`/`</div>`: 200/200 balanced. `<script>`/`</script>`: 5/5. `<body>`/`<html>`: 1/1 each.
+- No duplicate function definitions: `openEditStockModal`, `closeEditStockModal`, `submitEditStock`, `renderStockStats`, `updateStock_`, `addStockCore_`, `csvToStock_`, `renderStockTable`, `renderAll` — each defined exactly once.
+- No id collisions: `modal-editStock` appears once; `stat-stock-total-items`/`stat-stock-total-value`/`stat-stock-low`/`stat-stock-zero` each appear exactly once and don't clash with any existing `stat-*` id.
+- Stock table `<thead>` now has exactly 9 `<th>` cells, matching the `colspan="9"` used in the empty-state row.
+
+## Not tested this round
+
+Live end-to-end write verification (`updateStock` POST round-trip against the real sheet) — blocked on the user manually redeploying `Code.gs` to Apps Script, called out in the plan itself. Browser rendering/visual check also not done (no browser access) — recommend a quick look at the Stock tab after redeploying, per the plan's own manual-verification steps.
+
+## Unrelated observation
+
+An untracked `Stock/Stock R_D_1current.xlsx` sits in the working tree (never committed, predates this session's commits by ~10 minutes) — not part of this plan's execution, not touched by any of the 6 commits, flagged only so it isn't mistaken for executor output.
+
+## Verdict: PASS, all 6 tasks — ready to redeploy `Code.gs` and manually verify in browser
