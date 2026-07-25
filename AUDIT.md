@@ -175,3 +175,44 @@ Live end-to-end write verification (`updateStock` POST round-trip against the re
 An untracked `Stock/Stock R_D_1current.xlsx` sits in the working tree (never committed, predates this session's commits by ~10 minutes) — not part of this plan's execution, not touched by any of the 6 commits, flagged only so it isn't mistaken for executor output.
 
 ## Verdict: PASS, all 6 tasks — ready to redeploy `Code.gs` and manually verify in browser
+
+---
+
+## Audit: SAP ME5A order verification upload (5-task plan, Antigravity)
+
+Plan: `docs/superpowers/plans/2026-07-25-sap-me5a-verify.md`
+Spec: `docs/superpowers/specs/2026-07-25-sap-me5a-verify-design.md`
+Commits audited (in order): `06572e3` (Task 1) → `deaebbd` (Task 2) → `fb759e9` (Task 3) → `44e3f0a` (Task 4) → `a52da4f` (Task 5)
+
+## Commit hygiene: clean
+
+Exactly 5 commits, one per plan task, in the plan's own order, exact commit messages, `index.html` only in every commit — no unplanned files, no bundled unrelated changes.
+
+## Per-task verdicts
+
+| Task | Verdict | Notes |
+|---|---|---|
+| 1 — SheetJS CDN | PASS | Byte-for-byte match. Pinned to `xlsx@0.18.5`, not `@latest`. |
+| 2 — Upload button + hidden file input | PASS | Byte-for-byte match, placed exactly where planned in the Orders table header. |
+| 3 — Results modal markup | PASS | Byte-for-byte match, follows the existing modal shell convention exactly. |
+| 4 — Parse/group/compare logic | PASS, functionally verified | Byte-for-byte match. Not just read — extracted the three functions and ran them in Node: the plan's own Task 4 test case (`compareSapWithOrders_` on a 2-mismatch fixture) reproduces exactly (`matchedCount: 2`, one mismatch, correctly flagged for qty only). Additionally verified beyond what the plan's manual step asked: duplicate-row summing (two 5-qty SAP rows vs. two rows summing to the same total on the system side → correctly no mismatch), and the ±0.01 price tolerance boundary (0.005 diff → no flag, 0.02 diff → flagged) — both behave as specced. |
+| 5 — Wire upload → parse → compare → render | PASS | Byte-for-byte match. All `onclick`/`onchange` references (`triggerSapVerifyUpload`, `handleSapVerifyFile`, `closeSapVerifyModal` ×2) resolve to functions actually defined in this commit — no dangling references in the final state. |
+
+## Whole-file sweep (post all 5 commits)
+
+- `<div>`/`</div>`: 208/208 balanced. `<script>`/`</script>`: 6/6. `<body>`/`</body>`: 1/1.
+- No duplicate function definitions: `parseSapExport_`, `groupByPrMat_`, `compareSapWithOrders_`, `triggerSapVerifyUpload`, `handleSapVerifyFile`, `renderSapVerifyResults_`, `closeSapVerifyModal`, `sapVerifyEscHandler` — each defined exactly once. `renderOrdersTable` (pre-existing) still defined exactly once, untouched by this feature.
+- No id collisions: `modal-sapVerifyResults` and its 4 child ids (`sap-verify-summary`, `sap-verify-empty-message`, `sap-verify-table-wrapper`, `sap-verify-results-body`, `sap-verify-file-input`) each appear exactly once.
+
+## Beyond code review: real-file parse test
+
+Installed `xlsx@0.18.5` in an isolated scratch directory (not touching the repo — `CLAUDE.md` forbids reintroducing npm tooling here) and ran the committed `parseSapExport_` logic against the actual `template/ME5A.XLSX`:
+- 69 raw rows → 46 correctly parsed detail rows, blank summary rows correctly filtered out, zero bogus/header-derived rows leaked through.
+- Spot-checked two known rows against the values confirmed earlier via `openpyxl`: PR `1100032568`/Mat `80007533` → qty 1, unit price 14000 ✓; PR `1100032564`/Mat `50004717` → qty 10, unit price 165 ✓.
+- Note: an earlier concern (a duplicate header row around raw row 7) raised during the original design research turned out to be an artifact of a shell command with a `||` fallback that printed the same rows twice — not a real duplicate in the file. Re-verified directly this round: no duplicate header row exists in the template, and `parseSapExport_` has no defect there.
+
+## Not tested this round
+
+Live browser click-through (upload dialog, modal rendering, Escape-to-close) — no browser access. Static/functional verification (function-count checks, id uniqueness, real Node execution of the parsing and comparison logic against the actual template file) substitutes for it this round; recommend the user do one real upload in-browser per the plan's Task 5 manual-verify step to confirm the visual result matches.
+
+## Verdict: PASS, all 5 tasks — feature is fully client-side, safe to use immediately (no `Code.gs` redeploy needed for this one)
