@@ -1123,6 +1123,11 @@
             }
         }
 
+        // Soft-launch gate: only these two user_name values may log in today,
+        // even though the members sheet lists 11 people. Remove/extend this
+        // array when the wider rollout begins — nothing else about login changes.
+        const LOGIN_ALLOWLIST = ["1026308039", "0000"];
+
         function submitLogin() {
             const input = document.getElementById("login-username-input");
             const error = document.getElementById("login-error");
@@ -1131,7 +1136,7 @@
             const typedValue = input.value.trim();
             const member = membersList.find(function (m) { return m.userName === typedValue; });
             
-            if (!member) {
+            if (!member || LOGIN_ALLOWLIST.indexOf(member.userName) === -1) {
                 if (error) {
                     error.classList.remove("hidden");
                 }
