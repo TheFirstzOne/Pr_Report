@@ -459,6 +459,44 @@ function receiveOrder_(payload) {
   }
 }
 
+const GITHUB_REPO = 'TheFirstzOne/Maintenance_System';
+
+// No LockService here — unlike adjustStockQty_/setVerify_, this doesn't
+// read-modify-write a shared sheet row, so there's no race to guard
+// against. Each call is an independent, unconditional POST to GitHub.
+function submitFeedback_(payload) {
+  const token = PropertiesService.getScriptProperties().getProperty('GITHUB_TOKEN');
+  if (!token) {
+    return { error: 'GITHUB_TOKEN ยังไม่ถูกตั้งค่าใน Script Properties' };
+  }
+
+  const subject = String(payload.subject || '').trim();
+  const message = String(payload.message || '').trim();
+  if (!subject || !message) {
+    return { error: 'กรุณากรอกหัวข้อและรายละเอียด' };
+  }
+
+  const name = String(payload.name || 'ไม่ระบุตัวตน').trim();
+  const role = String(payload.role || '').trim();
+  const attribution = role ? (name + ' (' + role + ')') : name;
+  const body = message + '\n\n---\nผู้แจ้ง: ' + attribution + '\nส่งจาก: Maintenance System (แท็บข้อเสนอแนะ)';
+
+  const response = UrlFetchApp.fetch('https://api.github.com/repos/' + GITHUB_REPO + '/issues', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' },
+    payload: JSON.stringify({ title: subject, body: body }),
+    muteHttpExceptions: true
+  });
+
+  const status = response.getResponseCode();
+  const result = JSON.parse(response.getContentText());
+  if (status !== 201) {
+    return { error: 'สร้าง Issue ไม่สำเร็จ: ' + (result.message || status) };
+  }
+  return { success: true, issueUrl: result.html_url, issueNumber: result.number };
+}
+
 function doPost(e) {
   let payload;
   try {
@@ -484,6 +522,11 @@ function doPost(e) {
         throw new Error('Missing required fields');
       }
       payload = receiveOrder_(body);
+    } else if (body.action === 'submitFeedback') {
+      if (!body.subject || !body.message) {
+        throw new Error('Missing subject/message');
+      }
+      payload = submitFeedback_(body);
     } else {
       payload = { error: 'Unknown action: ' + body.action };
     }
