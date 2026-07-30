@@ -1030,6 +1030,7 @@
         const inFlightRequests = new Set();
         const inFlightStock = new Set();
         const inFlightReceiving = new Set();
+        let inFlightFeedback = false;
 
         function normalizeOrderStatus(status) {
             const s = (status || "").trim().toUpperCase();
@@ -3003,6 +3004,56 @@
             .finally(function () {
                 inFlightStock.delete(matCode);
                 renderAll();
+            });
+        }
+
+        function submitFeedback(event) {
+            event.preventDefault();
+            if (inFlightFeedback) return;
+
+            const subject = document.getElementById("form-feedback-subject").value.trim();
+            const message = document.getElementById("form-feedback-message").value.trim();
+            if (!subject || !message) return;
+
+            const userRaw = localStorage.getItem("maintxProCurrentUser");
+            const user = userRaw ? JSON.parse(userRaw) : null;
+            const name = user && user.name ? user.name : "ไม่ระบุตัวตน";
+            const role = user && user.role ? user.role : "";
+
+            inFlightFeedback = true;
+            const btn = document.getElementById("feedback-submit-btn");
+            btn.setAttribute("disabled", "true");
+            btn.innerText = "กำลังส่ง...";
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "submitFeedback",
+                    subject: subject,
+                    message: message,
+                    name: name,
+                    role: role
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                const successBox = document.getElementById("feedback-success");
+                const link = document.getElementById("feedback-issue-link");
+                link.href = data.issueUrl;
+                successBox.classList.remove("hidden");
+                triggerToast("ส่งข้อเสนอแนะสำเร็จ", "success");
+            })
+            .catch(function (err) {
+                console.error(err);
+                triggerToast(err.message || "ส่งข้อเสนอแนะไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
+            })
+            .finally(function () {
+                inFlightFeedback = false;
+                btn.removeAttribute("disabled");
+                btn.innerText = "ส่งข้อเสนอแนะ";
             });
         }
 
