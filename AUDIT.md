@@ -216,3 +216,42 @@ Installed `xlsx@0.18.5` in an isolated scratch directory (not touching the repo 
 Live browser click-through (upload dialog, modal rendering, Escape-to-close) — no browser access. Static/functional verification (function-count checks, id uniqueness, real Node execution of the parsing and comparison logic against the actual template file) substitutes for it this round; recommend the user do one real upload in-browser per the plan's Task 5 manual-verify step to confirm the visual result matches.
 
 ## Verdict: PASS, all 5 tasks — feature is fully client-side, safe to use immediately (no `Code.gs` redeploy needed for this one)
+
+---
+
+## Audit: login restriction + anonymous user, and feedback-to-GitHub-Issue (2 plans, 5 tasks, Antigravity)
+
+Plan A: `docs/superpowers/plans/2026-07-26-login-restriction-anonymous.md` (2 tasks)
+Spec A: `docs/superpowers/specs/2026-07-26-login-restriction-anonymous-design.md`
+Plan B: `docs/superpowers/plans/2026-07-26-feedback-github-issue.md` (3 tasks)
+Spec B: `docs/superpowers/specs/2026-07-26-feedback-github-issue-design.md`
+Commits audited (in order): `54857ef` (A1) → `f1b52bd` (A2) → `5293046` (B1) → `fe58a5a` (B2) → `bf77a1b` (B3)
+
+## Commit hygiene: clean
+
+Exactly 5 commits for 5 tasks across both plans, in the plans' own order, exact commit messages. File scoping matches each task's Files section precisely: A1/A2 touch only `index.html`; B1 touches only `Code.gs`; B2/B3 touch only `index.html`. No unplanned files, no bundled unrelated changes.
+
+## Per-task verdicts
+
+| Task | Verdict | Notes |
+|---|---|---|
+| A1 — `LOGIN_ALLOWLIST` + gate `submitLogin()` | PASS | Byte-for-byte match. `!member \|\| LOGIN_ALLOWLIST.indexOf(member.userName) === -1` correctly rejects both unknown codes and known-but-not-allowlisted codes through the same existing error path. |
+| A2 — Anonymous-login hint | PASS | Byte-for-byte match, placed exactly under the existing error paragraph. |
+| B1 — `Code.gs` `submitFeedback_` + `doPost` wiring | PASS | Byte-for-byte match. `GITHUB_REPO` hardcoded correctly to `TheFirstzOne/Maintenance_System` (verified this is the actual repo). No `LockService` — correct per spec, this isn't a read-modify-write against a shared row. Required-field validation present both in the `doPost` branch and inside `submitFeedback_` itself (defense in depth, matches convention). |
+| B2 — Feedback tab markup + `titles` entry | PASS | Byte-for-byte match. New sidebar group correctly placed as the last item inside `<nav>`, directly above the User Profile Footer. `feedback: "ข้อเสนอแนะ"` added to `titles` without disturbing the other 4 entries. |
+| B3 — Wire `submitFeedback()` | PASS | Byte-for-byte match, inserted at the exact specified location (right after `submitAddStock`, before the `// Toggle displaying low-stock items` comment). `inFlightFeedback` guard present and correctly reset in `.finally()`. |
+
+## Whole-file sweep (post all 5 commits)
+
+- `<div>`/`</div>`: 216/216. `<section>`/`</section>`: 6/6 (5 original tabs + new feedback tab). `<nav>`/`</nav>`: 1/1. `<script>`/`</script>`: 6/6.
+- No duplicate function definitions: `submitFeedback_` (`Code.gs`, ×1), `submitFeedback` (`index.html`, ×1), `submitLogin` (×1), `doPost` (×1) — correctly one definition each in the correct file.
+- No id collisions: `tab-feedback`, `content-feedback`, `form-feedback-subject`, `form-feedback-message`, `feedback-submit-btn`, `feedback-success`, `feedback-issue-link` — each appears exactly once.
+- `onsubmit="submitFeedback(event)"` and `onclick="switchTab('feedback')"` both resolve to functions that exist in the final state (no dangling references once all 3 of Plan B's tasks are in).
+- Checked `.env` (untracked, gitignored) after noticing the user had it open — still only contains `GEMINI_API_KEY`; no GitHub token was accidentally placed there. Correct: the token belongs in Apps Script Script Properties, not this repo's `.env`, and `.env` wouldn't be committed either way.
+
+## Not tested this round (blocked on manual, non-code steps outside the executor's reach)
+
+- **Plan A:** the `0000` row still needs to be added to the live `members` Google Sheet by the repo owner — until then, typing `0000` at login will correctly show "ไม่พบผู้ใช้งาน" (expected, not a bug in this code). Live browser test of the allowlist (confirming a real gated-out employee code now fails, `1026308039` still works) not run — no browser access.
+- **Plan B:** requires `GITHUB_TOKEN` in Script Properties + a `Code.gs` redeploy before `submitFeedback` can work end-to-end — neither can be done by an executor. No live curl test against the deployed exec URL was run this round; code review + static checks substitute for it.
+
+## Verdict: PASS, all 5 tasks across both plans — ready pending two manual steps: add the `0000` row to the `members` sheet, and set `GITHUB_TOKEN` + redeploy `Code.gs`
