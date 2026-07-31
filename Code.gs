@@ -485,7 +485,7 @@ function submitFeedback_(payload) {
     method: 'post',
     contentType: 'application/json',
     headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' },
-    payload: JSON.stringify({ title: subject, body: body }),
+    payload: JSON.stringify({ title: subject, body: body, labels: ['feedback'] }),
     muteHttpExceptions: true
   });
 
