@@ -2643,6 +2643,10 @@
             };
             document.getElementById("current-page-title").innerText = titles[tabId];
 
+            if (tabId === "feedback") {
+                fetchFeedbackList();
+            }
+
             if (window.innerWidth < 768) {
                 document.getElementById("sidebar-nav").classList.add("hidden");
                 document.getElementById("menu-icon").setAttribute("data-lucide", "menu");
@@ -3058,6 +3062,7 @@
                 link.href = data.issueUrl;
                 successBox.classList.remove("hidden");
                 triggerToast("ส่งข้อเสนอแนะสำเร็จ", "success");
+                fetchFeedbackList();
             })
             .catch(function (err) {
                 console.error(err);
@@ -3068,6 +3073,54 @@
                 btn.removeAttribute("disabled");
                 btn.innerText = "ส่งข้อเสนอแนะ";
             });
+        }
+
+        function fetchFeedbackList() {
+            const loading = document.getElementById("feedback-list-loading");
+            const empty = document.getElementById("feedback-list-empty");
+            const errorBox = document.getElementById("feedback-list-error");
+            const body = document.getElementById("feedback-list-body");
+
+            loading.classList.remove("hidden");
+            empty.classList.add("hidden");
+            errorBox.classList.add("hidden");
+            body.innerHTML = "";
+
+            fetch("https://api.github.com/repos/TheFirstzOne/Maintenance_System/issues?labels=feedback&state=all&sort=created&direction=desc&per_page=10")
+                .then(function (res) { return res.json(); })
+                .then(function (issues) {
+                    loading.classList.add("hidden");
+                    if (!Array.isArray(issues) || issues.length === 0) {
+                        empty.classList.remove("hidden");
+                        return;
+                    }
+                    body.innerHTML = issues.map(function (issue) {
+                        const isOpen = issue.state === "open";
+                        const badgeClass = isOpen ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500";
+                        const badgeText = isOpen ? "เปิดอยู่" : "ปิดแล้ว";
+                        const dateText = new Date(issue.created_at).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
+                        return `
+                            <li class="p-4 flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-slate-800 truncate">${issue.title}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">${dateText}</p>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full ${badgeClass}">${badgeText}</span>
+                                    <a href="${issue.html_url}" target="_blank" class="text-indigo-600 hover:text-indigo-800">
+                                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                                    </a>
+                                </div>
+                            </li>
+                        `;
+                    }).join("");
+                    lucide.createIcons();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    loading.classList.add("hidden");
+                    errorBox.classList.remove("hidden");
+                });
         }
 
         // Toggle displaying low-stock items
