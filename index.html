@@ -1082,6 +1082,7 @@
         let rfqList = [];
         let quoteHistory = [];
         let purchaseOrders = [];
+        let prStatusPendingChanges = [];
         let membersList = [];
         const inFlightRequests = new Set();
         const inFlightStock = new Set();
@@ -2423,6 +2424,135 @@
             });
 
             return { pending: pending, excludedCount: excludedCount };
+        }
+
+        function triggerPrStatusUpload() {
+            document.getElementById("pr-status-file-input").click();
+        }
+
+        function handlePrStatusFile(event) {
+            const file = event.target.files[0];
+            event.target.value = "";
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                let workbook;
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: "array" });
+                } catch (err) {
+                    console.error(err);
+                    triggerToast("ไฟล์ไม่ถูกต้องหรืออ่านไม่ได้ กรุณาตรวจสอบไฟล์อีกครั้ง", "error");
+                    return;
+                }
+
+                let exportRows;
+                try {
+                    exportRows = parsePrStatusExport_(workbook);
+                } catch (err) {
+                    console.error(err);
+                    triggerToast(err.message, "error");
+                    return;
+                }
+
+                const result = buildPrStatusChanges_(exportRows, purchaseOrders);
+                prStatusPendingChanges = result.pending;
+                renderPrStatusPreview_(result);
+            };
+            reader.onerror = function () {
+                triggerToast("ไฟล์ไม่ถูกต้องหรืออ่านไม่ได้ กรุณาตรวจสอบไฟล์อีกครั้ง", "error");
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderPrStatusPreview_(result) {
+            document.getElementById("pr-status-summary").innerText =
+                "จะอัปเดต " + result.pending.length + " รายการ, ไม่พบในระบบหรือรับของแล้ว " + result.excludedCount + " รายการ";
+
+            const tbody = document.getElementById("pr-status-preview-body");
+            const wrapper = document.getElementById("pr-status-table-wrapper");
+            const emptyMsg = document.getElementById("pr-status-empty-message");
+            const confirmBtn = document.getElementById("pr-status-confirm-btn");
+
+            if (result.pending.length === 0) {
+                wrapper.classList.add("hidden");
+                emptyMsg.classList.remove("hidden");
+                confirmBtn.disabled = true;
+                confirmBtn.classList.add("opacity-50", "pointer-events-none");
+            } else {
+                emptyMsg.classList.add("hidden");
+                wrapper.classList.remove("hidden");
+                confirmBtn.disabled = false;
+                confirmBtn.classList.remove("opacity-50", "pointer-events-none");
+                tbody.innerHTML = result.pending.map(function (c) {
+                    return `
+                        <tr class="border-b border-slate-100">
+                            <td class="px-4 py-3 font-semibold text-slate-800">${c.prNo}</td>
+                            <td class="px-4 py-3 text-xs font-semibold text-slate-600">${c.matCode}</td>
+                            <td class="px-4 py-3 text-xs text-slate-600">${c.itemName}</td>
+                            <td class="px-4 py-3 text-center text-xs font-semibold text-slate-800">${c.oldStatus} &rarr; ${c.newStatus}</td>
+                            <td class="px-4 py-3 text-xs text-slate-600">${c.poNo || "-"}</td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+
+            document.getElementById("modal-prStatusPreview").classList.remove("hidden");
+            window.addEventListener("keydown", prStatusEscHandler);
+        }
+
+        function closePrStatusModal() {
+            document.getElementById("modal-prStatusPreview").classList.add("hidden");
+            window.removeEventListener("keydown", prStatusEscHandler);
+            prStatusPendingChanges = [];
+        }
+
+        function prStatusEscHandler(e) {
+            if (e.key === "Escape") closePrStatusModal();
+        }
+
+        function confirmPrStatusUpdate() {
+            if (prStatusPendingChanges.length === 0) return;
+
+            const confirmBtn = document.getElementById("pr-status-confirm-btn");
+            confirmBtn.disabled = true;
+            confirmBtn.innerText = "กำลังบันทึก...";
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "updatePrStatus",
+                    updates: prStatusPendingChanges
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                (data.updated || []).forEach(function (u) {
+                    const idx = purchaseOrders.findIndex(function (o) {
+                        return o.prNo === u.prNo && o.matCode === u.matCode && o.qty === u.qty;
+                    });
+                    if (idx !== -1) {
+                        purchaseOrders[idx].status = u.status;
+                        purchaseOrders[idx].normalizedStatus = normalizeOrderStatus(u.status);
+                        if (u.poNo) purchaseOrders[idx].poNo = u.poNo;
+                    }
+                });
+                renderAll();
+                triggerToast("อัปเดตสถานะสำเร็จ " + (data.updated || []).length + " รายการ", "success");
+                closePrStatusModal();
+            })
+            .catch(function (err) {
+                console.error(err);
+                triggerToast("อัปเดตสถานะไม่สำเร็จ กรุณาลองใหม่", "error");
+            })
+            .finally(function () {
+                confirmBtn.disabled = false;
+                confirmBtn.innerText = "ยืนยัน";
+            });
         }
 
         function setRfqVerifyFilter(value) {
