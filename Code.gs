@@ -459,6 +459,83 @@ function receiveOrder_(payload) {
   }
 }
 
+// Bulk status/PO-number write driven by a client-parsed SAP export upload.
+// One lock for the whole batch (not one per row) — this is one logical
+// operation (one file upload), not N independent writes. Re-checks each
+// row's current STATUS isn't already RECEIVED under the lock even though
+// the client already filtered for this client-side, because the export was
+// parsed before the confirm click — a receive could have happened in
+// between (defense in depth, not redundant).
+const RECEIVED_STATUS_VALUES_ = ['RECEIVED', 'ได้รับแล้ว', 'OK', 'SUCCESS'];
+
+function updatePrStatus_(updates) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName('PR');
+    if (!sheet) return { error: 'Sheet not found: PR' };
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(function (h) { return String(h).trim(); });
+
+    const prIdx = headers.indexOf('Pr No.');
+    const matCodeIdx = headers.indexOf('MAT CODE');
+    const qtyIdx = headers.indexOf('QTY.');
+    const statusIdx = headers.indexOf('STATUS');
+    const poIdx = headers.indexOf('PO No.');
+
+    if (prIdx === -1 || matCodeIdx === -1 || qtyIdx === -1 || statusIdx === -1 || poIdx === -1) {
+      return { error: 'Required columns not found in PR sheet' };
+    }
+
+    const updated = [];
+    const skipped = [];
+
+    updates.forEach(function (update) {
+      const matches = [];
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const matchPr = String(row[prIdx] || '') === String(update.prNo || '');
+        const matchMat = String(row[matCodeIdx] || '') === String(update.matCode || '');
+        const matchQty = Number(row[qtyIdx]) === Number(update.qty);
+        if (matchPr && matchMat && matchQty) {
+          matches.push(i);
+        }
+      }
+
+      if (matches.length !== 1) {
+        skipped.push({ prNo: update.prNo, matCode: update.matCode, reason: 'not found' });
+        return;
+      }
+
+      const rowIndex = matches[0];
+      const currentStatus = String(data[rowIndex][statusIdx] || '').trim().toUpperCase();
+      if (RECEIVED_STATUS_VALUES_.indexOf(currentStatus) !== -1) {
+        skipped.push({ prNo: update.prNo, matCode: update.matCode, reason: 'already received' });
+        return;
+      }
+
+      const sheetRow = rowIndex + 1;
+      sheet.getRange(sheetRow, statusIdx + 1).setValue(update.status);
+      if (update.status === 'PO' && update.poNo) {
+        sheet.getRange(sheetRow, poIdx + 1).setValue(update.poNo);
+      }
+
+      updated.push({
+        prNo: update.prNo,
+        matCode: update.matCode,
+        qty: update.qty,
+        status: update.status,
+        poNo: update.status === 'PO' ? (update.poNo || '') : ''
+      });
+    });
+
+    return { success: true, updated: updated, skipped: skipped };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 const GITHUB_REPO = 'TheFirstzOne/Maintenance_System';
 
 // No LockService here — unlike adjustStockQty_/setVerify_, this doesn't
@@ -522,6 +599,11 @@ function doPost(e) {
         throw new Error('Missing required fields');
       }
       payload = receiveOrder_(body);
+    } else if (body.action === 'updatePrStatus') {
+      if (!Array.isArray(body.updates) || body.updates.length === 0) {
+        throw new Error('Missing updates array');
+      }
+      payload = updatePrStatus_(body.updates);
     } else if (body.action === 'submitFeedback') {
       if (!body.subject || !body.message) {
         throw new Error('Missing subject/message');
