@@ -154,6 +154,10 @@
             <div>
                 <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">ช่วยเหลือ</p>
                 <div class="space-y-1">
+                    <button onclick="switchTab('diary')" id="tab-diary" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="book-open" class="w-4.5 h-4.5"></i>
+                        <span>บันทึกประจำวัน</span>
+                    </button>
                     <button onclick="switchTab('feedback')" id="tab-feedback" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
                         <i data-lucide="message-square" class="w-4.5 h-4.5"></i>
                         <span>ข้อเสนอแนะ</span>
@@ -821,6 +825,41 @@
                         <div id="feedback-list-empty" class="hidden p-6 text-sm text-slate-500">ยังไม่มีข้อเสนอแนะที่ส่งไป</div>
                         <div id="feedback-list-error" class="hidden p-6 text-sm text-rose-600">โหลดรายการไม่สำเร็จ ลองรีเฟรชหน้าอีกครั้ง</div>
                         <ul id="feedback-list-body" class="divide-y divide-slate-100"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. JOB DIARY TAB -->
+            <section id="content-diary" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                            <h3 class="font-bold text-base text-slate-800">บันทึกงานวันนี้</h3>
+                            <p class="text-xs text-slate-500 mt-1">บันทึกจะถูกเพิ่มต่อท้ายเอกสารบันทึกประจำวันของทีม</p>
+                        </div>
+                        <form onsubmit="submitDiaryEntry(event)" class="p-6 space-y-4">
+                            <div>
+                                <label for="form-diary-content" class="block text-xs font-bold uppercase text-slate-500 mb-1">รายละเอียดงาน</label>
+                                <textarea id="form-diary-content" rows="10" placeholder="วันนี้ทำอะไรบ้าง..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500" required></textarea>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" id="diary-submit-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">บันทึก</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                            <h3 class="font-bold text-base text-slate-800">ประวัติบันทึก</h3>
+                            <p class="text-xs text-slate-500 mt-1">บันทึกของทีมทั้งหมด เรียงตามวันที่ล่าสุด</p>
+                        </div>
+                        <div id="diary-list-loading" class="p-6 text-sm text-slate-500">กำลังโหลด...</div>
+                        <div id="diary-list-empty" class="hidden p-6 text-sm text-slate-500">ยังไม่มีบันทึก</div>
+                        <div id="diary-list-error" class="hidden p-6 text-sm text-rose-600">โหลดรายการไม่สำเร็จ ลองรีเฟรชหน้าอีกครั้ง</div>
+                        <div id="diary-list-wrapper" class="hidden flex flex-col md:flex-row">
+                            <div id="diary-date-list" class="md:w-48 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-100 overflow-y-auto divide-y divide-slate-100" style="max-height: 480px;"></div>
+                            <div id="diary-entries-body" class="flex-1 overflow-y-auto p-4 space-y-4" style="max-height: 480px;"></div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -2913,12 +2952,17 @@
                 rfq: "รายการขอราคา",
                 budget: "งบประมาณ",
                 quotes: "ประวัติใบเสนอราคา",
-                feedback: "ข้อเสนอแนะ"
+                feedback: "ข้อเสนอแนะ",
+                diary: "บันทึกประจำวัน"
             };
             document.getElementById("current-page-title").innerText = titles[tabId];
 
             if (tabId === "feedback") {
                 fetchFeedbackList();
+            }
+
+            if (tabId === "diary") {
+                fetchDiaryEntries();
             }
 
             if (window.innerWidth < 768) {
