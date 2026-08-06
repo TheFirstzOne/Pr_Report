@@ -3618,6 +3618,51 @@
             }).join("");
         }
 
+        function submitDiaryEntry(event) {
+            event.preventDefault();
+            if (inFlightDiary) return;
+
+            const contentField = document.getElementById("form-diary-content");
+            const content = contentField.value.trim();
+            if (!content) return;
+
+            const userRaw = localStorage.getItem("maintxProCurrentUser");
+            const user = userRaw ? JSON.parse(userRaw) : null;
+            const who = user && user.name ? user.name : "ไม่ระบุตัวตน";
+
+            inFlightDiary = true;
+            const btn = document.getElementById("diary-submit-btn");
+            btn.setAttribute("disabled", "true");
+            btn.innerText = "กำลังบันทึก...";
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "addDiaryEntry",
+                    who: who,
+                    content: content
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                contentField.value = "";
+                triggerToast("บันทึกสำเร็จ", "success");
+                fetchDiaryEntries();
+            })
+            .catch(function (err) {
+                console.error(err);
+                triggerToast("บันทึกไม่สำเร็จ กรุณาลองใหม่", "error");
+            })
+            .finally(function () {
+                inFlightDiary = false;
+                btn.removeAttribute("disabled");
+                btn.innerText = "บันทึก";
+            });
+        }
+
         // Toggle displaying low-stock items
         function toggleLowStockOnly() {
             showLowStockOnly = !showLowStockOnly;
