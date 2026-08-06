@@ -1127,6 +1127,9 @@
         const inFlightStock = new Set();
         const inFlightReceiving = new Set();
         let inFlightFeedback = false;
+        let inFlightDiary = false;
+        let diaryEntriesByDate = [];
+        let selectedDiaryDate = null;
 
         function normalizeOrderStatus(status) {
             const s = (status || "").trim().toUpperCase();
@@ -3542,6 +3545,77 @@
             const div = document.createElement("div");
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function fetchDiaryEntries() {
+            const loading = document.getElementById("diary-list-loading");
+            const empty = document.getElementById("diary-list-empty");
+            const errorBox = document.getElementById("diary-list-error");
+            const wrapper = document.getElementById("diary-list-wrapper");
+
+            loading.classList.remove("hidden");
+            empty.classList.add("hidden");
+            errorBox.classList.add("hidden");
+            wrapper.classList.add("hidden");
+
+            fetch("https://docs.google.com/document/d/1DuuoQhKA9WNgndt2q1V8Am2tiq0epy5AKBeHtHWU9yA/export?format=txt")
+                .then(function (res) { return res.text(); })
+                .then(function (text) {
+                    loading.classList.add("hidden");
+                    diaryEntriesByDate = parseDiaryText_(text);
+                    if (diaryEntriesByDate.length === 0) {
+                        empty.classList.remove("hidden");
+                        return;
+                    }
+                    wrapper.classList.remove("hidden");
+                    selectedDiaryDate = diaryEntriesByDate[0].date;
+                    renderDiaryDateList_();
+                    renderDiaryEntriesForSelectedDate_();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    loading.classList.add("hidden");
+                    errorBox.classList.remove("hidden");
+                });
+        }
+
+        function renderDiaryDateList_() {
+            const container = document.getElementById("diary-date-list");
+            container.innerHTML = diaryEntriesByDate.map(function (group) {
+                const isActive = group.date === selectedDiaryDate;
+                const activeClass = isActive ? "bg-indigo-50 text-indigo-700 font-bold" : "text-slate-600 hover:bg-slate-50";
+                return `
+                    <button type="button" onclick="selectDiaryDate('${group.date}')" class="w-full text-left px-3 py-2.5 text-xs ${activeClass} transition-colors">
+                        ${group.date}
+                    </button>
+                `;
+            }).join("");
+        }
+
+        function selectDiaryDate(date) {
+            selectedDiaryDate = date;
+            renderDiaryDateList_();
+            renderDiaryEntriesForSelectedDate_();
+        }
+
+        function renderDiaryEntriesForSelectedDate_() {
+            const container = document.getElementById("diary-entries-body");
+            const group = diaryEntriesByDate.find(function (g) { return g.date === selectedDiaryDate; });
+            if (!group) {
+                container.innerHTML = "";
+                return;
+            }
+            container.innerHTML = group.entries.map(function (entry) {
+                return `
+                    <div class="border border-slate-100 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-600">${entry.time}</span>
+                            <span class="text-xs text-slate-400">${entry.who}</span>
+                        </div>
+                        <p class="text-sm text-slate-700 whitespace-pre-line">${escapeDiaryHtml_(entry.content)}</p>
+                    </div>
+                `;
+            }).join("");
         }
 
         // Toggle displaying low-stock items
