@@ -2324,6 +2324,107 @@
             if (e.key === "Escape") closeSapVerifyModal();
         }
 
+        // Parses the SAP ME5A export for the "Status" upload — a superset of
+        // parseSapExport_'s columns (same file type, different fields read).
+        // Purchase order is deliberately NOT in the required list: it's only
+        // needed for Z-indicator rows and is checked per-row in
+        // buildPrStatusChanges_ instead, since requiring it here would reject
+        // valid files whose only Z rows already have it and whose other rows
+        // legitimately don't need it.
+        function parsePrStatusExport_(workbook) {
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+            if (rows.length === 0) {
+                throw new Error("ไฟล์ไม่มีข้อมูล");
+            }
+
+            const headers = rows[0].map(function (h) { return String(h).trim(); });
+            const prIdx = headers.indexOf('Purchase Requisition');
+            const matIdx = headers.indexOf('Material');
+            const qtyIdx = headers.indexOf('Quantity requested');
+            const indicatorIdx = headers.indexOf('Release indicator');
+            const poIdx = headers.indexOf('Purchase order');
+
+            const required = [
+                ['Purchase Requisition', prIdx],
+                ['Material', matIdx],
+                ['Quantity requested', qtyIdx],
+                ['Release indicator', indicatorIdx]
+            ];
+            const missing = required
+                .filter(function (pair) { return pair[1] === -1; })
+                .map(function (pair) { return pair[0]; });
+            if (missing.length > 0) {
+                throw new Error("ไฟล์ SAP ขาดคอลัมน์: " + missing.join(", "));
+            }
+
+            // Same blank-summary-row filter as parseSapExport_: Material is
+            // empty on SAP's per-PR summary rows.
+            return rows.slice(1)
+                .filter(function (row) { return row[matIdx]; })
+                .map(function (row) {
+                    return {
+                        prNo: String(row[prIdx] || '').trim(),
+                        matCode: String(row[matIdx] || '').trim(),
+                        qty: Number(row[qtyIdx]) || 0,
+                        indicator: String(row[indicatorIdx] || '').trim().toUpperCase(),
+                        poNo: poIdx !== -1 ? String(row[poIdx] || '').trim() : ''
+                    };
+                });
+        }
+
+        // X/Y both mean "still at PR stage" per the issue's mapping; Z means
+        // it has progressed to a PO. Anything else (blank, unrecognized) maps
+        // to null, which buildPrStatusChanges_ treats as "not actionable" —
+        // not an error, this file legitimately contains many such rows.
+        function mapIndicatorToStatus_(indicator) {
+            if (indicator === 'X' || indicator === 'Y') return 'Pr';
+            if (indicator === 'Z') return 'PO';
+            return null;
+        }
+
+        // Matches each actionable export row (mapIndicatorToStatus_ !== null)
+        // against purchaseOrders by prNo+matCode+qty — the same composite key
+        // receiveOrder_ already uses server-side to disambiguate the PR
+        // sheet's known duplicate-row cases. 0 or >1 matches, or a match whose
+        // normalizedStatus is already RECEIVED (a receive is a one-way door),
+        // are excluded rather than guessed at.
+        function buildPrStatusChanges_(exportRows, orders) {
+            const pending = [];
+            let excludedCount = 0;
+
+            exportRows.forEach(function (row) {
+                const newStatus = mapIndicatorToStatus_(row.indicator);
+                if (!newStatus) return;
+
+                const matches = orders.filter(function (o) {
+                    return o.prNo === row.prNo && o.matCode === row.matCode && o.qty === row.qty;
+                });
+                if (matches.length !== 1) {
+                    excludedCount++;
+                    return;
+                }
+
+                const order = matches[0];
+                if (order.normalizedStatus === 'RECEIVED') {
+                    excludedCount++;
+                    return;
+                }
+
+                pending.push({
+                    prNo: row.prNo,
+                    matCode: row.matCode,
+                    qty: row.qty,
+                    itemName: order.itemName,
+                    oldStatus: order.status,
+                    newStatus: newStatus,
+                    poNo: newStatus === 'PO' ? row.poNo : ''
+                });
+            });
+
+            return { pending: pending, excludedCount: excludedCount };
+        }
+
         function setRfqVerifyFilter(value) {
             rfqVerifyFilter = value;
             
