@@ -1020,6 +1020,44 @@
         </div>
     </div>
 
+    <!-- MODAL: PR STATUS UPDATE PREVIEW -->
+    <div id="modal-prStatusPreview" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-4xl w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100 max-h-[85vh] flex flex-col">
+            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-slate-800 text-base">ตัวอย่างการอัปเดตสถานะ PR</h4>
+                    <p class="text-xs text-slate-500 mt-1" id="pr-status-summary"></p>
+                </div>
+                <button type="button" onclick="closePrStatusModal()" class="text-slate-400 hover:text-slate-600 transition-colors w-11 h-11 flex items-center justify-center rounded-lg hover:bg-slate-50 -mr-2">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <p id="pr-status-empty-message" class="hidden text-sm text-slate-600 font-semibold bg-slate-50 border border-slate-100 rounded-lg p-4">ไม่มีรายการที่ต้องอัปเดต</p>
+                <div id="pr-status-table-wrapper" class="hidden overflow-x-auto border border-slate-100 rounded-lg">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100">
+                            <tr>
+                                <th class="px-4 py-3">Pr No.</th>
+                                <th class="px-4 py-3">Mat Code</th>
+                                <th class="px-4 py-3">ชื่อ</th>
+                                <th class="px-4 py-3 text-center">สถานะเดิม &rarr; สถานะใหม่</th>
+                                <th class="px-4 py-3">PO No.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pr-status-preview-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end space-x-3 border-t border-slate-100">
+                <button type="button" onclick="closePrStatusModal()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                <button type="button" id="pr-status-confirm-btn" onclick="confirmPrStatusUpdate()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- ==================== JAVASCRIPT SYSTEM ENGINE ==================== -->
     <script>
