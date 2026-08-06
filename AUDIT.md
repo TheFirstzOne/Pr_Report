@@ -293,3 +293,42 @@ Exactly 3 commits for 3 tasks, in the plan's own order, exact commit messages. F
 - Error-state visual check (typo'd URL) and responsive-stacking visual check (Task 2 Step 2) — no browser access this round.
 
 ## Verdict: PASS, all 3 tasks — commits match the plan exactly, no defects found. The 3 commits were already present in git log before this audit ran (Antigravity had already executed and committed them); nothing needed to be redone. Ready pending two manual steps: create the `feedback` label on GitHub, and redeploy `Code.gs` with Task 1's change.
+
+---
+
+## Audit: PR status update from SAP ME5A export (5-task plan, Antigravity)
+
+Plan: `docs/superpowers/plans/2026-08-06-pr-status-update.md` (5 tasks)
+Spec: `docs/superpowers/specs/2026-08-06-pr-status-update-design.md`
+Commits audited (in order): `dfc5b20` (Task 1) → `3b1c5d9` (Task 2) → `5d5efd5` (Task 3) → `1654b01` (Task 4) → `42632a5` (Task 5)
+
+## Commit hygiene: clean, but manual-verify steps look skipped
+
+Exactly 5 commits for 5 tasks, in the plan's own order, exact commit messages. File scoping matches each task's Files section precisely: Tasks 1-4 touch only `index.html`, Task 5 touches only `Code.gs`. No unplanned files bundled in.
+
+Flag (process, not a code defect): all 5 commits are timestamped 15:28:00-15:28:47 — 47 seconds total for 5 tasks whose plan requires a browser reload + manual interaction between each (Task 3's console-paste check, Task 4's real-file upload + Network-tab check). Not enough time to have actually happened. Treated as "not independently verified this round" below rather than assumed-done — the diff content itself is still checked against the plan directly, not against Antigravity's claims.
+
+## Per-task verdicts
+
+| Task | Verdict | Notes |
+|---|---|---|
+| 1 — "Status" upload button + hidden file input | PASS | Byte-for-byte match against the plan's find/replace. `Verify`/`Status` buttons now share one flex container; existing `sap-verify-file-input`/`triggerSapVerifyUpload` untouched. |
+| 2 — preview modal markup | PASS | Byte-for-byte match. Inserted immediately after `modal-sapVerifyResults`, before the JS engine comment, exactly where the plan specified. All 5 planned ids present once each. |
+| 3 — parsing + matching logic | PASS | Byte-for-byte match. `parsePrStatusExport_`/`mapIndicatorToStatus_`/`buildPrStatusChanges_` inserted immediately before `setRfqVerifyFilter`, matching the plan's insertion point. |
+| 4 — upload → preview → confirm wiring | PASS | Byte-for-byte match. `prStatusPendingChanges` declared alongside `purchaseOrders`; all 6 planned functions present once each, in the plan's exact order. |
+| 5 — `Code.gs` `updatePrStatus` action | PASS | Byte-for-byte match. `updatePrStatus_` inserted between `receiveOrder_` and `GITHUB_REPO`; `doPost` branch inserted between `receiveOrder` and `submitFeedback`, in that order. |
+
+## Whole-file sweep (post all 5 commits)
+
+- No duplicate function definitions: `parsePrStatusExport_`, `mapIndicatorToStatus_`, `buildPrStatusChanges_`, `triggerPrStatusUpload`, `handlePrStatusFile`, `renderPrStatusPreview_`, `closePrStatusModal`, `prStatusEscHandler`, `confirmPrStatusUpdate` (`index.html`, ×1 each); `updatePrStatus_` (`Code.gs`, ×1).
+- No id collisions: `pr-status-file-input`, `modal-prStatusPreview`, `pr-status-summary`, `pr-status-empty-message`, `pr-status-table-wrapper`, `pr-status-preview-body`, `pr-status-confirm-btn` — each appears exactly once as an `id=`.
+- `node --check` on the extracted inline `<script>` block and on `Code.gs` (copied to `.js` for the check) — both parse clean, no syntax errors introduced.
+- Logic spot-check against the spec: `buildPrStatusChanges_` returns early on an unrecognized indicator *before* incrementing `excludedCount` (matches spec: unrecognized-indicator rows are silently dropped, not counted in the "ไม่พบในระบบหรือรับของแล้ว" bucket) — confirmed by reading the code, not by trusting the plan's own worked example. `updatePrStatus_`'s `RECEIVED_STATUS_VALUES_` list (`RECEIVED`/`ได้รับแล้ว`/`OK`/`SUCCESS`) matches `normalizeOrderStatus()`'s RECEIVED bucket in `index.html` exactly — the server-side guard can't drift from the client's definition of "already received."
+- `renderOrdersTable`'s existing `${order.poNo || "-"}` cell (untouched by this work) will correctly reflect `PO No.` reconciled by `confirmPrStatusUpdate` after a `Z`-indicator update, since `purchaseOrders[idx].poNo` is set before `renderAll()` — checked the read side, not just the write side.
+
+## Not tested this round (blocked on manual, non-code steps outside the executor's reach)
+
+- Real browser end-to-end (Tasks 1-4's manual-verify steps: button render, modal render, console-paste match, real-file upload against live PR sheet) — no browser access this round, and per the commit-hygiene flag above, likely not run by Antigravity either. Static/logical verification (diff-vs-plan, syntax, id/function uniqueness, spec-vs-code cross-check) substitutes for it this round.
+- `updatePrStatus` is not live yet — `Code.gs` must be manually pasted into the Apps Script editor and redeployed (per `CLAUDE.md`, same gap flagged in the feedback-label audit above). Until then, clicking "ยืนยัน" in the deployed app will hit the *old* `doPost`, which returns `{error: "Unknown action: updatePrStatus"}` — this is the designed failure path (Task 4's own manual-verify step expected exactly this), not a bug.
+
+## Verdict: PASS, all 5 tasks — commits match the plan exactly, no defects found in the diffs, no scope creep, no duplicate ids/functions, both files parse as valid JS. Process note (not a task failure): the 47-second commit span across 5 tasks makes it unlikely the plan's browser-based manual-verify steps were actually run — worth watching for in future Antigravity rounds. Ready pending the `Code.gs` redeploy; real end-to-end write behavior against the live sheet is unverified until then.
