@@ -574,6 +574,45 @@ function submitFeedback_(payload) {
   return { success: true, issueUrl: result.html_url, issueNumber: result.number };
 }
 
+// DocumentApp, not SpreadsheetApp — this is the one write action in this
+// file that doesn't touch the spreadsheet at all; it appends to a separate
+// Google Doc (DIARY_DOC_ID). No LockService: appendParagraph is an
+// append-only operation, and unlike the sheet write actions this never
+// reads-then-writes a specific row, so there's no read-modify-write race to
+// guard against (same reasoning submitFeedback_ already uses above).
+const DIARY_DOC_ID = '1DuuoQhKA9WNgndt2q1V8Am2tiq0epy5AKBeHtHWU9yA';
+
+function addDiaryEntry_(payload) {
+  const who = String(payload.who || 'ไม่ระบุตัวตน').trim();
+  const content = String(payload.content || '').trim();
+  if (!content) {
+    return { error: 'กรุณากรอกเนื้อหาก่อนบันทึก' };
+  }
+
+  const doc = DocumentApp.openById(DIARY_DOC_ID);
+  const body = doc.getBody();
+
+  // Same divider-only-between-entries convention job_diary_app.py used
+  // (`if len(doc.paragraphs) > 0`), translated to "does the doc already
+  // have any text".
+  if (body.getText().trim().length > 0) {
+    body.appendParagraph('');
+    body.appendParagraph('='.repeat(80));
+  }
+
+  const now = new Date();
+  const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+
+  const dateParagraph = body.appendParagraph('📅 วันที่: ' + dateStr);
+  dateParagraph.setBold(true);
+  body.appendParagraph('โดย: ' + who);
+  body.appendParagraph(content);
+
+  doc.saveAndClose();
+
+  return { success: true, who: who };
+}
+
 function doPost(e) {
   let payload;
   try {
@@ -604,6 +643,11 @@ function doPost(e) {
         throw new Error('Missing updates array');
       }
       payload = updatePrStatus_(body.updates);
+    } else if (body.action === 'addDiaryEntry') {
+      if (!body.content) {
+        throw new Error('Missing content');
+      }
+      payload = addDiaryEntry_(body);
     } else if (body.action === 'submitFeedback') {
       if (!body.subject || !body.message) {
         throw new Error('Missing subject/message');
