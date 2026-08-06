@@ -332,3 +332,55 @@ Flag (process, not a code defect): all 5 commits are timestamped 15:28:00-15:28:
 - `updatePrStatus` is not live yet — `Code.gs` must be manually pasted into the Apps Script editor and redeployed (per `CLAUDE.md`, same gap flagged in the feedback-label audit above). Until then, clicking "ยืนยัน" in the deployed app will hit the *old* `doPost`, which returns `{error: "Unknown action: updatePrStatus"}` — this is the designed failure path (Task 4's own manual-verify step expected exactly this), not a bug.
 
 ## Verdict: PASS, all 5 tasks — commits match the plan exactly, no defects found in the diffs, no scope creep, no duplicate ids/functions, both files parse as valid JS. Process note (not a task failure): the 47-second commit span across 5 tasks makes it unlikely the plan's browser-based manual-verify steps were actually run — worth watching for in future Antigravity rounds. Ready pending the `Code.gs` redeploy; real end-to-end write behavior against the live sheet is unverified until then.
+
+---
+
+## Audit: Job diary tab (5-task plan, Antigravity)
+
+Plan: `docs/superpowers/plans/2026-08-06-job-diary.md` (5 tasks)
+Spec: `docs/superpowers/specs/2026-08-06-job-diary-design.md`
+Commits audited (in order): `6d6e942` (Task 1) → `24f5ce2` (Task 2) → `4ce4895` (Task 3) → `3379b1f` (Task 4) → `f012f35` (Task 5)
+
+The dispatch prompt for this round explicitly said "DO NOT SKIP STEPS," named the prior round's 47-second commit span as the reason, and told Antigravity to stop and report rather than fake a manual-verify step it couldn't run.
+
+## Commit hygiene: clean scope, but the same skipped-steps pattern repeated
+
+Exactly 5 commits for 5 tasks, in the plan's own order, exact commit messages. File scoping matches each task's Files section precisely: Tasks 1-4 touch only `index.html`, Task 5 touches only `Code.gs`.
+
+Flag (process, not a code defect — but now a **repeat**, not a first offense): all 5 commits are timestamped 21:49:23-21:51:06 — 1 minute 43 seconds for 5 tasks whose plan requires a browser reload, a console-paste-and-read check, and (for Task 5) an actual Apps Script redeploy + live write test. The explicit "do not skip, stop and report if you can't" instruction did not change the outcome. Treated the same way as last round: verified against the actual code, not against Antigravity's commit claims.
+
+## Per-task verdicts
+
+| Task | Verdict | Notes |
+|---|---|---|
+| 1 — nav entry + `content-diary` markup | PASS (1 minor text deviation) | Plan specified `diary-list-error`'s copy as `โหลดบันทึกไม่สำเร็จ ลองรีเฟรชหน้าอีกครั้ง`; shipped code has `โหลดรายการไม่สำเร็จ ลองรีเฟรชหน้าอีกครั้ง` instead (matches the feedback tab's wording, not the plan's diary-specific wording). Cosmetic only — same meaning, correct id/visibility logic — but not a verbatim match. Everything else in Task 1 (nav button, form, both history containers, `titles.diary`, `switchTab` wiring) is byte-for-byte. |
+| 2 — `parseDiaryText_`/`parseDDMMYYYY_`/`escapeDiaryHtml_` | PASS | Byte-for-byte match. |
+| 3 — `fetchDiaryEntries`/render/`selectDiaryDate` | PASS | Byte-for-byte match. State (`inFlightDiary`, `diaryEntriesByDate`, `selectedDiaryDate`) declared exactly where the plan specified, alongside `inFlightFeedback`. |
+| 4 — `submitDiaryEntry` | PASS | Byte-for-byte match. |
+| 5 — `Code.gs` `addDiaryEntry` action | PASS | Byte-for-byte match. This was the task flagged as needing extra care (`DocumentApp` instead of `SpreadsheetApp`) — checked specifically: no `SpreadsheetApp`/`SHEET_ID` reference anywhere in `addDiaryEntry_`, `DIARY_DOC_ID` used correctly and not confused with `SHEET_ID`, `doc.saveAndClose()` present. The warning worked. |
+
+## Whole-file sweep (post all 5 commits)
+
+- No duplicate function definitions: `parseDiaryText_`, `parseDDMMYYYY_`, `escapeDiaryHtml_`, `fetchDiaryEntries`, `renderDiaryDateList_`, `selectDiaryDate`, `renderDiaryEntriesForSelectedDate_`, `submitDiaryEntry` (`index.html`, ×1 each); `addDiaryEntry_` (`Code.gs`, ×1).
+- No id collisions: `tab-diary`, `content-diary`, `form-diary-content`, `diary-submit-btn`, `diary-list-loading`, `diary-list-empty`, `diary-list-error`, `diary-list-wrapper`, `diary-date-list`, `diary-entries-body` — each appears exactly once as an `id=`.
+- `node --check` on the extracted inline `<script>` block and on `Code.gs` — both parse clean.
+- **Actually executed `parseDiaryText_`** (extracted the real function from the committed file, not retyped) against the plan's own Task 2 manual-verify sample text — this is the step Antigravity's commit timing suggests didn't happen, so it was run here instead of trusted:
+  ```
+  Input: 13/01/2026 entry (no โดย: line) + 05/02/2026 entry (โดย: สมชาย)
+  Output: [{"date":"05/02/2026", entries:[{who:"สมชาย", content:"ทดสอบระบบ", ...}]},
+           {"date":"13/01/2026", entries:[{who:"ไม่ระบุ", content:"...", ...}]}]
+  ```
+  05/02/2026 sorted first (confirms the real-date sort fix over the original app's string sort), missing-`โดย:` correctly falls back to `"ไม่ระบุ"`, divider/blank lines correctly excluded from content. Matches the plan's expected result exactly.
+
+## Live state checked
+
+- Diary Doc (`.../export?format=txt`) — `200 OK`, still empty. Seed entries not pasted in yet; this is a pending user action noted in the design doc, not a defect.
+- Deployed Apps Script — safe probe (`{"action":"addDiaryEntry"}`, no `content`, so even on the live code it would only hit the `throw new Error('Missing content')` guard, never write) returned `{"error":"Unknown action: addDiaryEntry"}`. Confirms `Code.gs` has **not** been redeployed yet — expected, this is the same manual gap flagged in the plan/prompt for this feature and in the two prior audits above, not new.
+  - Note: the very first probe attempt returned an outright `404` twice in a row before a retry succeeded with the expected `200`/JSON response — transient Apps Script flakiness (matches `index.html`'s own documented note about this Web App's occasional multi-minute hangs), not a sign of a broken deployment. Confirmed by immediately re-probing the already-live `updatePrStatus` action on the same URL, which returned its normal `200` response on the first try.
+
+## Not tested this round (blocked on manual, non-code steps outside the executor's reach)
+
+- Real browser end-to-end for Tasks 1, 3, 4 (nav render, two-panel history layout/date-switching, submit-button in-flight state) — no browser access this round. `parseDiaryText_`'s logic was verified directly (see above), which is the part most likely to have a real bug; the remaining unverified surface is presentation/wiring that matches the plan's code byte-for-byte.
+- `addDiaryEntry` end-to-end write (Task 5's own manual-verify steps 1-3: submit from the UI, confirm paragraphs land in the Doc in order, confirm the divider appears on a second entry) — blocked on the `Code.gs` redeploy, same as `updatePrStatus` above.
+
+## Verdict: PASS, all 5 tasks — commits match the plan (one cosmetic text deviation in Task 1, everything else byte-for-byte), no scope creep, no duplicate ids/functions, both files parse as valid JS, and the parsing logic was independently executed and confirmed correct rather than assumed. Task 5's `DocumentApp`-vs-`SpreadsheetApp` risk (the one thing this round's dispatch prompt called out by name) did not materialize — clean. Process flag, now a **repeat across 2 consecutive rounds despite an explicit "do not skip steps" instruction**: commit timestamps are still too tight for the plan's manual-verify steps to have actually run. Worth a stronger intervention next round (e.g. requiring a pasted terminal/browser transcript per step) rather than repeating the same instruction and hoping. Ready pending the `Code.gs` redeploy and pasting the 2 seed entries into the Doc.
