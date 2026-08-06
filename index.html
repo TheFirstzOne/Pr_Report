@@ -459,11 +459,16 @@
                             <h3 class="font-bold text-base text-slate-800">บันทึกประวัติการสั่งซื้ออะไหล่ (PO)</h3>
                             <p class="text-xs text-slate-500 mt-1">ประวัติใบสั่งซื้อที่ผ่านการอนุมัติและรอตรวจรับพัสดุ</p>
                         </div>
-                        <div>
+                        <div class="flex items-center space-x-2">
                             <input type="file" id="sap-verify-file-input" accept=".xlsx" class="hidden" onchange="handleSapVerifyFile(event)">
                             <button type="button" onclick="triggerSapVerifyUpload()" class="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-semibold transition-colors flex items-center space-x-1.5">
                                 <i data-lucide="upload" class="w-4 h-4"></i>
-                                <span>ตรวจสอบกับ SAP (ME5A)</span>
+                                <span>Verify</span>
+                            </button>
+                            <input type="file" id="pr-status-file-input" accept=".xlsx" class="hidden" onchange="handlePrStatusFile(event)">
+                            <button type="button" onclick="triggerPrStatusUpload()" class="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-semibold transition-colors flex items-center space-x-1.5">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                <span>Status</span>
                             </button>
                         </div>
                     </div>
