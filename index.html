@@ -3454,6 +3454,96 @@
                 });
         }
 
+        // Ported from JobdiaryRecord/job_diary_app.py's parse_diary_entries.
+        // Splits the diary Doc's plain-text export into per-date entry
+        // groups. Content lines run until the next 📅 date line or end of
+        // text; blank lines and the "===...=" divider between entries are
+        // dropped, not treated as content.
+        function parseDiaryText_(text) {
+            const lines = text.replace(/\r\n/g, "\n").split("\n");
+            const dateRe = /^📅 วันที่: (\d{2})\/(\d{2})\/(\d{4}) (\d{2}:\d{2}:\d{2})$/;
+            const whoRe = /^โดย: (.*)$/;
+            const dividerRe = /^=+$/;
+
+            const entriesByDate = {};
+            let currentDateKey = null;
+            let currentTime = null;
+            let currentWho = "";
+            let currentContentLines = [];
+            let sawFirstLineAfterDate = false;
+
+            function flush() {
+                if (currentDateKey && currentContentLines.length > 0) {
+                    if (!entriesByDate[currentDateKey]) entriesByDate[currentDateKey] = [];
+                    entriesByDate[currentDateKey].push({
+                        time: currentTime,
+                        who: currentWho || "ไม่ระบุ",
+                        content: currentContentLines.join("\n")
+                    });
+                }
+            }
+
+            lines.forEach(function (raw) {
+                const line = raw.trim();
+                const dateMatch = dateRe.exec(line);
+                if (dateMatch) {
+                    flush();
+                    currentDateKey = dateMatch[1] + "/" + dateMatch[2] + "/" + dateMatch[3];
+                    currentTime = dateMatch[4];
+                    currentWho = "";
+                    currentContentLines = [];
+                    sawFirstLineAfterDate = false;
+                    return;
+                }
+                if (!currentDateKey) return;
+
+                // "โดย:" only ever appears as the line immediately after a
+                // date line (per addDiaryEntry_'s write order) — checked
+                // once per entry, never again once that slot is consumed,
+                // so a legitimate content line that happens to start with
+                // "โดย:" later in the same entry isn't misread as the author.
+                if (!sawFirstLineAfterDate) {
+                    sawFirstLineAfterDate = true;
+                    const whoMatch = whoRe.exec(line);
+                    if (whoMatch) {
+                        currentWho = whoMatch[1].trim();
+                        return;
+                    }
+                }
+
+                if (line === "" || dividerRe.test(line)) return;
+                currentContentLines.push(line);
+            });
+            flush();
+
+            const dateKeys = Object.keys(entriesByDate).sort(function (a, b) {
+                return parseDDMMYYYY_(b) - parseDDMMYYYY_(a);
+            });
+
+            return dateKeys.map(function (dateKey) {
+                return { date: dateKey, entries: entriesByDate[dateKey] };
+            });
+        }
+
+        // Sorts by an actual calendar date, not the DD/MM/YYYY string — the
+        // original desktop app's plain string sort mis-orders across
+        // month/year boundaries (e.g. "05/02/2026" < "13/01/2026" lexically
+        // despite being chronologically later).
+        function parseDDMMYYYY_(dateKey) {
+            const parts = dateKey.split("/");
+            return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])).getTime();
+        }
+
+        // Diary content is free-typed, often-multiline text — the one new
+        // interpolation site in this feature most likely to carry characters
+        // that would otherwise be read as HTML, so it's escaped explicitly
+        // here rather than interpolated raw.
+        function escapeDiaryHtml_(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Toggle displaying low-stock items
         function toggleLowStockOnly() {
             showLowStockOnly = !showLowStockOnly;
