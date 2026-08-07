@@ -2155,11 +2155,13 @@
             document.getElementById("stat-orders-received").innerText = receivedCount;
         }
 
-        // Parses a SheetJS workbook produced from a raw SAP ME5A .xlsx export into
-        // a flat array of requisition-line rows. Throws if a required column is
-        // missing — this is a hard requirement, not an optional-field fallback,
-        // because the whole point of the upload is to compare these exact fields.
-        function parseSapExport_(workbook) {
+        // Shared by every SAP ME5A .xlsx reader (parseSapExport_,
+        // parsePrStatusExport_): reads the first sheet, validates the
+        // required headers exist, and drops SAP's blank per-PR summary rows
+        // (Material empty — same filter trick csvToOrders_/csvToRequests_
+        // use) so neither caller has to repeat that logic, just its own
+        // column-to-object mapping.
+        function readSapWorkbookRows_(workbook, requiredColumns) {
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
             if (rows.length === 0) {
@@ -2167,31 +2169,34 @@
             }
 
             const headers = rows[0].map(function (h) { return String(h).trim(); });
+            const missing = requiredColumns.filter(function (col) { return headers.indexOf(col) === -1; });
+            if (missing.length > 0) {
+                throw new Error("ไฟล์ SAP ขาดคอลัมน์: " + missing.join(", "));
+            }
+
+            const matIdx = headers.indexOf('Material');
+            return {
+                headers: headers,
+                rows: rows.slice(1).filter(function (row) { return row[matIdx]; })
+            };
+        }
+
+        // Parses a SheetJS workbook produced from a raw SAP ME5A .xlsx export into
+        // a flat array of requisition-line rows. Throws if a required column is
+        // missing — this is a hard requirement, not an optional-field fallback,
+        // because the whole point of the upload is to compare these exact fields.
+        function parseSapExport_(workbook) {
+            const parsed = readSapWorkbookRows_(workbook, [
+                'Purchase Requisition', 'Material', 'Short Text', 'Quantity requested', 'Valuation Price'
+            ]);
+            const headers = parsed.headers;
             const prIdx = headers.indexOf('Purchase Requisition');
             const matIdx = headers.indexOf('Material');
             const nameIdx = headers.indexOf('Short Text');
             const qtyIdx = headers.indexOf('Quantity requested');
             const priceIdx = headers.indexOf('Valuation Price');
 
-            const required = [
-                ['Purchase Requisition', prIdx],
-                ['Material', matIdx],
-                ['Short Text', nameIdx],
-                ['Quantity requested', qtyIdx],
-                ['Valuation Price', priceIdx]
-            ];
-            const missing = required
-                .filter(function (pair) { return pair[1] === -1; })
-                .map(function (pair) { return pair[0]; });
-            if (missing.length > 0) {
-                throw new Error("ไฟล์ SAP ขาดคอลัมน์: " + missing.join(", "));
-            }
-
-            // SAP's export puts a blank "summary" row (PR number + total only)
-            // before each PR's real detail row(s) — Material is empty on those,
-            // same filter trick csvToOrders_/csvToRequests_ already use.
-            return rows.slice(1)
-                .filter(function (row) { return row[matIdx]; })
+            return parsed.rows
                 .map(function (row) {
                     return {
                         prNo: String(row[prIdx] || '').trim(),
@@ -2375,36 +2380,17 @@
         // valid files whose only Z rows already have it and whose other rows
         // legitimately don't need it.
         function parsePrStatusExport_(workbook) {
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
-            if (rows.length === 0) {
-                throw new Error("ไฟล์ไม่มีข้อมูล");
-            }
-
-            const headers = rows[0].map(function (h) { return String(h).trim(); });
+            const parsed = readSapWorkbookRows_(workbook, [
+                'Purchase Requisition', 'Material', 'Quantity requested', 'Release indicator'
+            ]);
+            const headers = parsed.headers;
             const prIdx = headers.indexOf('Purchase Requisition');
             const matIdx = headers.indexOf('Material');
             const qtyIdx = headers.indexOf('Quantity requested');
             const indicatorIdx = headers.indexOf('Release indicator');
             const poIdx = headers.indexOf('Purchase order');
 
-            const required = [
-                ['Purchase Requisition', prIdx],
-                ['Material', matIdx],
-                ['Quantity requested', qtyIdx],
-                ['Release indicator', indicatorIdx]
-            ];
-            const missing = required
-                .filter(function (pair) { return pair[1] === -1; })
-                .map(function (pair) { return pair[0]; });
-            if (missing.length > 0) {
-                throw new Error("ไฟล์ SAP ขาดคอลัมน์: " + missing.join(", "));
-            }
-
-            // Same blank-summary-row filter as parseSapExport_: Material is
-            // empty on SAP's per-PR summary rows.
-            return rows.slice(1)
-                .filter(function (row) { return row[matIdx]; })
+            return parsed.rows
                 .map(function (row) {
                     return {
                         prNo: String(row[prIdx] || '').trim(),
@@ -2630,12 +2616,17 @@
             renderRFQTable();
         }
 
-        // Remark is free text and now lands inside a title="" attribute (for
-        // the truncated-column fix) instead of only element text content —
-        // an unescaped `"` there would break out of the attribute, which
-        // plain text interpolation elsewhere in this file isn't exposed to.
-        function escapeRfqRemarkAttr_(text) {
-            return String(text || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        // Escapes free-typed user text before interpolating it into HTML —
+        // covers both an attribute value (RFQ remark's title="", where an
+        // unescaped `"` would break out of the attribute) and element text
+        // content (diary entries): escaping `"`/`'` in text content is
+        // harmless, so one function safely serves both call sites.
+        function escapeHtml_(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
         }
 
         function renderRFQTable() {
@@ -2685,7 +2676,7 @@
                         <td class="px-6 py-4 text-xs text-slate-700">${req.who}${req.role ? " / " + req.role : ""}</td>
                         <td class="px-6 py-4 font-bold text-slate-900">${req.part}</td>
                         <td class="px-6 py-4 text-center text-slate-800 font-semibold">${req.qty || "-"}</td>
-                        <td class="px-6 py-4 text-xs text-slate-500 w-48"><div class="max-w-[12rem] truncate" title="${escapeRfqRemarkAttr_(req.remark)}">${req.remark || "-"}</div></td>
+                        <td class="px-6 py-4 text-xs text-slate-500 w-48"><div class="max-w-[12rem] truncate" title="${escapeHtml_(req.remark)}">${req.remark || "-"}</div></td>
                         <td class="px-6 py-4 text-center">
                             <!-- Keyboard-operable button for RFQ verification toggle -->
                             <button type="button" ${disabledAttr} onclick="toggleVerify('${req.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${badgeClass} select-none transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none" aria-label="สถานะการตรวจสอบสำหรับ ${req.id}: ${displayBadgeText}. กดเพื่อเปลี่ยนสถานะ">${displayBadgeText}</button>
@@ -3553,16 +3544,6 @@
             return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])).getTime();
         }
 
-        // Diary content is free-typed, often-multiline text — the one new
-        // interpolation site in this feature most likely to carry characters
-        // that would otherwise be read as HTML, so it's escaped explicitly
-        // here rather than interpolated raw.
-        function escapeDiaryHtml_(text) {
-            const div = document.createElement("div");
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         function fetchDiaryEntries() {
             const loading = document.getElementById("diary-list-loading");
             const empty = document.getElementById("diary-list-empty");
@@ -3628,7 +3609,7 @@
                             <span class="text-xs font-bold text-indigo-600">${entry.time}</span>
                             <span class="text-xs text-slate-400">${entry.who}</span>
                         </div>
-                        <p class="text-sm text-slate-700 whitespace-pre-line">${escapeDiaryHtml_(entry.content)}</p>
+                        <p class="text-sm text-slate-700 whitespace-pre-line">${escapeHtml_(entry.content)}</p>
                     </div>
                 `;
             }).join("");
