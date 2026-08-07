@@ -522,9 +522,14 @@ function updatePrStatus_(updates) {
         return;
       }
 
+      // The client (buildPrStatusChanges_) sends the new status as
+      // `newStatus`, not `status` — reading `update.status` here always
+      // returned undefined, and setValue(undefined) silently blanks the
+      // cell instead of throwing. This is the root cause of issue "สถานะ
+      // ถูกทำให้ว่างเปล่า": every confirmed update wrote a blank STATUS.
       const sheetRow = rowIndex + 1;
-      sheet.getRange(sheetRow, statusIdx + 1).setValue(update.status);
-      if (update.status === 'PO' && update.poNo) {
+      sheet.getRange(sheetRow, statusIdx + 1).setValue(update.newStatus);
+      if (update.newStatus === 'PO' && update.poNo) {
         sheet.getRange(sheetRow, poIdx + 1).setValue(update.poNo);
       }
 
@@ -532,8 +537,8 @@ function updatePrStatus_(updates) {
         prNo: update.prNo,
         matCode: update.matCode,
         qty: update.qty,
-        status: update.status,
-        poNo: update.status === 'PO' ? (update.poNo || '') : ''
+        status: update.newStatus,
+        poNo: update.newStatus === 'PO' ? (update.poNo || '') : ''
       });
     });
 
