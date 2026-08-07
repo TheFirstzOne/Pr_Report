@@ -2449,7 +2449,15 @@
                 }
 
                 const order = matches[0];
-                if (order.normalizedStatus === 'RECEIVED') {
+                // Issue #7: DEL. is a one-way door same as RECEIVED — a
+                // stale export row must not regress an already-delivered
+                // line back to Pr/PO. normalizedStatus can't be used here
+                // (DEL. shares the broader "SHIPPING" bucket with
+                // DELIVERING/SHIPPED, which are NOT one-way), so this checks
+                // the raw status text directly, same as updatePrStatus_
+                // does server-side.
+                const currentStatusUpper = String(order.status || '').trim().toUpperCase();
+                if (order.normalizedStatus === 'RECEIVED' || currentStatusUpper === 'DEL.') {
                     excludedCount++;
                     return;
                 }

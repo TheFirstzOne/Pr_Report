@@ -514,6 +514,13 @@ function updatePrStatus_(updates) {
         skipped.push({ prNo: update.prNo, matCode: update.matCode, reason: 'already received' });
         return;
       }
+      // Issue #7: a stale export row could otherwise regress an
+      // already-delivered line back to Pr/PO — DEL. is a one-way door same
+      // as RECEIVED.
+      if (currentStatus === 'DEL.') {
+        skipped.push({ prNo: update.prNo, matCode: update.matCode, reason: 'already delivered' });
+        return;
+      }
 
       const sheetRow = rowIndex + 1;
       sheet.getRange(sheetRow, statusIdx + 1).setValue(update.status);
