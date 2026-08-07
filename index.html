@@ -556,7 +556,7 @@
                                     <th class="px-6 py-4">ผู้ขอ / แผนก</th>
                                     <th class="px-6 py-4">รายการอะไหล่</th>
                                     <th class="px-6 py-4 text-center">จำนวน</th>
-                                    <th class="px-6 py-4">หมายเหตุ</th>
+                                    <th class="px-6 py-4 w-48">หมายเหตุ</th>
                                     <th class="px-6 py-4 text-center">ตรวจสอบ</th>
                                 </tr>
                             </thead>
@@ -2630,6 +2630,14 @@
             renderRFQTable();
         }
 
+        // Remark is free text and now lands inside a title="" attribute (for
+        // the truncated-column fix) instead of only element text content —
+        // an unescaped `"` there would break out of the attribute, which
+        // plain text interpolation elsewhere in this file isn't exposed to.
+        function escapeRfqRemarkAttr_(text) {
+            return String(text || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        }
+
         function renderRFQTable() {
             const tbody = document.getElementById("rfq-table-body");
 
@@ -2677,7 +2685,7 @@
                         <td class="px-6 py-4 text-xs text-slate-700">${req.who}${req.role ? " / " + req.role : ""}</td>
                         <td class="px-6 py-4 font-bold text-slate-900">${req.part}</td>
                         <td class="px-6 py-4 text-center text-slate-800 font-semibold">${req.qty || "-"}</td>
-                        <td class="px-6 py-4 text-xs text-slate-500">${req.remark || "-"}</td>
+                        <td class="px-6 py-4 text-xs text-slate-500 w-48"><div class="max-w-[12rem] truncate" title="${escapeRfqRemarkAttr_(req.remark)}">${req.remark || "-"}</div></td>
                         <td class="px-6 py-4 text-center">
                             <!-- Keyboard-operable button for RFQ verification toggle -->
                             <button type="button" ${disabledAttr} onclick="toggleVerify('${req.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg ${badgeClass} select-none transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none" aria-label="สถานะการตรวจสอบสำหรับ ${req.id}: ${displayBadgeText}. กดเพื่อเปลี่ยนสถานะ">${displayBadgeText}</button>
