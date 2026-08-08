@@ -2,6 +2,8 @@
 // Read-only JSON API over the spreadsheet's STOCK/requests/QuotationHistory/Budget/PR sheets.
 
 const SHEET_ID = '1oOzyZxcfzzfirdeOKUO1m9S6NjXKFUFgkfhNzNZqtV8';
+// Separate spreadsheet file ("Maintenance Task") — not a tab on SHEET_ID.
+const TASK_SHEET_ID = '11HYT-fPPGZOS6FY3KoYSPGR1Nk0GMOQsOhVIIXp65nI';
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'all';
@@ -223,8 +225,8 @@ function getOrders() {
 // Reads have moved to client-side gviz fetches; Code.gs now exists solely to
 // handle the 2 actions that need write access (gviz is read-only, no auth).
 
-function findRowByColumnValue_(sheetName, matchColumnName, matchValue) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+function findRowByColumnValue_(sheetName, matchColumnName, matchValue, sheetId) {
+  const ss = SpreadsheetApp.openById(sheetId || SHEET_ID);
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) throw new Error('Sheet not found: ' + sheetName);
   const data = sheet.getDataRange().getValues();
@@ -250,6 +252,100 @@ function setVerify_(reqId, verifyValue) {
     const value = (verifyValue === true || String(verifyValue).toUpperCase() === 'TRUE') ? 'TRUE' : 'FALSE';
     found.sheet.getRange(found.rowNumber, verifyColIdx + 1).setValue(value);
     return { success: true, reqId: reqId, verify: value };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// 'cancle' is a soft-delete marker, not a status a user picks from the
+// dropdown (the client's status <select> only offers the first 3) — it's
+// only ever set by the delete-task button, reusing this same whitelist so
+// setTaskStatus_ doesn't need a parallel delete endpoint.
+const TASK_STATUS_VALUES_ = ['รอดำเนินการ', 'กำลังดำเนินการ', 'เสร็จสิ้น', 'cancle'];
+
+// task_id generated server-side under the lock (data.length at read time,
+// after the header row) so two people submitting at once can't collide —
+// the same reason exists-vs-new is decided server-side in addStock_.
+function addTask_(payload) {
+  if (!payload.title) return { error: 'Missing title' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(TASK_SHEET_ID);
+    const sheet = ss.getSheetByName('task');
+    if (!sheet) return { error: 'Sheet not found: task' };
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(function (h) { return String(h).trim(); });
+    const idIdx = headers.indexOf('task_id');
+    const dateIdx = headers.indexOf('created_at');
+    const titleIdx = headers.indexOf('title');
+    const assigneeIdx = headers.indexOf('assignee');
+    const statusIdx = headers.indexOf('status');
+
+    const taskId = 'TSK-' + String(data.length).padStart(3, '0');
+    const now = new Date();
+    const status = TASK_STATUS_VALUES_[0];
+
+    const newRow = new Array(headers.length).fill('');
+    if (idIdx !== -1) newRow[idIdx] = taskId;
+    if (dateIdx !== -1) newRow[dateIdx] = now;
+    if (titleIdx !== -1) newRow[titleIdx] = payload.title;
+    if (assigneeIdx !== -1) newRow[assigneeIdx] = payload.assignee || '';
+    if (statusIdx !== -1) newRow[statusIdx] = status;
+    sheet.appendRow(newRow);
+
+    return {
+      success: true,
+      taskId: taskId,
+      date: formatDate_(now),
+      title: payload.title,
+      assignee: payload.assignee || '',
+      status: status
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Full overwrite of title/assignee by task_id — mirrors updateStock_'s
+// "edit modal" role (status is handled separately by setTaskStatus_).
+function updateTask_(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const found = findRowByColumnValue_('task', 'task_id', payload.taskId, TASK_SHEET_ID);
+    if (!found) return { error: 'Task not found: ' + payload.taskId };
+
+    const titleIdx = found.headers.indexOf('title');
+    const assigneeIdx = found.headers.indexOf('assignee');
+
+    if (titleIdx !== -1) found.sheet.getRange(found.rowNumber, titleIdx + 1).setValue(payload.title);
+    if (assigneeIdx !== -1) found.sheet.getRange(found.rowNumber, assigneeIdx + 1).setValue(payload.assignee || '');
+
+    return {
+      success: true,
+      taskId: payload.taskId,
+      title: payload.title,
+      assignee: payload.assignee || ''
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function setTaskStatus_(taskId, status) {
+  if (TASK_STATUS_VALUES_.indexOf(status) === -1) {
+    return { error: 'Invalid status: ' + status };
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const found = findRowByColumnValue_('task', 'task_id', taskId, TASK_SHEET_ID);
+    if (!found) return { error: 'Task not found: ' + taskId };
+    const statusColIdx = found.headers.indexOf('status');
+    if (statusColIdx === -1) return { error: 'status column not found in task sheet' };
+    found.sheet.getRange(found.rowNumber, statusColIdx + 1).setValue(status);
+    return { success: true, taskId: taskId, status: status };
   } finally {
     lock.releaseLock();
   }
@@ -665,6 +761,15 @@ function doPost(e) {
         throw new Error('Missing subject/message');
       }
       payload = submitFeedback_(body);
+    } else if (body.action === 'setTaskStatus') {
+      if (!body.taskId || !body.status) throw new Error('Missing taskId/status');
+      payload = setTaskStatus_(body.taskId, body.status);
+    } else if (body.action === 'addTask') {
+      if (!body.title) throw new Error('Missing title');
+      payload = addTask_(body);
+    } else if (body.action === 'updateTask') {
+      if (!body.taskId || !body.title) throw new Error('Missing taskId/title');
+      payload = updateTask_(body);
     } else {
       payload = { error: 'Unknown action: ' + body.action };
     }
@@ -673,6 +778,23 @@ function doPost(e) {
   }
   return ContentService.createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Run this once manually after (re)deploying, BEFORE using the "งาน" tab:
+// in the Apps Script editor, select authorizeAccess in the function
+// dropdown and click Run. TASK_SHEET_ID is a spreadsheet this script
+// never touched before, so the first real request against it would
+// otherwise fail (or silently hang, for a Web App with no one watching
+// the auth prompt) until Google's consent screen is granted — running
+// it manually here surfaces that prompt at a controlled time instead.
+function authorizeAccess() {
+  const ss = SpreadsheetApp.openById(TASK_SHEET_ID);
+  const sheet = ss.getSheetByName('task');
+  if (!sheet) {
+    throw new Error('Sheet "task" not found in TASK_SHEET_ID — check the tab name.');
+  }
+  const headers = sheet.getDataRange().getValues()[0];
+  Logger.log('Access OK. TASK_SHEET_ID "task" headers: ' + JSON.stringify(headers));
 }
 
 // Runnable self-check: in the Apps Script editor, select testAllSheets

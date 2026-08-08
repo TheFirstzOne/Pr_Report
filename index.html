@@ -138,7 +138,18 @@
                     </button>
                 </div>
             </div>
- 
+
+            <!-- Group 2b: Maintenance Tasks -->
+            <div>
+                <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">งานซ่อมบำรุง</p>
+                <div class="space-y-1">
+                    <button onclick="switchTab('task')" id="tab-task" class="tab-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 text-slate-300 hover:bg-slate-900 hover:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none">
+                        <i data-lucide="clipboard-list" class="w-4.5 h-4.5"></i>
+                        <span>งาน</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Group 3: Budget & Finance -->
             <div>
                 <p class="text-xs font-semibold text-slate-300/80 uppercase tracking-wider px-3 mb-2">การเงินและงบประมาณ</p>
@@ -562,6 +573,55 @@
                             </thead>
                             <tbody id="rfq-table-body">
                                 <!-- Dynamic Requests List -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="content-task" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6">
+                    <h3 class="font-bold text-base text-slate-800 mb-4">สร้างงานใหม่</h3>
+                    <form onsubmit="submitTask(event)" class="flex flex-col md:flex-row gap-3 md:items-end">
+                        <div class="flex-1">
+                            <label for="form-task-title" class="block text-xs font-bold uppercase text-slate-500 mb-1">หัวข้องาน</label>
+                            <input type="text" id="form-task-title" placeholder="เช่น เปลี่ยนซีลปั๊มไฮดรอลิก" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500" required>
+                        </div>
+                        <div class="w-full md:w-56">
+                            <label for="form-task-assignee" class="block text-xs font-bold uppercase text-slate-500 mb-1">ผู้รับผิดชอบ</label>
+                            <select id="form-task-assignee" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                                <option value="">-- ไม่ระบุ --</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="task-submit-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">เพิ่มงาน</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">รายการงาน</h3>
+                            <p class="text-xs text-slate-500 mt-1">งานซ่อมบำรุงและผู้รับผิดชอบ</p>
+                        </div>
+                        <div class="relative w-full md:w-72">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                            </span>
+                            <input type="text" id="task-search" oninput="renderTaskTable()" placeholder="ค้นหาหัวข้องาน หรือผู้รับผิดชอบ..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-100 font-bold">
+                                <tr>
+                                    <th class="px-6 py-4">วันที่</th>
+                                    <th class="px-6 py-4">หัวข้องาน</th>
+                                    <th class="px-6 py-4">ผู้รับผิดชอบ</th>
+                                    <th class="px-6 py-4 text-center">สถานะ</th>
+                                    <th class="px-6 py-4 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="task-table-body">
+                                <!-- Dynamic Task List -->
                             </tbody>
                         </table>
                     </div>
@@ -999,6 +1059,54 @@
         </div>
     </div>
 
+    <!-- MODAL: EDIT TASK -->
+    <div id="modal-editTask" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-[transform,opacity] duration-300 border border-slate-100">
+            <div class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <h4 class="font-bold text-slate-800 text-base">แก้ไขงาน</h4>
+                <button type="button" onclick="closeEditTaskModal()" class="text-slate-400 hover:text-slate-600 transition-colors w-11 h-11 flex items-center justify-center rounded-lg hover:bg-slate-50 -mr-2">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="submitEditTask(event)" class="p-6 space-y-4">
+                <input type="hidden" id="form-edit-task-id">
+                <div>
+                    <label for="form-edit-task-title" class="block text-xs font-bold uppercase text-slate-500 mb-1">หัวข้องาน</label>
+                    <input type="text" id="form-edit-task-title" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-500" required>
+                </div>
+                <div>
+                    <label for="form-edit-task-assignee" class="block text-xs font-bold uppercase text-slate-500 mb-1">ผู้รับผิดชอบ</label>
+                    <select id="form-edit-task-assignee" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        <option value="">-- ไม่ระบุ --</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeEditTaskModal()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                    <button type="submit" id="edit-task-submit-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors">บันทึกการแก้ไข</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM DELETE TASK -->
+    <div id="modal-confirmDeleteTask" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100">
+            <div class="bg-white border-b border-slate-100 px-6 py-4">
+                <h4 class="font-bold text-slate-800 text-base">ยืนยันยกเลิกงาน</h4>
+            </div>
+            <div class="p-6 space-y-3">
+                <p class="text-sm text-slate-600 font-medium">งานนี้จะถูกยกเลิกและไม่แสดงในระบบอีก (แก้ไขได้จาก Google Sheet โดยตรงถ้าต้องการกู้คืน)</p>
+                <div class="bg-rose-50 border border-rose-100 rounded-lg p-4 text-xs text-rose-800 font-semibold">
+                    <p>งาน: <span id="confirm-delete-task-title" class="font-bold text-slate-900"></span></p>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end space-x-3">
+                <button type="button" onclick="closeDeleteTaskModal()" class="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">ยกเลิก</button>
+                <button type="button" onclick="confirmDeleteTask()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-colors">ยืนยันยกเลิกงาน</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: CONFIRM LOW STOCK -->
     <div id="modal-confirmLowStock" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 transition-opacity duration-300">
         <div class="bg-white rounded-xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100">
@@ -1123,11 +1231,14 @@
         let purchaseOrders = [];
         let prStatusPendingChanges = [];
         let membersList = [];
+        let maintenanceTasks = [];
         const inFlightRequests = new Set();
+        const inFlightTasks = new Set();
         const inFlightStock = new Set();
         const inFlightReceiving = new Set();
         let inFlightFeedback = false;
         let inFlightDiary = false;
+        let inFlightNewTask = false;
         let diaryEntriesByDate = [];
         let selectedDiaryDate = null;
 
@@ -1313,12 +1424,16 @@
                 normalizedStatus: normalizeOrderStatus(o.status)
             }));
             membersList = data.members || [];
+            maintenanceTasks = data.tasks || [];
 
             populateOrderFilterOptions();
+            populateTaskAssigneeOptions();
             renderAll();
         }
 
         const SHEET_ID = "1oOzyZxcfzzfirdeOKUO1m9S6NjXKFUFgkfhNzNZqtV8";
+        // Separate spreadsheet file ("Maintenance Task") — not a tab on SHEET_ID.
+        const TASK_SHEET_ID = "11HYT-fPPGZOS6FY3KoYSPGR1Nk0GMOQsOhVIIXp65nI";
 
         const SHEET_GIDS = {
             'STOCK': '1318466636',
@@ -1326,7 +1441,8 @@
             'QuotationHistory': '996020767',
             'Budget': '1651297386',
             'PR': '1646453870',
-            'members': '380548139'
+            'members': '380548139',
+            'task': '0'
         };
 
         function parseCSV(text) {
@@ -1361,9 +1477,9 @@
             return lines;
         }
 
-        async function fetchCSVTable_(sheetName, signal) {
+        async function fetchCSVTable_(sheetName, signal, sheetId) {
             const gid = SHEET_GIDS[sheetName];
-            const url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=" + gid;
+            const url = "https://docs.google.com/spreadsheets/d/" + (sheetId || SHEET_ID) + "/export?format=csv&gid=" + gid;
             const res = await fetch(url, { signal: signal });
             const text = await res.text();
             const parsed = parseCSV(text);
@@ -1405,6 +1521,28 @@
                         name: String(row[nameIdx] || '').trim(),
                         role: String(row[roleIdx] || '').trim(),
                         userName: String(row[usernameIdx] || '').trim()
+                    };
+                });
+        }
+
+        function csvToTask_(sheetData) {
+            const headers = sheetData.headers;
+            const rows = sheetData.rows;
+            const idIdx = headers.indexOf('task_id');
+            const dateIdx = headers.indexOf('created_at');
+            const titleIdx = headers.indexOf('title');
+            const assigneeIdx = headers.indexOf('assignee');
+            const statusIdx = headers.indexOf('status');
+
+            return rows
+                .filter(function (row) { return row[titleIdx]; })
+                .map(function (row) {
+                    return {
+                        id: String(row[idIdx] || ''),
+                        date: formatDate_(row[dateIdx]),
+                        title: String(row[titleIdx] || ''),
+                        assignee: String(row[assigneeIdx] || ''),
+                        status: String(row[statusIdx] || '').trim()
                     };
                 });
         }
@@ -1587,7 +1725,8 @@
                     fetchCSVTable_('QuotationHistory', controller.signal),
                     fetchCSVTable_('Budget', controller.signal),
                     fetchCSVTable_('PR', controller.signal),
-                    fetchCSVTable_('members', controller.signal)
+                    fetchCSVTable_('members', controller.signal),
+                    fetchCSVTable_('task', controller.signal, TASK_SHEET_ID)
                 ]);
                 return {
                     stock: csvToStock_(tables[0]),
@@ -1595,7 +1734,8 @@
                     quotes: csvToQuotes_(tables[2]),
                     budget: csvToBudget_(tables[3]),
                     orders: csvToOrders_(tables[4]),
-                    members: csvToMembers_(tables[5])
+                    members: csvToMembers_(tables[5]),
+                    tasks: csvToTask_(tables[6])
                 };
             } catch (err) {
                 if (err.name === 'AbortError') {
@@ -1973,6 +2113,7 @@
             renderQuotesTable();
             renderBudgetInfo();
             renderSystemAlerts();
+            renderTaskTable();
 
             
             // Global Badges Update
@@ -2695,6 +2836,251 @@
             document.getElementById("stat-total-quotes-system").innerText = quoteHistory.length;
         }
 
+        const TASK_STATUS_VALUES = ["รอดำเนินการ", "กำลังดำเนินการ", "เสร็จสิ้น"];
+
+        function taskStatusBadgeClass_(status) {
+            if (status === "เสร็จสิ้น") return "bg-emerald-50 border border-emerald-100 text-emerald-700";
+            if (status === "กำลังดำเนินการ") return "bg-indigo-50 border border-indigo-100 text-indigo-700";
+            return "bg-amber-50 border border-amber-100 text-amber-700"; // รอดำเนินการ / unrecognized
+        }
+
+        function renderTaskTable() {
+            const tbody = document.getElementById("task-table-body");
+            if (!tbody) return;
+
+            const searchInput = document.getElementById("task-search");
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+            const rows = maintenanceTasks
+                .filter(t => t.status !== "cancle") // soft-deleted — never shown
+                .filter(t => {
+                    if (!query) return true;
+                    return t.title.toLowerCase().includes(query) || t.assignee.toLowerCase().includes(query);
+                })
+                .map(t => {
+                    const isInFlight = inFlightTasks.has(t.id);
+                    const disabledAttr = isInFlight ? "disabled style='opacity:0.5; pointer-events:none;'" : "";
+                    const options = TASK_STATUS_VALUES.map(function (s) {
+                        return `<option value="${escapeHtml_(s)}" ${s === t.status ? "selected" : ""}>${escapeHtml_(s)}</option>`;
+                    }).join("");
+                    return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 text-xs text-slate-500">${t.date || "-"}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800">${escapeHtml_(t.title)}</td>
+                        <td class="px-6 py-4 text-slate-700">${escapeHtml_(t.assignee) || "-"}</td>
+                        <td class="px-6 py-4 text-center">
+                            <select ${isInFlight ? "disabled" : ""} onchange="updateTaskStatus('${t.id}', this.value)" class="px-2.5 py-1 text-xs font-bold rounded-lg ${taskStatusBadgeClass_(t.status)} select-none transition-colors focus:ring-2 focus:ring-indigo-500/50 focus:outline-none" aria-label="สถานะงาน ${escapeHtml_(t.title)}">${options}</select>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="inline-flex rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                                <button type="button" ${disabledAttr} onclick="openEditTaskModal('${t.id}')" class="w-11 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-r border-slate-200 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors" aria-label="แก้ไขงาน ${escapeHtml_(t.title)}" title="แก้ไขงาน"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                                <button type="button" ${disabledAttr} onclick="openDeleteTaskModal('${t.id}')" class="w-11 h-11 flex items-center justify-center text-rose-600 hover:bg-rose-50 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none transition-colors" aria-label="ยกเลิกงาน ${escapeHtml_(t.title)}" title="ยกเลิกงาน"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                });
+
+            tbody.innerHTML = rows.length
+                ? rows.join("")
+                : `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 font-medium">ไม่พบงานที่ตรงกับตัวกรอง</td></tr>`;
+            lucide.createIcons();
+        }
+
+        function taskAssigneeOptionsHtml_() {
+            return membersList.map(function (m) {
+                return `<option value="${escapeHtml_(m.name)}">${escapeHtml_(m.name)}</option>`;
+            }).join("");
+        }
+
+        function populateTaskAssigneeOptions() {
+            const select = document.getElementById("form-task-assignee");
+            if (!select) return;
+            const currentValue = select.value;
+            select.innerHTML = `<option value="">-- ไม่ระบุ --</option>` + taskAssigneeOptionsHtml_();
+            select.value = currentValue;
+        }
+
+        function submitTask(event) {
+            event.preventDefault();
+            if (inFlightNewTask) return;
+
+            const titleField = document.getElementById("form-task-title");
+            const assigneeField = document.getElementById("form-task-assignee");
+            const title = titleField.value.trim();
+            if (!title) return;
+            const assignee = assigneeField.value;
+
+            inFlightNewTask = true;
+            const btn = document.getElementById("task-submit-btn");
+            btn.setAttribute("disabled", "true");
+            btn.innerText = "กำลังบันทึก...";
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "addTask",
+                    title: title,
+                    assignee: assignee
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                maintenanceTasks.push({
+                    id: data.taskId,
+                    date: data.date,
+                    title: data.title,
+                    assignee: data.assignee,
+                    status: data.status
+                });
+                titleField.value = "";
+                assigneeField.value = "";
+                renderTaskTable();
+                triggerToast("สร้างงานสำเร็จ", "success");
+            })
+            .catch(function (err) {
+                console.error(err);
+                triggerToast("สร้างงานไม่สำเร็จ กรุณาลองใหม่", "error");
+            })
+            .finally(function () {
+                inFlightNewTask = false;
+                btn.removeAttribute("disabled");
+                btn.innerText = "เพิ่มงาน";
+            });
+        }
+
+        function updateTaskStatus(taskId, newStatus) {
+            if (inFlightTasks.has(taskId)) return;
+            const task = maintenanceTasks.find(function (t) { return t.id === taskId; });
+            if (!task) return;
+
+            const oldStatus = task.status;
+            inFlightTasks.add(taskId);
+
+            task.status = newStatus;
+            renderTaskTable();
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "setTaskStatus",
+                    taskId: taskId,
+                    status: newStatus
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                task.status = data.status;
+            })
+            .catch(function (err) {
+                console.error(err);
+                task.status = oldStatus;
+                triggerToast("ปรับปรุงสถานะงานไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
+            })
+            .finally(function () {
+                inFlightTasks.delete(taskId);
+                renderTaskTable();
+            });
+        }
+
+        function openEditTaskModal(taskId) {
+            const task = maintenanceTasks.find(function (t) { return t.id === taskId; });
+            if (!task) return;
+
+            document.getElementById("form-edit-task-id").value = task.id;
+            document.getElementById("form-edit-task-title").value = task.title;
+            const assigneeSelect = document.getElementById("form-edit-task-assignee");
+            assigneeSelect.innerHTML = `<option value="">-- ไม่ระบุ --</option>` + taskAssigneeOptionsHtml_();
+            assigneeSelect.value = task.assignee;
+
+            document.getElementById("modal-editTask").classList.remove("hidden");
+            editTaskEscHandlerRef = function (e) {
+                if (e.key === "Escape") closeEditTaskModal();
+            };
+            window.addEventListener("keydown", editTaskEscHandlerRef);
+        }
+
+        function closeEditTaskModal() {
+            document.getElementById("modal-editTask").classList.add("hidden");
+            if (editTaskEscHandlerRef) {
+                window.removeEventListener("keydown", editTaskEscHandlerRef);
+                editTaskEscHandlerRef = null;
+            }
+        }
+
+        function submitEditTask(event) {
+            event.preventDefault();
+
+            const taskId = document.getElementById("form-edit-task-id").value;
+            const title = document.getElementById("form-edit-task-title").value.trim();
+            const assignee = document.getElementById("form-edit-task-assignee").value;
+            if (!title) return;
+
+            if (inFlightTasks.has(taskId)) return;
+            const idx = maintenanceTasks.findIndex(function (t) { return t.id === taskId; });
+            if (idx === -1) return;
+
+            const snapshot = Object.assign({}, maintenanceTasks[idx]);
+
+            inFlightTasks.add(taskId);
+            maintenanceTasks[idx] = Object.assign({}, maintenanceTasks[idx], { title: title, assignee: assignee });
+            closeEditTaskModal();
+            renderTaskTable();
+
+            fetch(EXEC_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "updateTask",
+                    taskId: taskId,
+                    title: title,
+                    assignee: assignee
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                triggerToast("บันทึกการแก้ไขงานสำเร็จ", "success");
+            })
+            .catch(function (err) {
+                console.error(err);
+                const rollbackIdx = maintenanceTasks.findIndex(function (t) { return t.id === taskId; });
+                if (rollbackIdx !== -1) maintenanceTasks[rollbackIdx] = snapshot;
+                triggerToast("บันทึกการแก้ไขงานไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
+            })
+            .finally(function () {
+                inFlightTasks.delete(taskId);
+                renderTaskTable();
+            });
+        }
+
+        function openDeleteTaskModal(taskId) {
+            const task = maintenanceTasks.find(function (t) { return t.id === taskId; });
+            if (!task) return;
+            pendingDeleteTaskId = taskId;
+            document.getElementById("confirm-delete-task-title").innerText = task.title;
+            document.getElementById("modal-confirmDeleteTask").classList.remove("hidden");
+        }
+
+        function closeDeleteTaskModal() {
+            document.getElementById("modal-confirmDeleteTask").classList.add("hidden");
+            pendingDeleteTaskId = null;
+        }
+
+        function confirmDeleteTask() {
+            const taskId = pendingDeleteTaskId;
+            closeDeleteTaskModal();
+            if (!taskId) return;
+            updateTaskStatus(taskId, "cancle");
+        }
+
         function toggleVerify(reqId) {
             if (inFlightRequests.has(reqId)) return;
             const req = rfqList.find(function (r) { return r.id === reqId; });
@@ -2962,6 +3348,7 @@
                 rfq: "รายการขอราคา",
                 budget: "งบประมาณ",
                 quotes: "ประวัติใบเสนอราคา",
+                task: "งาน",
                 feedback: "ข้อเสนอแนะ",
                 diary: "บันทึกประจำวัน"
             };
@@ -3261,6 +3648,8 @@
         }
 
         let editStockEscHandlerRef = null;
+        let editTaskEscHandlerRef = null;
+        let pendingDeleteTaskId = null;
 
         function openEditStockModal(matCode) {
             const part = stockParts.find(function (p) { return p.id === matCode; });
